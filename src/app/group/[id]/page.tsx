@@ -52,12 +52,11 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 				<div className="flex flex-col">
 					{mockMessages.map((msg, idx) => (
 						<React.Fragment key={msg.id}>
-							{/* {idx !== 0 && (
-								<hr className="border-t border-dotted border-neutral-300 dark:border-neutral-700 my-4" />
-							)} */}
 							<div className="flex flex-col gap-4 py-2 mt-2">
 								<div className="flex items-center gap-2">
-									<span className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}>
+									<span
+										className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
+									>
 										{msg.sender}
 									</span>
 									<span className="text-xs text-neutral-400 dark:text-neutral-500">
@@ -73,7 +72,6 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 					))}
 				</div>
 			</section>
-			{/* Input area floating at the bottom */}
 			<GroupInputArea />
 		</main>
 	);

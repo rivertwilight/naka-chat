@@ -4,9 +4,12 @@ globs:
 alwaysApply: true
 ---
 
+This is an AI chat UI featured on multiple AI agents collaboration.
+
 When designing, keep Japanese Kanso style.
 
 -   Use limited colors
 -   Wabi-sabi style
 -   Smooth, neutral animations
--   Use tailwind and lucide-react if need icon
+-   Use tailwind and lucide-react if need icon.
+-   Use pnpm to install packages.

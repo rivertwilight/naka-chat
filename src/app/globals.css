@@ -16,8 +16,8 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--background: #0a0a0a;
-		--foreground: #ededed;
+		--background: var(--color-neutral-900);
+		--foreground: var(--color-neutral-100);
 	}
 }
 
@@ -29,9 +29,17 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Selection color for light mode (default) */
 ::selection {
 	background: #171717; /* Tailwind's neutral-900 */
 	color: #ededed; /* Ensure text is visible on dark background */
+}
+
+@media (prefers-color-scheme: dark) {
+	::selection {
+		background: #ededed; /* Light color for selection in dark mode */
+		color: #171717; /* Dark text for contrast */
+	}
 }
 
 /* Custom scrollbar styles */

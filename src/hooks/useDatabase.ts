@@ -781,3 +781,60 @@ export function useUserGroups() {
 		error,
 	};
 }
+
+// Hook for getting the latest message for each group in a list
+export function useLatestGroupMessages(groupIds: string[]) {
+  const [latestMessages, setLatestMessages] = useState<Record<string, MessageWithDetails | null>>({});
+  useEffect(() => {
+    if (!groupIds || groupIds.length === 0) {
+      setLatestMessages({});
+      return;
+    }
+    let cancelled = false;
+    const fetchLatest = async () => {
+      const result: Record<string, MessageWithDetails | null> = {};
+      for (const groupId of groupIds) {
+        // Get all sessions for the group
+        const sessions = await db.sessions.where("group_id").equals(groupId).toArray();
+        if (!sessions.length) {
+          result[groupId] = null;
+          continue;
+        }
+        // Get all messages for all sessions
+        let allMessages: MessageWithDetails[] = [];
+        for (const session of sessions) {
+          const sessionMessages = await dbHelpers.getMessagesWithReactions(session.id);
+          // Enhance messages with sender details
+          const enhancedMessages = await Promise.all(
+            sessionMessages.map(async (message) => {
+              let senderUser: User | undefined;
+              let senderAgent: Agent | undefined;
+              if (message.sender_user_id) {
+                senderUser = await db.users.get(message.sender_user_id);
+              }
+              if (message.sender_agent_id) {
+                senderAgent = await db.agents.get(message.sender_agent_id);
+              }
+              return {
+                ...message,
+                senderUser,
+                senderAgent,
+                session,
+              };
+            })
+          );
+          allMessages.push(...enhancedMessages);
+        }
+        // Sort and get the latest
+        allMessages.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+        result[groupId] = allMessages[0] || null;
+      }
+      if (!cancelled) setLatestMessages(result);
+    };
+    fetchLatest();
+    return () => {
+      cancelled = true;
+    };
+  }, [JSON.stringify(groupIds)]);
+  return latestMessages;
+}

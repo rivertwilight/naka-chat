@@ -1,5 +1,4 @@
-import { generateText } from "ai";
-import { db, dbHelpers, Agent, MessageWithDetails } from "./database";
+import { dbHelpers, Agent, MessageWithDetails } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
@@ -18,7 +17,7 @@ export interface GroupChatMember {
 }
 
 export interface SupervisorDecision {
-	nextSpeaker: "human" | string; // 'human' or agent ID
+	nextSpeaker: string[]; // Always an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
 	reasoning: string;
 	shouldStop: boolean;
 }
@@ -94,32 +93,34 @@ export class AgentGroupChat {
 
 		const prompt = `You are a supervisor agent managing a group chat discussion. Your role is to decide who should speak next based on the conversation context and each agent's expertise.
 
-Group Members:
+<groupMembers>
 ${membersList}
+</groupMembers>
 
-Conversation History:
+<conversationHistory>
 ${conversationHistory}
-
-${lastSpeaker ? `Last speaker: ${lastSpeaker}` : ""}
+</conversationHistory>
 
 Analyze the conversation and decide:
-1. Who should speak next? (Choose from the agents above, or "human" if waiting for human input)
+
+1. Who should speak next? (Return an array of agent IDs/names and/or 'human', e.g., ['agent_id_1'], ['human'], or ['human', 'agent_id'])
 2. Should the conversation stop here? (true if waiting for human input or conversation has reached a natural conclusion)
 
-Respond in this exact JSON format, no other text, no markdown warpper, such as:
+Respond in this exact JSON format, no other text, no markdown wrapper, such as:
 
 <example>
 {
-  "nextSpeaker": "agent_id_or_human",
+  "nextSpeaker": ["agent_id_1", "agent_id_2"],
   "shouldStop": false
 }
 </example>
 
 Rules:
-- If the last message was a question directed at humans or requires human input, choose "human"
-- If an agent's expertise is needed based on the conversation topic, choose that agent
-- If the conversation seems complete or stuck, set shouldStop to true
-- Don't have the same agent speak twice in a row unless absolutely necessary
+- Always return nextSpeaker as an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
+- If the last message was a question directed at humans or requires human input, include 'human' in the array
+- If an agent's expertise is needed based on the conversation topic, include that agent
+- If the conversation seems complete, set shouldStop to true
+- Your goal is to make the conversation as natural as possible
 - Consider the natural flow of collaboration (PM → Designer → Developer, etc.)`;
 
 		try {
@@ -140,15 +141,21 @@ Rules:
 			const decision = JSON.parse(responseText) as SupervisorDecision;
 
 			// Validate the decision
-
 			console.log("decision", decision);
 			console.log("members", members);
 
-			if (
-				decision.nextSpeaker !== "human" &&
-				!members.find((m) => m.name === decision.nextSpeaker)
-			) {
-				throw new Error("Invalid nextSpeaker in supervisor decision");
+			if (!Array.isArray(decision.nextSpeaker)) {
+				throw new Error("nextSpeaker must always be an array");
+			}
+			for (const speaker of decision.nextSpeaker) {
+				if (
+					speaker !== "human" &&
+					!members.find((m) => m.name === speaker || m.id === speaker)
+				) {
+					throw new Error(
+						"Invalid nextSpeaker in supervisor decision: " + speaker
+					);
+				}
 			}
 
 			return decision;
@@ -156,7 +163,7 @@ Rules:
 			console.error("Supervisor decision error:", error);
 			// Fallback decision
 			return {
-				nextSpeaker: "human",
+				nextSpeaker: ["human"],
 				reasoning:
 					"Error in supervisor decision, defaulting to human input",
 				shouldStop: true,
@@ -186,20 +193,21 @@ You are participating in a group chat with the following members:
 ${membersList}
 
 Guidelines:
-- Stay in character as ${agent.name} (${agent.title}), behave like a real person
-- Be concise but helpful
-- Build on what others have said
+- Stay in character as ${agent.name} (${agent.title})
+- Be concise and natural, behave like a real person. You can use emojis to make the message more natural.
+- Each message should no more than 150 words or 50 chinese characters unless it's a code block or a long quote
 - Collaborate effectively with other team members
+- Follow user's language
 
 Conversation so far:
 
 ${conversationHistory}
 
-As ${agent.name} (${agent.title}), provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content`;
+As ${agent.name} (${agent.title}), provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content.`;
 
 		try {
 			const response = await ai.models.generateContent({
-				model: "gemini-2.5-flash",
+				model: "gemini-2.5-pro",
 				contents: [{ role: "user", parts: [{ text: prompt }] }],
 			});
 
@@ -244,39 +252,51 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 
 			console.log("Supervisor decision:", decision);
 
-			if (decision.shouldStop || decision.nextSpeaker === "human") {
+			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
 
-			// Find the agent to respond
-			const nextAgent = members.find(
-				(m) => m.name === decision.nextSpeaker && m.role === "agent"
-			);
-			if (!nextAgent) {
-				console.error("Agent not found:", decision.nextSpeaker);
+			// nextSpeaker is always an array
+			const nextAgents = decision.nextSpeaker
+				.map((speaker) =>
+					members.find(
+						(m) =>
+							(m.name === speaker || m.id === speaker) &&
+							m.role === "agent"
+					)
+				)
+				.filter(Boolean) as GroupChatMember[];
+
+			if (nextAgents.length === 0) {
+				console.error("Agent(s) not found:", decision.nextSpeaker);
 				break;
 			}
 
-			// Generate agent response
-			const agentResponse = await this.generateAgentResponse(
-				nextAgent,
-				currentHistory,
-				members
+			// Generate and send all agent responses in parallel
+			const responses = await Promise.all(
+				nextAgents.map((agent) =>
+					this.generateAgentResponse(agent, currentHistory, members)
+				)
 			);
 
-			// Send agent message to database
 			const currentSession = await dbHelpers.getCurrentSession(
 				this.groupId
 			);
-			await dbHelpers.sendMessage({
-				session_id: currentSession.id,
-				sender_agent_id: nextAgent.id,
-				content: agentResponse,
-			});
+			await Promise.all(
+				nextAgents.map((agent, idx) =>
+					dbHelpers.sendMessage({
+						session_id: currentSession.id,
+						sender_agent_id: agent.id,
+						content: responses[idx],
+					})
+				)
+			);
 
-			// Update conversation history
-			currentHistory += `\n${nextAgent.name}: ${agentResponse}`;
-			lastSpeaker = nextAgent.name;
+			// Update conversation history for all agent responses
+			responses.forEach((response, idx) => {
+				currentHistory += `\n${nextAgents[idx].name}: ${response}`;
+				lastSpeaker = nextAgents[idx].name;
+			});
 
 			// Small delay to prevent overwhelming the system
 			await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -291,7 +311,7 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 		conversationHistory: MessageWithDetails[] = []
 	): Promise<void> {
 		const members = await this.getGroupMembers();
-		const currentHistory =
+		let currentHistory =
 			this.formatConversationHistory(conversationHistory) +
 			(conversationHistory.length > 0 ? "\n" : "") +
 			`Human: ${topic}`;
@@ -308,40 +328,51 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 
 			console.log("Supervisor decision:", decision);
 
-			if (decision.shouldStop || decision.nextSpeaker === "human") {
+			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
 
-			// Find the agent to respond
-			const nextAgent = members.find(
-				(m) => m.id === decision.nextSpeaker && m.role === "agent"
-			);
-			if (!nextAgent) {
-				console.error("Agent not found:", decision.nextSpeaker);
+			// nextSpeaker is always an array
+			const nextAgents = decision.nextSpeaker
+				.map((speaker) =>
+					members.find(
+						(m) =>
+							(m.name === speaker || m.id === speaker) &&
+							m.role === "agent"
+					)
+				)
+				.filter(Boolean) as GroupChatMember[];
+
+			if (nextAgents.length === 0) {
+				console.error("Agent(s) not found:", decision.nextSpeaker);
 				break;
 			}
 
-			// Generate agent response
-			const agentResponse = await this.generateAgentResponse(
-				nextAgent,
-				currentHistory,
-				members
+			// Generate and send all agent responses in parallel
+			const responses = await Promise.all(
+				nextAgents.map((agent) =>
+					this.generateAgentResponse(agent, currentHistory, members)
+				)
 			);
 
-			// Send agent message to database
 			const currentSession = await dbHelpers.getCurrentSession(
 				this.groupId
 			);
-			await dbHelpers.sendMessage({
-				session_id: currentSession.id,
-				sender_agent_id: nextAgent.id,
-				content: agentResponse,
-			});
+			await Promise.all(
+				nextAgents.map((agent, idx) =>
+					dbHelpers.sendMessage({
+						session_id: currentSession.id,
+						sender_agent_id: agent.id,
+						content: responses[idx],
+					})
+				)
+			);
 
-			// Update conversation history for next iteration
-			const updatedHistory =
-				currentHistory + `\n${nextAgent.name}: ${agentResponse}`;
-			lastSpeaker = nextAgent.name;
+			// Update conversation history for all agent responses
+			responses.forEach((response, idx) => {
+				currentHistory += `\n${nextAgents[idx].name}: ${response}`;
+				lastSpeaker = nextAgents[idx].name;
+			});
 
 			// Small delay to prevent overwhelming the system
 			await new Promise((resolve) => setTimeout(resolve, 1000));

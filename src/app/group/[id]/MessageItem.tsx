@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Markdown } from "@lobehub/ui";
+import { User as UserIcon } from "lucide-react";
 
 interface MessageItemProps {
 	messageId: string;
@@ -12,6 +13,7 @@ interface MessageItemProps {
 	idx: number;
 	reactions?: { emoji: string; count: number }[];
 	onReact?: (emoji: string) => void;
+	avatar_url?: string;
 }
 
 const EMOJI_LIST = ["👍", "😊", "🎉", "❤️", "😂", "😮"];
@@ -25,9 +27,23 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	idx,
 	reactions = [],
 	onReact,
+	avatar_url,
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
+
+	const Avatar = () =>
+		avatar_url ? (
+			<img
+				src={avatar_url}
+				alt={sender}
+				className="w-7 h-7 rounded-full object-cover border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 mr-2"
+			/>
+		) : (
+			<span className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800 mr-2">
+				<UserIcon className="w-5 h-5 text-neutral-400" />
+			</span>
+		);
 
 	return (
 		<div
@@ -43,10 +59,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
 				}`}
 			>
 				{!isHuman && (
-					<span
-						className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
-					>
-						{sender}
+					<span className="flex items-center">
+						<Avatar />
+						<span
+							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
+						>
+							{sender}
+						</span>
 					</span>
 				)}
 				<span className="text-xs text-neutral-400 dark:text-neutral-500">
@@ -58,10 +77,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
 					}`}
 				/>
 				{isHuman && (
-					<span
-						className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
-					>
-						{sender}
+					<span className="flex items-center">
+						<Avatar />
+						<span
+							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
+						>
+							{sender}
+						</span>
 					</span>
 				)}
 			</div>

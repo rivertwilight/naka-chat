@@ -84,17 +84,16 @@ export class NakaChatDB extends Dexie {
 	messageReactions!: Table<MessageReaction>;
 
 	constructor() {
+		// create a new instance of Dexie with a name
 		super("NakaChatDB");
 
 		this.version(1).stores({
 			users: "id, name, email, created_at",
 			agents: "id, name, model, created_at",
 			groups: "id, name, created_by, created_at",
-			groupMembers:
-				"id, group_id, user_id, agent_id, role, status, joined_at",
+			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
-			messages:
-				"id, session_id, sender_user_id, sender_agent_id, created_at",
+			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 	}
@@ -106,8 +105,8 @@ export const db = new NakaChatDB();
 export async function initializeDatabase() {
 	try {
 		// Import dynamically to avoid circular dependency
-		const { isDatabaseSeeded, seedDatabase } = await import('./seedData');
-		
+		const { isDatabaseSeeded, seedDatabase } = await import("./seedData");
+
 		const isSeeded = await isDatabaseSeeded();
 		if (!isSeeded) {
 			console.log("Database is empty, auto-seeding...");
@@ -115,7 +114,7 @@ export async function initializeDatabase() {
 			console.log("Database initialized and seeded successfully!");
 			return true;
 		}
-		
+
 		console.log("Database already initialized");
 		return false;
 	} catch (error) {
@@ -225,7 +224,7 @@ export const dbHelpers = {
 	async addReaction(
 		reactionData: Omit<MessageReaction, "id" | "created_at">
 	): Promise<MessageReaction> {
-		// Check if reaction already exists
+		// Check if reaction already exists， be careful that the user_id or agent_id can be null
 		const existing = await db.messageReactions
 			.where(["message_id", "emoji", "user_id"])
 			.equals([
@@ -253,9 +252,7 @@ export const dbHelpers = {
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
 		sessionId: string
-	): Promise<
-		(Message & { reactions: { emoji: string; count: number }[] })[]
-	> {
+	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		const messages = await db.messages
 			.where("session_id")
 			.equals(sessionId)

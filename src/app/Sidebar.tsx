@@ -7,13 +7,15 @@ import { Moon, Sun, X, Check, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { div } from "framer-motion/client";
-import { useUserGroups, useLatestGroupMessages } from "../hooks/useDatabase";
+import { useUserGroups, useLatestGroupMessages, useCurrentUser } from "../hooks/useDatabase";
 import type { Group } from "../lib/database";
 import GroupListItem from "../components/GroupListItem";
 import SettingsDialog from "../components/SettingsDialog";
 import { useUiContext } from "../components/UiContext";
+import Dialog from "../components/Dialog";
+import { useState } from "react";
+import { dbHelpers } from "../lib/database";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -26,6 +28,36 @@ export default function Sidebar() {
 	const groupId = match ? match[1] : undefined;
 	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } = useUiContext();
 	const { groups, loading, error } = useUserGroups();
+	const { user } = useCurrentUser();
+	const router = useRouter();
+	const [creating, setCreating] = useState(false);
+	const [errorMsg, setErrorMsg] = useState("");
+	const [groupName, setGroupName] = useState("");
+	const [groupDesc, setGroupDesc] = useState("");
+
+	const handleCreateGroup = async () => {
+		if (!user) return;
+		setCreating(true);
+		setErrorMsg("");
+		try {
+			const group = await dbHelpers.createGroup({
+				name: "Untitled",
+				description: "",
+				created_by: user.id,
+			});
+			await dbHelpers.addGroupMember({
+				group_id: group.id,
+				user_id: user.id,
+				role: "human",
+				status: "active",
+			});
+			setTimeout(() => router.push(`/group/${group.id}`), 100);
+		} catch (e) {
+			setErrorMsg("Failed to create group");
+		} finally {
+			setCreating(false);
+		}
+	};
 
 	const groupIds = groups.map((g) => g.id);
 	const latestMessages = useLatestGroupMessages(groupIds);
@@ -73,12 +105,14 @@ export default function Sidebar() {
 					{/* Add Group Button */}
 					<button
 						type="button"
-						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none"
-						// No real logic for now
+						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+						onClick={handleCreateGroup}
+						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>Create new group</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
+					{errorMsg && <div className="text-red-500 text-sm mt-2">{errorMsg}</div>}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div

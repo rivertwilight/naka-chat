@@ -347,3 +347,5 @@ export interface MessageWithDetails extends Message {
 	senderAgent?: Agent;
 	session?: Session;
 }
+
+export { dbHelpers };

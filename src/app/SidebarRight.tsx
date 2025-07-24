@@ -6,6 +6,8 @@ import { SliderWithInput } from "@lobehub/ui";
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
+import Dialog from "../components/Dialog";
+import { db } from "../lib/database";
 
 interface Member {
 	id: string;
@@ -32,10 +34,54 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [descEdit, setDescEdit] = React.useState<string>("");
 	const [descEditing, setDescEditing] = React.useState(false);
 	const [descSaving, setDescSaving] = React.useState(false);
+	const [nameEdit, setNameEdit] = React.useState<string>("");
+	const [nameEditing, setNameEditing] = React.useState(false);
+	const [nameSaving, setNameSaving] = React.useState(false);
+	const [isAddOpen, setAddOpen] = React.useState(false);
+	const [addLoading, setAddLoading] = React.useState(false);
+	const [addError, setAddError] = React.useState("");
+	const [allAgents, setAllAgents] = React.useState<any[]>([]);
+	const [allUsers, setAllUsers] = React.useState<any[]>([]);
+	const [selectedId, setSelectedId] = React.useState<string>("");
+	const [selectedType, setSelectedType] = React.useState<
+		"agent" | "human" | ""
+	>("");
+
+	React.useEffect(() => {
+		if (group && !nameEditing) setNameEdit(group.name || "");
+	}, [group, nameEditing]);
 
 	React.useEffect(() => {
 		if (group && !descEditing) setDescEdit(group.description || "");
 	}, [group, descEditing]);
+
+	// Load all agents and users not already in the group
+	React.useEffect(() => {
+		if (!isAddOpen) return;
+		(async () => {
+			const groupMemberIds = new Set(
+				dbMembers.map((m) => m.user_id || m.agent_id)
+			);
+			const agents = (await db.agents.toArray()).filter(
+				(a) => !groupMemberIds.has(a.id)
+			);
+			const users = (await db.users.toArray()).filter(
+				(u) => !groupMemberIds.has(u.id)
+			);
+			setAllAgents(agents);
+			setAllUsers(users);
+			setSelectedId("");
+			setSelectedType("");
+		})();
+	}, [isAddOpen, dbMembers]);
+
+	const handleNameSave = async () => {
+		if (!groupId) return;
+		setNameSaving(true);
+		await dbHelpers.updateGroup(groupId, { name: nameEdit });
+		setNameEditing(false);
+		setNameSaving(false);
+	};
 
 	const handleDescSave = async () => {
 		if (!groupId) return;
@@ -43,6 +89,27 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		await dbHelpers.updateGroup(groupId, { description: descEdit });
 		setDescEditing(false);
 		setDescSaving(false);
+	};
+
+	const handleAddMember = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!groupId || !selectedId || !selectedType) return;
+		setAddLoading(true);
+		setAddError("");
+		try {
+			await dbHelpers.addGroupMember({
+				group_id: groupId,
+				user_id: selectedType === "human" ? selectedId : undefined,
+				agent_id: selectedType === "agent" ? selectedId : undefined,
+				role: selectedType,
+				status: "active",
+			});
+			setAddOpen(false);
+		} catch (e) {
+			setAddError("Failed to add member");
+		} finally {
+			setAddLoading(false);
+		}
 	};
 
 	// Transform database members to component format
@@ -100,12 +167,43 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 					>
 						{group && (
 							<div className="mb-2 flex flex-col gap-2 pb-4">
-								<span
-									className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2"
-									title={group.name}
-								>
-									{group.name}
-								</span>
+								{/* Editable group name */}
+								<div className="flex items-start gap-2">
+									{nameEditing ? (
+										<input
+											type="text"
+											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition"
+											value={nameEdit}
+											onChange={(e) =>
+												setNameEdit(e.target.value)
+											}
+											onBlur={handleNameSave}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													e.preventDefault();
+													handleNameSave();
+												}
+											}}
+											autoFocus
+											maxLength={40}
+										/>
+									) : (
+										<span
+											className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 cursor-pointer"
+											title={group.name}
+											onClick={() => setNameEditing(true)}
+										>
+											{group.name}
+										</span>
+									)}
+									{nameSaving && (
+										<Loader
+											size={18}
+											className="animate-spin ml-2"
+										/>
+									)}
+								</div>
+								{/* Editable group description (existing code) */}
 								<div className="flex items-start gap-2">
 									{descEditing ? (
 										<textarea
@@ -119,9 +217,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												setDescSaving(true);
 												await dbHelpers.updateGroup(
 													groupId,
-													{
-														description: descEdit,
-													}
+													{ description: descEdit }
 												);
 												setDescEditing(false);
 												setDescSaving(false);
@@ -153,6 +249,16 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											)}
 										</div>
 									)}
+								</div>
+								{/* Add a member button */}
+								<div className="flex items-end gap-2 mt-2">
+									<button
+										type="button"
+										className="ml-auto px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+										onClick={() => setAddOpen(true)}
+									>
+										+ Add a member
+									</button>
 								</div>
 							</div>
 						)}
@@ -325,6 +431,95 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 					</motion.div>
 				)}
 			</AnimatePresence>
+			{/* Add Member Dialog */}
+			<Dialog
+				open={isAddOpen}
+				onClose={() => setAddOpen(false)}
+				variant="modal"
+			>
+				<div className="p-6 w-full max-w-md">
+					<div className="mb-4 text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+						Add a member
+					</div>
+					<form onSubmit={handleAddMember}>
+						<div className="mb-4">
+							<div className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
+								Select an agent or user to add:
+							</div>
+							<div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+								{allAgents.map((agent) => (
+									<label
+										key={agent.id}
+										className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+									>
+										<input
+											type="radio"
+											name="member"
+											checked={
+												selectedId === agent.id &&
+												selectedType === "agent"
+											}
+											onChange={() => {
+												setSelectedId(agent.id);
+												setSelectedType("agent");
+											}}
+										/>
+										<span className="text-neutral-800 dark:text-neutral-100">
+											🤖 {agent.name}{" "}
+											<span className="text-xs text-neutral-400 ml-1">
+												(Agent)
+											</span>
+										</span>
+									</label>
+								))}
+								{allUsers.map((user) => (
+									<label
+										key={user.id}
+										className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+									>
+										<input
+											type="radio"
+											name="member"
+											checked={
+												selectedId === user.id &&
+												selectedType === "human"
+											}
+											onChange={() => {
+												setSelectedId(user.id);
+												setSelectedType("human");
+											}}
+										/>
+										<span className="text-neutral-800 dark:text-neutral-100">
+											🧑 {user.name}{" "}
+											<span className="text-xs text-neutral-400 ml-1">
+												(User)
+											</span>
+										</span>
+									</label>
+								))}
+								{allAgents.length === 0 &&
+									allUsers.length === 0 && (
+										<div className="text-neutral-400 text-sm">
+											No available members to add.
+										</div>
+									)}
+							</div>
+						</div>
+						{addError && (
+							<div className="text-red-500 text-sm mb-2">
+								{addError}
+							</div>
+						)}
+						<button
+							type="submit"
+							className="w-full bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 rounded-lg py-2 font-medium transition-colors disabled:opacity-60"
+							disabled={addLoading || !selectedId}
+						>
+							{addLoading ? "Adding..." : "Add to group"}
+						</button>
+					</form>
+				</div>
+			</Dialog>
 		</aside>
 	);
 };

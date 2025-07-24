@@ -4,6 +4,8 @@ import { ArrowRight, X, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SliderWithInput } from "@lobehub/ui";
 import { useGroupMembers } from "../hooks/useDatabase";
+import { useGroup } from "../hooks/useDatabase";
+import { dbHelpers } from "../lib/database";
 
 interface Member {
 	id: string;
@@ -20,12 +22,28 @@ interface SidebarRightProps {
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const { members: dbMembers, loading } = useGroupMembers(groupId);
+	const { group, loading: groupLoading } = useGroup(groupId);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
 		null
 	);
 	const [thinkingStates, setThinkingStates] = React.useState<
 		Record<string, boolean>
 	>({});
+	const [descEdit, setDescEdit] = React.useState<string>("");
+	const [descEditing, setDescEditing] = React.useState(false);
+	const [descSaving, setDescSaving] = React.useState(false);
+
+	React.useEffect(() => {
+		if (group && !descEditing) setDescEdit(group.description || "");
+	}, [group, descEditing]);
+
+	const handleDescSave = async () => {
+		if (!groupId) return;
+		setDescSaving(true);
+		await dbHelpers.updateGroup(groupId, { description: descEdit });
+		setDescEditing(false);
+		setDescSaving(false);
+	};
 
 	// Transform database members to component format
 	const members: Member[] = React.useMemo(() => {
@@ -52,7 +70,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		}));
 	};
 
-	if (loading) {
+	if (loading || groupLoading) {
 		return (
 			<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
 				<div className="flex items-center justify-center h-32">
@@ -64,6 +82,8 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 
 	return (
 		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
+			{/* Group name and description */}
+
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul
@@ -78,10 +98,68 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						}}
 						className="flex flex-col gap-2"
 					>
+						{group && (
+							<div className="mb-2 flex flex-col gap-2 pb-4">
+								<span
+									className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2"
+									title={group.name}
+								>
+									{group.name}
+								</span>
+								<div className="flex items-start gap-2">
+									{descEditing ? (
+										<textarea
+											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+											value={descEdit}
+											onChange={(e) =>
+												setDescEdit(e.target.value)
+											}
+											onBlur={async () => {
+												if (!groupId) return;
+												setDescSaving(true);
+												await dbHelpers.updateGroup(
+													groupId,
+													{
+														description: descEdit,
+													}
+												);
+												setDescEditing(false);
+												setDescSaving(false);
+											}}
+											autoFocus
+											rows={2}
+											maxLength={120}
+										/>
+									) : (
+										<div className="flex-1 flex items-center min-h-[2.5rem]">
+											<span
+												className="text-md text-neutral-500 dark:text-neutral-400 break-words whitespace-pre-line flex-1 cursor-pointer"
+												style={{ minHeight: "2.5rem" }}
+												onClick={() =>
+													setDescEditing(true)
+												}
+											>
+												{group.description || (
+													<span className="italic text-neutral-300 dark:text-neutral-600">
+														説明がありません
+													</span>
+												)}
+											</span>
+											{descSaving && (
+												<Loader
+													size={14}
+													className="animate-spin ml-2"
+												/>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
+						)}
 						{members.map((member) => (
 							<button
 								key={member.id}
-								className={`flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
+								className={`flex flex-col items-start group relative py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
 									member.status === "muted"
 										? "opacity-60 cursor-not-allowed"
 										: ""
@@ -148,13 +226,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						className="relative h-full flex flex-col"
 					>
 						<button
-							className="absolute top-0 right-0 m-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+							className="absolute -top-2 -right-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 							onClick={() => setSelectedMember(null)}
 							aria-label="Close"
 						>
 							<X size={20} />
 						</button>
-						<div className="flex flex-col pt-4 flex-1 gap-2">
+						<div className="flex flex-col flex-1 gap-2">
 							<span
 								className={`text-lg font-semibold ${
 									selectedMember?.status === "muted"

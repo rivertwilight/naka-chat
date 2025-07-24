@@ -12,12 +12,6 @@ import {
 	useLatestGroupMessages,
 	useCurrentUser,
 } from "../hooks/useDatabase";
-import type { Group } from "../lib/database";
-import {
-	useUserGroups,
-	useLatestGroupMessages,
-	useCurrentUser,
-} from "../hooks/useDatabase";
 import GroupListItem from "../components/GroupListItem";
 import SettingsDialog from "../components/SettingsDialog";
 import { useUiContext } from "../components/UiContext";
@@ -33,9 +27,6 @@ export default function Sidebar() {
 	const pathname = usePathname();
 	const match = pathname.match(/\/group\/(.+)/);
 	const groupId = match ? match[1] : undefined;
-	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
-		useUiContext();
-	const { groups, loading, error } = useUserGroups();
 	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
 		useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state

@@ -722,7 +722,7 @@ export function useCurrentUser() {
 }
 
 // Hook for getting all groups that the current user is a member of
-export function useUserGroups() {
+export function useUserGroups(version: number = 0) {
 	const [groups, setGroups] = useState<Group[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -773,7 +773,7 @@ export function useUserGroups() {
 		};
 
 		loadUserGroups();
-	}, [user]);
+	}, [user, version]);
 
 	return {
 		groups,

@@ -5,15 +5,15 @@ import { Sawarabi_Mincho } from "next/font/google";
 import React from "react";
 import { Moon, Sun, X, Check, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
-import { div } from "framer-motion/client";
-import { useUserGroups, useLatestGroupMessages, useCurrentUser } from "../hooks/useDatabase";
-import type { Group } from "../lib/database";
+import {
+	useUserGroups,
+	useLatestGroupMessages,
+	useCurrentUser,
+} from "../hooks/useDatabase";
 import GroupListItem from "../components/GroupListItem";
 import SettingsDialog from "../components/SettingsDialog";
 import { useUiContext } from "../components/UiContext";
-import Dialog from "../components/Dialog";
 import { useState } from "react";
 import { dbHelpers } from "../lib/database";
 
@@ -26,8 +26,10 @@ export default function Sidebar() {
 	const pathname = usePathname();
 	const match = pathname.match(/\/group\/(.+)/);
 	const groupId = match ? match[1] : undefined;
-	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } = useUiContext();
-	const { groups, loading, error } = useUserGroups();
+	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
+		useUiContext();
+	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
+	const { groups, loading, error } = useUserGroups(groupsVersion); // Pass version
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
@@ -51,6 +53,7 @@ export default function Sidebar() {
 				role: "human",
 				status: "active",
 			});
+			setGroupsVersion((v) => v + 1); // Trigger refetch
 			setTimeout(() => router.push(`/group/${group.id}`), 100);
 		} catch (e) {
 			setErrorMsg("Failed to create group");
@@ -110,9 +113,15 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
-					{errorMsg && <div className="text-red-500 text-sm mt-2">{errorMsg}</div>}
+					{errorMsg && (
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+						</div>
+					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
@@ -124,7 +133,10 @@ export default function Sidebar() {
 					<DarkModeSwitch />
 				</div>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

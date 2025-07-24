@@ -52,18 +52,19 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 				<div className="flex flex-col">
 					{mockMessages.map((msg, idx) => (
 						<React.Fragment key={msg.id}>
-							{idx !== 0 && (
+							{/* {idx !== 0 && (
 								<hr className="border-t border-dotted border-neutral-300 dark:border-neutral-700 my-4" />
-							)}
-							<div className="flex flex-col gap-1 py-2">
-								<span
-									className={`text-xs text-neutral-500 dark:text-neutral-400 ${geistMono.className}`}
-								>
-									{msg.sender}{" "}
-									<span className="ml-2 text-[10px]">
+							)} */}
+							<div className="flex flex-col gap-4 py-2 mt-2">
+								<div className="flex items-center gap-2">
+									<span className={`text-xs text-orange-600 dark:text-neutral-400 ${geistMono.className}`}>
+										{msg.sender}
+									</span>
+									<span className="text-[10px] text-neutral-400 dark:text-neutral-500">
 										{msg.time}
 									</span>
-								</span>
+									<div className="flex-1 border-b border-dotted border-neutral-300 dark:border-neutral-700 ml-2" />
+								</div>
 								<Markdown className="text-base text-neutral-900 dark:text-neutral-100">
 									{msg.content}
 								</Markdown>

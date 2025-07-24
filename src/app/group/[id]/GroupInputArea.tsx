@@ -33,17 +33,17 @@ const GroupInputArea: React.FC<GroupInputAreaProps> = ({ onSendMessage }) => {
 	};
 
 	return (
-		<div className="fixed left-96 right-0 bottom-0 py-4 z-30">
+		<div className="fixed left-96 right-96 bottom-0 pb-6 z-30 max-w-3xl">
 			<form
 				onSubmit={handleSubmit}
-				className="flex items-center gap-2 max-w-2xl w-full"
+				className="flex items-center gap-4 w-full"
 			>
 				<input
 					type="text"
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
 					onKeyDown={handleKeyDown}
-					className="flex-1 border border-neutral-200 dark:border-neutral-700 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400"
+					className="flex-1 flex-shrink-0 border border-neutral-200 dark:border-neutral-700 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400"
 					placeholder="Type a message..."
 					disabled={sending}
 				/>

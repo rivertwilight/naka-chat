@@ -1,4 +1,4 @@
-# wachat
+# NakaChat
 
 ## Reference
 

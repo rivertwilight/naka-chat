@@ -1,4 +1,4 @@
-import { dbHelpers, Agent, MessageWithDetails } from "./database";
+import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
@@ -218,6 +218,40 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 		}
 	}
 
+	// Helper to fetch latest messages with sender details for the current session
+	private async getLatestSessionMessagesWithDetails(): Promise<
+		MessageWithDetails[]
+	> {
+		const currentSession = await dbHelpers.getCurrentSession(this.groupId);
+		const sessionMessages = await dbHelpers.getMessagesWithReactions(
+			currentSession.id
+		);
+		// Enhance messages with sender details
+		const enhancedMessages = await Promise.all(
+			sessionMessages.map(async (message) => {
+				let senderUser;
+				let senderAgent;
+				if (message.sender_user_id) {
+					senderUser = await db.users.get(message.sender_user_id);
+				}
+				if (message.sender_agent_id) {
+					senderAgent = await db.agents.get(message.sender_agent_id);
+				}
+				return {
+					...message,
+					senderUser,
+					senderAgent,
+					session: currentSession,
+				};
+			})
+		);
+		// Sort by creation time
+		enhancedMessages.sort(
+			(a, b) => a.created_at.getTime() - b.created_at.getTime()
+		);
+		return enhancedMessages;
+	}
+
 	/**
 	 * Process a new human message and potentially trigger agent responses
 	 */
@@ -227,7 +261,6 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 		conversationHistory: MessageWithDetails[]
 	): Promise<void> {
 		const members = await this.getGroupMembers();
-
 		// Add human message to history for context
 		const updatedHistory = [
 			...conversationHistory,
@@ -238,10 +271,8 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 				},
 			} as MessageWithDetails,
 		];
-
-		let currentHistory = this.formatConversationHistory(updatedHistory);
 		let lastSpeaker = members.find((m) => m.id === userId)?.name || "User";
-
+		let currentHistory = this.formatConversationHistory(updatedHistory);
 		// Continue the conversation with agents
 		while (true) {
 			const decision = await this.decideBySupervisor(
@@ -249,13 +280,10 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 				currentHistory,
 				lastSpeaker
 			);
-
 			console.log("Supervisor decision:", decision);
-
 			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
-
 			// nextSpeaker is always an array
 			const nextAgents = decision.nextSpeaker
 				.map((speaker) =>
@@ -266,38 +294,47 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 					)
 				)
 				.filter(Boolean) as GroupChatMember[];
-
 			if (nextAgents.length === 0) {
 				console.error("Agent(s) not found:", decision.nextSpeaker);
 				break;
 			}
-
-			// Generate and send all agent responses in parallel
-			const responses = await Promise.all(
-				nextAgents.map((agent) =>
-					this.generateAgentResponse(agent, currentHistory, members)
-				)
-			);
-
-			const currentSession = await dbHelpers.getCurrentSession(
-				this.groupId
-			);
-			await Promise.all(
-				nextAgents.map((agent, idx) =>
-					dbHelpers.sendMessage({
-						session_id: currentSession.id,
-						sender_agent_id: agent.id,
-						content: responses[idx],
-					})
-				)
-			);
-
-			// Update conversation history for all agent responses
-			responses.forEach((response, idx) => {
-				currentHistory += `\n${nextAgents[idx].name}: ${response}`;
-				lastSpeaker = nextAgents[idx].name;
+			// For each agent, schedule response with random delay
+			const agentPromises = nextAgents.map((agent) => {
+				const delay =
+					Math.floor(Math.random() * (180000 - 1000 + 1)) + 1000; // 1s to 180s
+				return new Promise<void>((resolve) => {
+					setTimeout(async () => {
+						// Fetch latest messages before responding
+						const latestMessages =
+							await this.getLatestSessionMessagesWithDetails();
+						const formattedHistory =
+							this.formatConversationHistory(latestMessages);
+						const response = await this.generateAgentResponse(
+							agent,
+							formattedHistory,
+							members
+						);
+						const currentSession =
+							await dbHelpers.getCurrentSession(this.groupId);
+						await dbHelpers.sendMessage({
+							session_id: currentSession.id,
+							sender_agent_id: agent.id,
+							content: response,
+						});
+						resolve();
+					}, delay);
+				});
 			});
-
+			// Wait for all scheduled agent responses to complete
+			await Promise.all(agentPromises);
+			// After all agents have responded, fetch latest messages for next supervisor decision
+			const latestMessages =
+				await this.getLatestSessionMessagesWithDetails();
+			currentHistory = this.formatConversationHistory(latestMessages);
+			// Set lastSpeaker to the last agent who responded
+			if (nextAgents.length > 0) {
+				lastSpeaker = nextAgents[nextAgents.length - 1].name;
+			}
 			// Small delay to prevent overwhelming the system
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		}
@@ -315,24 +352,17 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 			this.formatConversationHistory(conversationHistory) +
 			(conversationHistory.length > 0 ? "\n" : "") +
 			`Human: ${topic}`;
-
 		let lastSpeaker = "Human";
-
-		// Begin agent conversation
 		while (true) {
 			const decision = await this.decideBySupervisor(
 				members,
 				currentHistory,
 				lastSpeaker
 			);
-
 			console.log("Supervisor decision:", decision);
-
 			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
-
-			// nextSpeaker is always an array
 			const nextAgents = decision.nextSpeaker
 				.map((speaker) =>
 					members.find(
@@ -342,39 +372,46 @@ As ${agent.name} (${agent.title}), provide your response to continue this discus
 					)
 				)
 				.filter(Boolean) as GroupChatMember[];
-
 			if (nextAgents.length === 0) {
 				console.error("Agent(s) not found:", decision.nextSpeaker);
 				break;
 			}
-
-			// Generate and send all agent responses in parallel
-			const responses = await Promise.all(
-				nextAgents.map((agent) =>
-					this.generateAgentResponse(agent, currentHistory, members)
-				)
-			);
-
-			const currentSession = await dbHelpers.getCurrentSession(
-				this.groupId
-			);
-			await Promise.all(
-				nextAgents.map((agent, idx) =>
-					dbHelpers.sendMessage({
-						session_id: currentSession.id,
-						sender_agent_id: agent.id,
-						content: responses[idx],
-					})
-				)
-			);
-
-			// Update conversation history for all agent responses
-			responses.forEach((response, idx) => {
-				currentHistory += `\n${nextAgents[idx].name}: ${response}`;
-				lastSpeaker = nextAgents[idx].name;
+			// For each agent, schedule response with random delay
+			const agentPromises = nextAgents.map((agent) => {
+				const delay =
+					Math.floor(Math.random() * (180000 - 1000 + 1)) + 1000; // 1s to 180s
+				return new Promise<void>((resolve) => {
+					setTimeout(async () => {
+						// Fetch latest messages before responding
+						const latestMessages =
+							await this.getLatestSessionMessagesWithDetails();
+						const formattedHistory =
+							this.formatConversationHistory(latestMessages);
+						const response = await this.generateAgentResponse(
+							agent,
+							formattedHistory,
+							members
+						);
+						const currentSession =
+							await dbHelpers.getCurrentSession(this.groupId);
+						await dbHelpers.sendMessage({
+							session_id: currentSession.id,
+							sender_agent_id: agent.id,
+							content: response,
+						});
+						resolve();
+					}, delay);
+				});
 			});
-
-			// Small delay to prevent overwhelming the system
+			// Wait for all scheduled agent responses to complete
+			await Promise.all(agentPromises);
+			// After all agents have responded, fetch latest messages for next supervisor decision
+			const latestMessages =
+				await this.getLatestSessionMessagesWithDetails();
+			currentHistory = this.formatConversationHistory(latestMessages);
+			if (nextAgents.length > 0) {
+				lastSpeaker = nextAgents[nextAgents.length - 1].name;
+			}
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		}
 	}

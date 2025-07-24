@@ -5,7 +5,6 @@ import { Sawarabi_Mincho } from "next/font/google";
 import React from "react";
 import { Moon, Sun, X, Check, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
 import { div } from "framer-motion/client";
 import {
@@ -14,10 +13,14 @@ import {
 	useCurrentUser,
 } from "../hooks/useDatabase";
 import type { Group } from "../lib/database";
+import {
+	useUserGroups,
+	useLatestGroupMessages,
+	useCurrentUser,
+} from "../hooks/useDatabase";
 import GroupListItem from "../components/GroupListItem";
 import SettingsDialog from "../components/SettingsDialog";
 import { useUiContext } from "../components/UiContext";
-import Dialog from "../components/Dialog";
 import { useState } from "react";
 import { dbHelpers } from "../lib/database";
 
@@ -33,6 +36,10 @@ export default function Sidebar() {
 	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
 		useUiContext();
 	const { groups, loading, error } = useUserGroups();
+	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
+		useUiContext();
+	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
+	const { groups, loading, error } = useUserGroups(groupsVersion); // Pass version
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
@@ -56,6 +63,7 @@ export default function Sidebar() {
 				role: "human",
 				status: "active",
 			});
+			setGroupsVersion((v) => v + 1); // Trigger refetch
 			setTimeout(() => router.push(`/group/${group.id}`), 100);
 		} catch (e) {
 			setErrorMsg("Failed to create group");

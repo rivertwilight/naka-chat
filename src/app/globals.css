@@ -50,4 +50,5 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: #bdbdbd transparent;
+  scrollbar-gutter: stable both-edges;
 }

@@ -8,7 +8,6 @@ import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { div } from "framer-motion/client";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -119,20 +118,20 @@ function DarkModeSwitch() {
 	const [mounted, setMounted] = React.useState(false);
 
 	React.useEffect(() => {
+		console.log("theme:", theme);
 		setMounted(true);
 	}, []);
 
 	if (!mounted) return null; // Prevents SSR mismatch
 
-	const isDark = resolvedTheme === "dark";
 	return (
 		<button
-			onClick={() => setTheme(isDark ? "light" : "dark")}
+			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
 			aria-label="Toggle dark mode"
 			className="ml-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 			type="button"
 		>
-			{isDark ? <Sun size={16} /> : <Moon size={16} />}
+			{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
 		</button>
 	);
 }

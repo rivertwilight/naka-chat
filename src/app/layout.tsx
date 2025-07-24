@@ -6,7 +6,7 @@ import Sidebar from "./Sidebar";
 import SidebarRight from "./SidebarRight";
 import { ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "../components/ThemeProvider";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -27,7 +27,6 @@ const mockMembers = [
 	{ name: "Yuki", role: "Owner" },
 	{ name: "Alex", role: "Member", thinking: true },
 	{ name: "Mina", role: "Member", muted: true },
-	{ name: "Mina", role: "Member" },
 	{ name: "Ono", role: "Designer" },
 	{ name: "Kazuki", role: "Engineer" },
 ];
@@ -38,19 +37,19 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressContentEditableWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				{/* <ThemeProvider attribute="class" defaultTheme="system" enableSystem> */}
-				<div className="flex bg-white dark:bg-neutral-900">
-					<Sidebar />
-					<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
-						{children}
+				<ThemeProvider>
+					<div className="flex bg-white dark:bg-neutral-900">
+						<Sidebar />
+						<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
+							{children}
+						</div>
+						<SidebarRight members={mockMembers} />
 					</div>
-					<SidebarRight members={mockMembers} />
-				</div>
-				{/* </ThemeProvider> */}
+				</ThemeProvider>
 			</body>
 		</html>
 	);

@@ -34,7 +34,7 @@ const GroupInputArea: React.FC<GroupInputAreaProps> = ({ onSendMessage }) => {
 	};
 
 	return (
-		<div className="fixed left-96 right-96 bottom-0 pb-6 z-30 max-w-3xl">
+		<div className="fixed left-96 right-96 bottom-0 pb-6 z-30 max-w-3xl mx-auto">
 			<form
 				onSubmit={handleSubmit}
 				className="flex items-center gap-4 w-full"

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import React from "react";
@@ -10,8 +9,9 @@ import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { div } from "framer-motion/client";
-import { useUserGroups } from "../hooks/useDatabase";
+import { useUserGroups, useLatestGroupMessages } from "../hooks/useDatabase";
 import type { Group } from "../lib/database";
+import GroupListItem from "../components/GroupListItem";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -26,10 +26,13 @@ export default function Sidebar() {
 	const [settingsOpen, setSettingsOpen] = React.useState(false);
 	const { groups, loading, error } = useUserGroups();
 
+	const groupIds = groups.map((g) => g.id);
+	const latestMessages = useLatestGroupMessages(groupIds);
+
 	return (
 		<>
 			<aside
-				className="w-56 sm:w-64 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none"
+				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none"
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				<nav className="flex flex-col gap-1">
@@ -46,13 +49,25 @@ export default function Sidebar() {
 							No groups found
 						</div>
 					) : (
-						groups.map((group) => (
-							<GroupListItem
-								key={group.id}
-								group={group}
-								selected={groupId === group.id}
-							/>
-						))
+						groups.map((group) => {
+							const msg = latestMessages[group.id];
+							let preview = "";
+							if (msg) {
+								const sender =
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
+								preview = `${sender}: ${msg.content}`;
+							}
+							return (
+								<GroupListItem
+									key={group.id}
+									group={group}
+									selected={groupId === group.id}
+									messagePreview={preview}
+								/>
+							);
+						})
 					)}
 					{/* Add Group Button */}
 					<button
@@ -82,58 +97,6 @@ export default function Sidebar() {
 				)}
 			</AnimatePresence>
 		</>
-	);
-}
-
-function GroupListItem({
-	group,
-	selected,
-}: {
-	group: Group;
-	selected: boolean;
-}) {
-	const [showCheck, setShowCheck] = React.useState(false);
-	return (
-		<Link
-			href={`/group/${group.id}`}
-			className={
-				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
-				(selected
-					? " font-semibold bg-neutral-100 dark:bg-neutral-800"
-					: "")
-			}
-		>
-			<span>{group.name}</span>
-			<span
-				className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex items-center"
-				onClick={(e) => {
-					e.preventDefault();
-					setShowCheck((v) => !v);
-				}}
-			>
-				{showCheck ? (
-					<button
-						type="button"
-						tabIndex={-1}
-						className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
-						onBlur={() => setShowCheck(false)}
-					>
-						<Check size={16} />
-					</button>
-				) : (
-					<Tooltip title="Remove group" placement="top">
-						<button
-							type="button"
-							tabIndex={-1}
-							className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
-							onBlur={() => setShowCheck(false)}
-						>
-							<X size={16} />
-						</button>
-					</Tooltip>
-				)}
-			</span>
-		</Link>
 	);
 }
 

@@ -44,11 +44,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	// Only auto-scroll when there are new messages
 	useEffect(() => {
 		const hasNewMessages = messages.length > previousMessageCount;
-		
+
 		if (hasNewMessages && messagesEndRef.current) {
 			messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
 		}
-		
+
 		setPreviousMessageCount(messages.length);
 	}, [messages, previousMessageCount]);
 
@@ -118,6 +118,19 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return "Unknown";
 	};
 
+	// Get sender avatar from message
+	const getSenderAvatar = (message: any) => {
+		if (message.senderUser) {
+			return user && message.senderUser.id === user.id
+				? user.avatar_url
+				: message.senderUser.avatar_url;
+		}
+		if (message.senderAgent) {
+			return message.senderAgent.avatar_url;
+		}
+		return undefined;
+	};
+
 	// Group messages by session and add dividers
 	const renderMessagesWithDividers = () => {
 		if (messages.length === 0) return null;
@@ -156,6 +169,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						idx={idx}
 						reactions={msg.reactions || []}
 						onReact={(emoji) => handleReaction(msg.id, emoji)}
+						avatar_url={getSenderAvatar(msg)}
 					/>
 				</React.Fragment>
 			);

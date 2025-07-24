@@ -63,7 +63,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	}
 
 	return (
-		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
+		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul

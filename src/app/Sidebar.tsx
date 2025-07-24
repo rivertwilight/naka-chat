@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
@@ -137,25 +138,16 @@ function GroupListItem({
 }
 
 function DarkModeSwitch() {
-	const { theme, setTheme, resolvedTheme } = useTheme();
-	const [mounted, setMounted] = React.useState(false);
-
-	React.useEffect(() => {
-		setMounted(true);
-	}, []);
-
-	if (!mounted) return null; // Prevents SSR mismatch
-
-	const isDark = resolvedTheme === "dark";
+	const { setTheme, theme } = useTheme();
 
 	return (
 		<button
-			onClick={() => setTheme(isDark ? "light" : "dark")}
+			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
 			aria-label="Toggle dark mode"
 			className="ml-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 			type="button"
 		>
-			{isDark ? <Sun size={16} /> : <Moon size={16} />}
+			{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
 		</button>
 	);
 }

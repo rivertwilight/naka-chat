@@ -2,6 +2,7 @@
 import React from "react";
 import { ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SliderWithInput } from "@lobehub/ui";
 
 interface Member {
 	name: string;
@@ -79,30 +80,20 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 						>
 							<X size={20} />
 						</button>
-						<div className="flex flex-col items-center justify-center flex-1 gap-2">
+						<div className="flex flex-col pt-4 flex-1 gap-2">
 							<span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
 								{selectedMember.name}
 							</span>
-							<span className="text-sm text-neutral-500 dark:text-neutral-400">
-								{selectedMember.role}
-							</span>
 							{/* Member config panel UI */}
-							<div className="w-full flex flex-col gap-1">
-								<label
-									htmlFor="prompt-input"
-									className="text-xs text-neutral-500 dark:text-neutral-400"
-								>
-									Prompt
-								</label>
+							<div className="w-full flex flex-col gap-1 mt-4">
 								<textarea
 									id="prompt-input"
-									rows={3}
-									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+									rows={5}
+									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
 									placeholder="Enter prompt..."
-									disabled
 								/>
 							</div>
-							<div className="w-full flex items-center justify-between">
+							<div className="w-full flex items-center justify-between mt-4">
 								<span className="text-xs text-neutral-500 dark:text-neutral-400">
 									Web Search
 								</span>
@@ -114,17 +105,25 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 										type="checkbox"
 										value=""
 										className="sr-only peer"
-										disabled
 									/>
 									<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
 									<span
 										className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
 										style={{ pointerEvents: "none" }}
 									/>
-									<span className="ml-12 text-neutral-400 text-xs">
-										Off
-									</span>
 								</label>
+							</div>
+
+							{/* Temperature slider */}
+							<div className="w-full flex flex-col gap-1 mt-4">
+								<span className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Temperature</span>
+								<SliderWithInput
+									min={0}
+									max={2}
+									step={0.01}
+									defaultValue={1}
+									className="w-full"
+								/>
 							</div>
 						</div>
 					</motion.div>

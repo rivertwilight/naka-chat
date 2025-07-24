@@ -57,10 +57,10 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 							)} */}
 							<div className="flex flex-col gap-4 py-2 mt-2">
 								<div className="flex items-center gap-2">
-									<span className={`text-xs text-orange-600 dark:text-neutral-400 ${geistMono.className}`}>
+									<span className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}>
 										{msg.sender}
 									</span>
-									<span className="text-[10px] text-neutral-400 dark:text-neutral-500">
+									<span className="text-xs text-neutral-400 dark:text-neutral-500">
 										{msg.time}
 									</span>
 									<div className="flex-1 border-b border-dotted border-neutral-300 dark:border-neutral-700 ml-2" />

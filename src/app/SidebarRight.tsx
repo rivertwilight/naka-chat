@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { ArrowRight, X, Loader } from "lucide-react";
+import { ArrowRight, X, Loader, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SliderWithInput } from "@lobehub/ui";
 import { useGroupMembers } from "../hooks/useDatabase";
@@ -250,18 +250,19 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										</div>
 									)}
 								</div>
-								{/* Add a member button */}
-								<div className="flex items-end gap-2 mt-2">
-									<button
-										type="button"
-										className="ml-auto px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-										onClick={() => setAddOpen(true)}
-									>
-										+ Add a member
-									</button>
-								</div>
 							</div>
 						)}
+						{/* Add a member button */}
+						<div className="flex items-end gap-2 mb-4">
+							<button
+								type="button"
+								className="mt-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+								onClick={() => setAddOpen(true)}
+							>
+								<Plus size={16} />
+								<span>Add a member</span>
+							</button>
+						</div>
 						{members.map((member) => (
 							<button
 								key={member.id}
@@ -512,10 +513,17 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						)}
 						<button
 							type="submit"
-							className="w-full bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 rounded-lg py-2 font-medium transition-colors disabled:opacity-60"
+							className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
 							disabled={addLoading || !selectedId}
 						>
-							{addLoading ? "Adding..." : "Add to group"}
+							{addLoading ? (
+								<Loader size={16} className="animate-spin" />
+							) : (
+								<ArrowRight size={16} />
+							)}
+							<span>
+								{addLoading ? "Adding..." : "Add to group"}
+							</span>
 						</button>
 					</form>
 				</div>

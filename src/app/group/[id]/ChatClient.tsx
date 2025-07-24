@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
 import GroupInputArea from "./GroupInputArea";
@@ -28,6 +28,15 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
 		useGroupMessages(actualGroupId);
+
+	const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+	// Auto-scroll to bottom when messages change
+	useEffect(() => {
+		if (messagesEndRef.current) {
+			messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+		}
+	}, [messages]);
 
 	console.log("messages", messages);
 
@@ -162,6 +171,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 			<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
 				<div className="flex flex-col">
 					{renderMessagesWithDividers()}
+					<div ref={messagesEndRef} />
 				</div>
 			</section>
 			<GroupInputArea onSendMessage={handleSendMessage} />

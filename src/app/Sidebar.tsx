@@ -9,9 +9,12 @@ import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+<<<<<<< HEAD
 import { div } from "framer-motion/client";
 import { useUserGroups } from "../hooks/useDatabase";
 import type { Group } from "../lib/database";
+=======
+>>>>>>> b159b0487cd0eac00423806f65547dcd5c65a291
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -140,6 +143,16 @@ function GroupListItem({
 function DarkModeSwitch() {
 	const { setTheme, theme } = useTheme();
 
+<<<<<<< HEAD
+=======
+	React.useEffect(() => {
+		console.log("theme:", theme);
+		setMounted(true);
+	}, []);
+
+	if (!mounted) return null; // Prevents SSR mismatch
+
+>>>>>>> b159b0487cd0eac00423806f65547dcd5c65a291
 	return (
 		<button
 			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

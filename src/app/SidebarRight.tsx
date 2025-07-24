@@ -8,6 +8,7 @@ interface Member {
 	name: string;
 	role: string;
 	thinking?: boolean;
+	muted?: boolean;
 }
 
 interface SidebarRightProps {
@@ -38,15 +39,16 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 						{members.map((member) => (
 							<button
 								key={member.name}
-								className="flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
-								onClick={() => setSelectedMember(member)}
+								className={`flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${member.muted ? 'opacity-60 cursor-not-allowed' : ''}`}
+								onClick={() => !member.muted && setSelectedMember(member)}
 								style={{
 									outline: "none",
 									border: "none",
 									background: "none",
 								}}
+								disabled={member.muted}
 							>
-								<span className={`text-neutral-900 dark:text-neutral-100 font-medium flex items-center `}>
+								<span className={`${member.muted ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-900 dark:text-neutral-100'} font-medium flex items-center`}>
 									{member.name}
 									<span className="ml-2 relative flex items-center">
 										<ArrowRight
@@ -55,7 +57,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 										/>
 									</span>
 								</span>
-								<span className={`text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 ${member.thinking ? 'animate-pulse' : ''}`}>
+								<span className={`text-xs ${member.muted ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-500 dark:text-neutral-400'} flex items-center gap-1 ${member.thinking ? 'animate-pulse' : ''}`}>
 									{member.thinking ? 'Thinking' : member.role}
 									{member.thinking && (
 										<span className="mr-1">
@@ -87,7 +89,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 							<X size={20} />
 						</button>
 						<div className="flex flex-col pt-4 flex-1 gap-2">
-							<span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+							<span className={`text-lg font-semibold ${selectedMember?.muted ? 'text-neutral-300 dark:text-neutral-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
 								{selectedMember.name}
 							</span>
 							{/* Member config panel UI */}

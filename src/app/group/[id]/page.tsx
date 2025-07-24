@@ -1,9 +1,13 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
-import { Markdown } from "@lobehub/ui";
 import GroupInputArea from "./GroupInputArea";
 import MessageItem from "./MessageItem";
+
+export const metadata = {
+	title: "NakaChat",
+	description: "NakaChat",
+};
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -20,6 +24,8 @@ const mockMessages = [
 			{ emoji: "👍", count: 2 },
 			{ emoji: "😊", count: 1 },
 		],
+		llm: "kimi-k2",
+		provider: "NakaChat",
 	},
 	{
 		id: 2,

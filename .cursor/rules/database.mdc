@@ -1,0 +1,85 @@
+---
+description: This include the database schema and the data structure.
+globs:
+alwaysApply: false
+---
+
+### 1. Users
+
+-   `id` (PK)
+-   `name`
+-   `email`
+-   `avatar_url`
+-   `created_at`
+-   `updated_at`
+
+### 2. Agents
+
+-   `id` (PK)
+-   `name`
+-   `title`
+-   `system_prompt`
+-   `model` (e.g., gpt-4, claude-3, etc.)
+-   `temperature`
+-   `max_output_tokens`
+-   `avatar_url`
+-   `created_at`
+-   `updated_at`
+
+### 3. Groups
+
+-   `id` (PK)
+-   `name`
+-   `description`
+-   `created_by` (FK → Users.id)
+-   `created_at`
+-   `updated_at`
+
+### 4. GroupMembers
+
+-   `id` (PK)
+-   `group_id` (FK → Groups.id)
+-   `user_id` (nullable, FK → Users.id)
+-   `agent_id` (nullable, FK → Agents.id)
+-   `role` (enum: 'human', 'agent')
+-   `status` (enum: 'active', 'muted')
+-   `joined_at`
+-   `left_at` (nullable)
+
+### 5. Sessions
+
+-   `id` (PK)
+-   `group_id` (FK → Groups.id)
+-   `name` (optional, for context labeling)
+-   `context` (JSON, for storing context window, summary, etc.)
+-   `created_at`
+-   `ended_at` (nullable)
+
+### 6. Messages
+
+-   `id` (PK)
+-   `session_id` (FK → Sessions.id)
+-   `sender_user_id` (nullable, FK → Users.id)
+-   `sender_agent_id` (nullable, FK → Agents.id)
+-   `content` (text)
+-   `created_at`
+-   `edited_at` (nullable)
+-   `reply_to_id` (nullable, FK → Messages.id)
+
+### 7. MessageReactions
+
+-   `id` (PK)
+-   `message_id` (FK → Messages.id)
+-   `user_id` (nullable, FK → Users.id)
+-   `agent_id` (nullable, FK → Agents.id)
+-   `emoji` (string, e.g., "👍", "😂")
+-   `created_at`
+
+### Notes
+
+-   **Agents and Users** are both group members, tracked in `GroupMembers` with a role and status (active/muted).
+-   **Sessions** allow for context management within a group, so you can select or resume a context window.
+-   **Messages** are linked to sessions, and can be sent by either a user or an agent.
+-   **Reactions** support emoji and can be from either a user or an agent.
+-   **Agent attributes** (system prompt, model, temperature, etc.) are stored in the Agents table.
+-   **Extensibility:** You can add more agent attributes or message metadata as needed.

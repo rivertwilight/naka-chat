@@ -1,75 +1,137 @@
- "use client";
+"use client";
 import React from "react";
 import { ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Member {
-  name: string;
-  role: string;
+	name: string;
+	role: string;
 }
 
 interface SidebarRightProps {
-  members: Member[];
+	members: Member[];
 }
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
-  const [selectedMember, setSelectedMember] = React.useState<null | Member>(null);
+	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
+		null
+	);
 
-  return (
-    <aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
-      <AnimatePresence initial={false} mode="wait">
-        {!selectedMember ? (
-          <motion.ul
-            key="list"
-            initial={{ x: 64, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 64, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 40 }}
-            className="flex flex-col gap-2"
-          >
-            {members.map((member) => (
-              <button
-                key={member.name}
-                className="flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
-                onClick={() => setSelectedMember(member)}
-                style={{ outline: "none", border: "none", background: "none" }}
-              >
-                <span className="text-neutral-900 dark:text-neutral-100 font-medium flex items-center">
-                  {member.name}
-                  <span className="ml-2 relative flex items-center">
-                    <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  </span>
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">{member.role}</span>
-              </button>
-            ))}
-          </motion.ul>
-        ) : (
-          <motion.div
-            key="detail"
-            initial={{ x: 64, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 64, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 40 }}
-            className="relative h-full flex flex-col"
-          >
-            <button
-              className="absolute top-0 right-0 m-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-              onClick={() => setSelectedMember(null)}
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
-            <div className="flex flex-col items-center justify-center flex-1 gap-2">
-              <span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{selectedMember.name}</span>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">{selectedMember.role}</span>
-              {/* Add more member details here if needed */}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </aside>
-  );
+	return (
+		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
+			<AnimatePresence initial={false} mode="wait">
+				{!selectedMember ? (
+					<motion.ul
+						key="list"
+						initial={{ x: 64, opacity: 0 }}
+						animate={{ x: 0, opacity: 1 }}
+						exit={{ x: 64, opacity: 0 }}
+						transition={{
+							type: "spring",
+							stiffness: 400,
+							damping: 40,
+						}}
+						className="flex flex-col gap-2"
+					>
+						{members.map((member) => (
+							<button
+								key={member.name}
+								className="flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
+								onClick={() => setSelectedMember(member)}
+								style={{
+									outline: "none",
+									border: "none",
+									background: "none",
+								}}
+							>
+								<span className="text-neutral-900 dark:text-neutral-100 font-medium flex items-center">
+									{member.name}
+									<span className="ml-2 relative flex items-center">
+										<ArrowRight
+											size={16}
+											className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+										/>
+									</span>
+								</span>
+								<span className="text-xs text-neutral-500 dark:text-neutral-400">
+									{member.role}
+								</span>
+							</button>
+						))}
+					</motion.ul>
+				) : (
+					<motion.div
+						key="detail"
+						initial={{ x: 64, opacity: 0 }}
+						animate={{ x: 0, opacity: 1 }}
+						exit={{ x: 64, opacity: 0 }}
+						transition={{
+							type: "spring",
+							stiffness: 400,
+							damping: 40,
+						}}
+						className="relative h-full flex flex-col"
+					>
+						<button
+							className="absolute top-0 right-0 m-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+							onClick={() => setSelectedMember(null)}
+							aria-label="Close"
+						>
+							<X size={20} />
+						</button>
+						<div className="flex flex-col items-center justify-center flex-1 gap-2">
+							<span className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+								{selectedMember.name}
+							</span>
+							<span className="text-sm text-neutral-500 dark:text-neutral-400">
+								{selectedMember.role}
+							</span>
+							{/* Member config panel UI */}
+							<div className="w-full flex flex-col gap-1">
+								<label
+									htmlFor="prompt-input"
+									className="text-xs text-neutral-500 dark:text-neutral-400"
+								>
+									Prompt
+								</label>
+								<textarea
+									id="prompt-input"
+									rows={3}
+									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+									placeholder="Enter prompt..."
+									disabled
+								/>
+							</div>
+							<div className="w-full flex items-center justify-between">
+								<span className="text-xs text-neutral-500 dark:text-neutral-400">
+									Web Search
+								</span>
+								<label
+									className="relative inline-flex items-center cursor-pointer select-none"
+									style={{ minWidth: "2.25rem" }}
+								>
+									<input
+										type="checkbox"
+										value=""
+										className="sr-only peer"
+										disabled
+									/>
+									<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
+									<span
+										className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
+										style={{ pointerEvents: "none" }}
+									/>
+									<span className="ml-12 text-neutral-400 text-xs">
+										Off
+									</span>
+								</label>
+							</div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</aside>
+	);
 };
 
 export default SidebarRight;

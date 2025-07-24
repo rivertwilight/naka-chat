@@ -10,7 +10,6 @@ import {
 	useCurrentUser,
 	useGroup,
 } from "../../../hooks/useDatabase";
-import { seedDatabase, getGroupIdMapping } from "../../../lib/seedData";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -22,8 +21,8 @@ interface ChatClientProps {
 }
 
 export default function ChatClient({ groupId }: ChatClientProps) {
-	const [actualGroupId, setActualGroupId] = useState<string | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [actualGroupId, setActualGroupId] = useState<string | null>(groupId);
+	const [loading, setLoading] = useState(false);
 	const { user } = useCurrentUser();
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
@@ -39,31 +38,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	}, [messages]);
 
 	console.log("messages", messages);
-
-	useEffect(() => {
-		const initializeDatabase = async () => {
-			try {
-				// Seed database if needed
-				await seedDatabase();
-
-				// Get group ID mapping
-				const mapping = await getGroupIdMapping();
-				const mappedGroupId = mapping[groupId];
-
-				if (!mappedGroupId && !["1", "2", "3"].includes(groupId)) {
-					notFound();
-				}
-
-				setActualGroupId(mappedGroupId);
-			} catch (error) {
-				console.error("Failed to initialize database:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		initializeDatabase();
-	}, [groupId]);
 
 	const handleSendMessage = async (content: string) => {
 		if (!user || !actualGroupId) return;

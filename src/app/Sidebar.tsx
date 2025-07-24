@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import React from "react";
-import { Moon, Sun, X, Check } from "lucide-react";
+import { Moon, Sun, X, Check, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
@@ -53,6 +53,15 @@ export default function Sidebar() {
 							/>
 						))
 					)}
+					{/* Add Group Button */}
+					<button
+						type="button"
+						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none"
+						// No real logic for now
+					>
+						<Plus size={16} />
+						<span>Create new group</span>
+					</button>
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
@@ -88,7 +97,9 @@ function GroupListItem({
 			href={`/group/${group.id}`}
 			className={
 				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
-				(selected ? " font-semibold bg-neutral-100 dark:bg-neutral-800" : "")
+				(selected
+					? " font-semibold bg-neutral-100 dark:bg-neutral-800"
+					: "")
 			}
 		>
 			<span>{group.name}</span>
@@ -136,6 +147,7 @@ function DarkModeSwitch() {
 	if (!mounted) return null; // Prevents SSR mismatch
 
 	const isDark = resolvedTheme === "dark";
+
 	return (
 		<button
 			onClick={() => setTheme(isDark ? "light" : "dark")}

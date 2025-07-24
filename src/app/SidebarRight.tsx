@@ -20,19 +20,23 @@ interface SidebarRightProps {
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const { members: dbMembers, loading } = useGroupMembers(groupId);
-	const [selectedMember, setSelectedMember] = React.useState<null | Member>(null);
-	const [thinkingStates, setThinkingStates] = React.useState<Record<string, boolean>>({});
+	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
+		null
+	);
+	const [thinkingStates, setThinkingStates] = React.useState<
+		Record<string, boolean>
+	>({});
 
 	// Transform database members to component format
 	const members: Member[] = React.useMemo(() => {
 		return dbMembers.map((dbMember) => {
 			const isAgent = dbMember.role === "agent";
 			const details = dbMember.details;
-			
+
 			return {
 				id: dbMember.id,
 				name: details?.name || "Unknown",
-				role: isAgent ? (details?.title || "Agent") : "Human",
+				role: isAgent ? details?.title || "Agent" : "Human",
 				status: dbMember.status,
 				type: dbMember.role,
 				thinking: thinkingStates[dbMember.id] || false,
@@ -42,9 +46,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 
 	// Helper to toggle thinking state
 	const toggleThinking = (memberId: string) => {
-		setThinkingStates(prev => ({
+		setThinkingStates((prev) => ({
 			...prev,
-			[memberId]: !prev[memberId]
+			[memberId]: !prev[memberId],
 		}));
 	};
 
@@ -77,16 +81,29 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						{members.map((member) => (
 							<button
 								key={member.id}
-								className={`flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${member.status === 'muted' ? 'opacity-60 cursor-not-allowed' : ''}`}
-								onClick={() => member.status === 'active' && setSelectedMember(member)}
+								className={`flex flex-col items-start group relative px-2 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
+									member.status === "muted"
+										? "opacity-60 cursor-not-allowed"
+										: ""
+								}`}
+								onClick={() =>
+									member.status === "active" &&
+									setSelectedMember(member)
+								}
 								style={{
 									outline: "none",
 									border: "none",
 									background: "none",
 								}}
-								disabled={member.status === 'muted'}
+								disabled={member.status === "muted"}
 							>
-								<span className={`${member.status === 'muted' ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-900 dark:text-neutral-100'} font-medium flex items-center`}>
+								<span
+									className={`${
+										member.status === "muted"
+											? "text-neutral-400 dark:text-neutral-600"
+											: "text-neutral-900 dark:text-neutral-100"
+									} font-medium flex items-center`}
+								>
 									{member.name}
 									<span className="ml-2 relative flex items-center">
 										<ArrowRight
@@ -95,11 +112,22 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										/>
 									</span>
 								</span>
-								<span className={`text-xs ${member.status === 'muted' ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-500 dark:text-neutral-400'} flex items-center gap-1 ${member.thinking ? 'animate-pulse' : ''}`}>
-									{member.thinking ? 'Thinking' : member.role}
+								<span
+									className={`text-xs ${
+										member.status === "muted"
+											? "text-neutral-400 dark:text-neutral-600"
+											: "text-neutral-500 dark:text-neutral-400"
+									} flex items-center gap-1 ${
+										member.thinking ? "animate-pulse" : ""
+									}`}
+								>
+									{member.thinking ? "Thinking" : member.role}
 									{member.thinking && (
 										<span className="mr-1">
-											<Loader className="animate-spin" size={14} />
+											<Loader
+												className="animate-spin"
+												size={14}
+											/>
 										</span>
 									)}
 								</span>
@@ -127,15 +155,21 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 							<X size={20} />
 						</button>
 						<div className="flex flex-col pt-4 flex-1 gap-2">
-							<span className={`text-lg font-semibold ${selectedMember?.status === 'muted' ? 'text-neutral-300 dark:text-neutral-600' : 'text-neutral-900 dark:text-neutral-100'}`}>
+							<span
+								className={`text-lg font-semibold ${
+									selectedMember?.status === "muted"
+										? "text-neutral-300 dark:text-neutral-600"
+										: "text-neutral-900 dark:text-neutral-100"
+								}`}
+							>
 								{selectedMember.name}
 							</span>
-							
+
 							{/* Show thinking toggle for agents */}
-							{selectedMember.type === 'agent' && (
+							{selectedMember.type === "agent" && (
 								<div className="w-full flex items-center justify-between mt-4">
-									<span className="text-xs text-neutral-500 dark:text-neutral-400">
-										Thinking State
+									<span className="text-sm text-neutral-500 dark:text-neutral-400">
+										Mute
 									</span>
 									<label
 										className="relative inline-flex items-center cursor-pointer select-none"
@@ -144,7 +178,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										<input
 											type="checkbox"
 											checked={selectedMember.thinking}
-											onChange={() => toggleThinking(selectedMember.id)}
+											onChange={() =>
+												toggleThinking(
+													selectedMember.id
+												)
+											}
 											className="sr-only peer"
 										/>
 										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
@@ -157,7 +195,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 							)}
 
 							{/* Member config panel UI - only show for agents */}
-							{selectedMember.type === 'agent' && (
+							{selectedMember.type === "agent" && (
 								<>
 									<div className="w-full flex flex-col gap-1 mt-4">
 										<textarea
@@ -183,7 +221,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
 											<span
 												className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
-												style={{ pointerEvents: "none" }}
+												style={{
+													pointerEvents: "none",
+												}}
 											/>
 										</label>
 									</div>

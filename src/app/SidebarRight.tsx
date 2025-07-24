@@ -16,7 +16,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
   const [selectedMember, setSelectedMember] = React.useState<null | Member>(null);
 
   return (
-    <aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 bg-white dark:bg-neutral-900 select-none">
+    <aside className="hidden md:flex flex-col gap-4 w-56 sm:w-64 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
       <AnimatePresence initial={false} mode="wait">
         {!selectedMember ? (
           <motion.ul

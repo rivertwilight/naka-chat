@@ -1,7 +1,7 @@
 import React from "react";
 
 const GroupInputArea = () => (
-  <div className="fixed left-56 sm:left-0 right-0 bottom-0 py-4 px-4 sm:px-8 z-30">
+  <div className="fixed left-56 sm:left-0 right-0 bottom-0 py-4 px-0 sm:px-8 z-30">
     <div className="flex items-center gap-2 max-w-2xl mx-auto w-full">
       <input
         type="text"

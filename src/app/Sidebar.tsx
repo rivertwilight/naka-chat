@@ -24,7 +24,7 @@ export default function Sidebar() {
 
 	return (
 		<aside
-			className="w-56 sm:w-64 h-screen fixed left-0 top-0 z-20 px-4 py-8 bg-white dark:bg-neutral-900 flex flex-col gap-2 justify-between overflow-hidden border-none select-none"
+			className="w-56 sm:w-64 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none"
 			style={{ WebkitOverflowScrolling: "auto" }}
 		>
 			<nav className="flex flex-col gap-1">

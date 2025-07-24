@@ -37,7 +37,7 @@ const mockMessages = [
 	{
 		id: 5,
 		sender: "Alex",
-		content: `Sounds good!\n\n---\n\n> "Simplicity is the ultimate sophistication." — Leonardo da Vinci`,
+		content: `Sounds good!\n\n "Simplicity is the ultimate sophistication." — Leonardo da Vinci`,
 		time: "09:05",
 	},
 ];
@@ -47,7 +47,7 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 	if (![1, 2, 3].includes(groupId)) notFound();
 
 	return (
-		<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 bg-white dark:bg-neutral-900 relative min-h-screen">
+		<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
 			<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
 				<div className="flex flex-col">
 					{mockMessages.map((msg, idx) => (

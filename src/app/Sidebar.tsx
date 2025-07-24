@@ -7,6 +7,7 @@ import { Moon, Sun, X, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -26,12 +27,6 @@ export default function Sidebar() {
 	const groupId = match ? Number(match[1]) : undefined;
 	const [settingsOpen, setSettingsOpen] = React.useState(false);
 
-	React.useEffect(() => {
-		if (settingsOpen) {
-			router.push("/settings");
-		}
-	}, [settingsOpen, router]);
-
 	return (
 		<>
 			<aside
@@ -50,8 +45,7 @@ export default function Sidebar() {
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
 						onClick={() => {
-							alert("settings");
-							// setSettingsOpen(true);
+							setSettingsOpen(true);
 						}}
 						className={`${sawarabi.className} text-xl text-neutral-700 dark:text-neutral-200 tracking-wide cursor-pointer transition-opacity hover:opacity-70`}
 					>
@@ -60,23 +54,37 @@ export default function Sidebar() {
 					<DarkModeSwitch />
 				</div>
 			</aside>
-			{settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+			<AnimatePresence>
+				{settingsOpen && (
+					<SettingsDialog onClose={() => setSettingsOpen(false)} />
+				)}
+			</AnimatePresence>
 		</>
 	);
 }
 
-function GroupListItem({ group, selected }: { group: { id: number; name: string }; selected: boolean }) {
+function GroupListItem({
+	group,
+	selected,
+}: {
+	group: { id: number; name: string };
+	selected: boolean;
+}) {
 	const [showCheck, setShowCheck] = React.useState(false);
 	return (
 		<Link
 			href={`/group/${group.id}`}
-			className={`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
-				(selected ? " font-semibold bg-neutral-100 dark:bg-neutral-800" : "")}
+			className={
+				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
+				(selected
+					? " font-semibold bg-neutral-100 dark:bg-neutral-800"
+					: "")
+			}
 		>
 			<span>{group.name}</span>
 			<span
 				className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex items-center"
-				onClick={e => {
+				onClick={(e) => {
 					e.preventDefault();
 					setShowCheck((v) => !v);
 				}}
@@ -138,36 +146,112 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
 		document.addEventListener("keydown", onEsc);
 		return () => document.removeEventListener("keydown", onEsc);
 	}, [onClose]);
+
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 backdrop-blur-sm animate-fadein">
-			<div className="relative bg-neutral-50 dark:bg-neutral-900 rounded-xl shadow-xl max-w-2xl w-full mx-auto p-8 transition-all duration-300 border border-neutral-200 dark:border-neutral-800">
+		<motion.div
+			className="fixed inset-0 z-50 bg-neutral-50 dark:bg-neutral-900 flex flex-col"
+			initial={{ x: "100%" }}
+			animate={{ x: 0 }}
+			exit={{ x: "100%" }}
+			transition={{
+				type: "tween",
+				ease: [0.25, 0.1, 0.25, 1],
+				duration: 0.3,
+			}}
+		>
+			{/* Header */}
+			<motion.div
+				className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800"
+				initial={{ opacity: 0, y: -20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.1, duration: 0.3 }}
+			>
+				<h2
+					className={`${sawarabi.className} text-2xl text-neutral-800 dark:text-neutral-100 tracking-wide`}
+				>
+					Settings
+				</h2>
 				<button
-					className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+					className="p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
 					onClick={onClose}
 					aria-label="Close settings"
 					type="button"
 				>
 					<X size={24} />
 				</button>
-				<h2 className="text-2xl font-semibold mb-6 text-neutral-800 dark:text-neutral-100 tracking-wide">Settings</h2>
-				<form className="flex flex-col gap-6">
-					<div>
-						<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">Username</label>
-						<input className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition" placeholder="Your name" />
-					</div>
-					<div>
-						<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">Language</label>
-						<select className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition">
-							<option>English</option>
-							<option>日本語</option>
-						</select>
-					</div>
-					<div>
-						<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">Notifications</label>
-						<input type="checkbox" className="accent-neutral-700 dark:accent-neutral-200 mr-2" /> Enable notifications
-					</div>
-				</form>
-			</div>
-		</div>
+			</motion.div>
+
+			{/* Content */}
+			<motion.div
+				className="flex-1 overflow-y-auto p-6"
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.2, duration: 0.3 }}
+			>
+				<div className="max-w-2xl mx-auto">
+					<form className="flex flex-col gap-8">
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.3, duration: 0.3 }}
+						>
+							<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+								Username
+							</label>
+							<input
+								className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+								placeholder="Your name"
+							/>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.4, duration: 0.3 }}
+						>
+							<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+								Language
+							</label>
+							<select className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition">
+								<option>English</option>
+								<option>日本語</option>
+							</select>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.5, duration: 0.3 }}
+						>
+							<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+								Notifications
+							</label>
+							<div className="flex items-center gap-3">
+								<input
+									type="checkbox"
+									className="accent-neutral-700 dark:accent-neutral-200 h-4 w-4"
+								/>
+								<span className="text-neutral-700 dark:text-neutral-200">
+									Enable notifications
+								</span>
+							</div>
+						</motion.div>
+
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.6, duration: 0.3 }}
+						>
+							<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+								Theme
+							</label>
+							<div className="text-neutral-700 dark:text-neutral-200">
+								<DarkModeSwitch />
+							</div>
+						</motion.div>
+					</form>
+				</div>
+			</motion.div>
+		</motion.div>
 	);
 }

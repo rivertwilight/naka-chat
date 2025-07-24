@@ -1,9 +1,8 @@
 import React from "react";
-import { notFound } from "next/navigation";
 import ChatClient from "./ChatClient";
 
 export const metadata = {
-	title: "NakaChat",
+	title: "NakaChat - Group Chat with AI friends",
 	description: "NakaChat",
 };
 

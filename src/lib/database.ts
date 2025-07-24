@@ -170,6 +170,17 @@ export const dbHelpers = {
 		return group;
 	},
 
+	// Update group details (name, description, etc.)
+	async updateGroup(
+		groupId: string,
+		updates: Partial<Pick<Group, "name" | "description">>
+	): Promise<void> {
+		await db.groups.update(groupId, {
+			...updates,
+			updated_at: new Date(),
+		});
+	},
+
 	// Add member to group
 	async addGroupMember(
 		memberData: Omit<GroupMember, "id" | "joined_at">

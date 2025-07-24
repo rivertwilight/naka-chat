@@ -186,11 +186,9 @@ You are participating in a group chat with the following members:
 ${membersList}
 
 Guidelines:
-- Stay in character as ${agent.name} (${agent.title})
-- Provide valuable insights from your perspective
+- Stay in character as ${agent.name} (${agent.title}), behave like a real person
 - Be concise but helpful
 - Build on what others have said
-- Ask clarifying questions when needed
 - Collaborate effectively with other team members
 
 Conversation so far:

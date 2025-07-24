@@ -720,3 +720,64 @@ export function useCurrentUser() {
 		error,
 	};
 }
+
+// Hook for getting all groups that the current user is a member of
+export function useUserGroups() {
+	const [groups, setGroups] = useState<Group[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const { user } = useCurrentUser();
+
+	useEffect(() => {
+		if (!user) {
+			setGroups([]);
+			setLoading(false);
+			return;
+		}
+
+		const loadUserGroups = async () => {
+			try {
+				setLoading(true);
+
+				// Get all group memberships for the current user
+				const memberships = await db.groupMembers
+					.where("user_id")
+					.equals(user.id)
+					.and((member) => member.status === "active")
+					.toArray();
+
+				// Get the group details for each membership
+				const groupIds = memberships.map((membership) => membership.group_id);
+				const userGroups = await Promise.all(
+					groupIds.map(async (groupId) => {
+						const group = await db.groups.get(groupId);
+						return group;
+					})
+				);
+
+				// Filter out any null groups and sort by creation date
+				const validGroups = userGroups
+					.filter((group): group is Group => group !== undefined)
+					.sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+
+				setGroups(validGroups);
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: "Failed to load user groups"
+				);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadUserGroups();
+	}, [user]);
+
+	return {
+		groups,
+		loading,
+		error,
+	};
+}

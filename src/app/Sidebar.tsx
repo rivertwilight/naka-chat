@@ -8,24 +8,21 @@ import { useTheme } from "next-themes";
 import { Tooltip } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserGroups } from "../hooks/useDatabase";
+import type { Group } from "../lib/database";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
 	subsets: ["latin"],
 });
 
-const mockGroups = [
-	{ id: 1, name: "AI Researchers" },
-	{ id: 2, name: "Design Team" },
-	{ id: 3, name: "Friends" },
-];
-
 export default function Sidebar() {
 	const pathname = usePathname();
 	const router = useRouter();
-	const match = pathname.match(/\/group\/(\d+)/);
-	const groupId = match ? Number(match[1]) : undefined;
+	const match = pathname.match(/\/group\/(.+)/);
+	const groupId = match ? match[1] : undefined;
 	const [settingsOpen, setSettingsOpen] = React.useState(false);
+	const { groups, loading, error } = useUserGroups();
 
 	return (
 		<>
@@ -34,13 +31,27 @@ export default function Sidebar() {
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				<nav className="flex flex-col gap-1">
-					{mockGroups.map((group) => (
-						<GroupListItem
-							key={group.id}
-							group={group}
-							selected={groupId === group.id}
-						/>
-					))}
+					{loading ? (
+						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
+							Loading groups...
+						</div>
+					) : error ? (
+						<div className="px-3 py-2 text-red-500 text-sm">
+							Failed to load groups
+						</div>
+					) : groups.length === 0 ? (
+						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
+							No groups found
+						</div>
+					) : (
+						groups.map((group) => (
+							<GroupListItem
+								key={group.id}
+								group={group}
+								selected={groupId === group.id}
+							/>
+						))
+					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
@@ -67,7 +78,7 @@ function GroupListItem({
 	group,
 	selected,
 }: {
-	group: { id: number; name: string };
+	group: Group;
 	selected: boolean;
 }) {
 	const [showCheck, setShowCheck] = React.useState(false);

@@ -42,8 +42,13 @@ const mockMessages = [
 	},
 ];
 
-export default function GroupPage({ params }: { params: { id: string } }) {
-	const groupId = Number(params.id);
+export default async function GroupPage({
+	params,
+}: {
+	params: { id: string };
+}) {
+	const { id } = await params;
+	const groupId = Number(id);
 	if (![1, 2, 3].includes(groupId)) notFound();
 
 	return (

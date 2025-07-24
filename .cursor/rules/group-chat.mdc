@@ -1,0 +1,22 @@
+---
+description: How our multi-agents group chat works.
+globs:
+alwaysApply: false
+---
+
+We'll introduce a Supervisor Agent. It will decide who to send message in the group chat (or just stop, asking user to engage in)
+
+For example, if a group has these members:
+
+- Human (user)
+- Designer
+- Developer
+- Product Manager
+
+When user say: "How to build a todo app?":
+
+1. Supervisor Agent will decide who to start thinking, he think we should start with the PM
+2. PM got all context and generate a response. Now provide the new full history to the supervisor agent
+3. Supervisor Agent decide Designer should start thinking
+4. Designer got all context and generate a response. Now provide the new full history to the supervisor agent
+5. Supervisor Agent decide waiting for human to respond

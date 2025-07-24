@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
 import GroupInputArea from "./GroupInputArea";
 import MessageItem from "./MessageItem";
+import SidebarRight from "../../SidebarRight";
 import {
 	useGroupMessages,
 	useCurrentUser,
 	useGroup,
 } from "../../../hooks/useDatabase";
+import { AgentGroupChat } from "../../../lib/agentGroupChat";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -23,25 +25,61 @@ interface ChatClientProps {
 export default function ChatClient({ groupId }: ChatClientProps) {
 	const [actualGroupId, setActualGroupId] = useState<string | null>(groupId);
 	const [loading, setLoading] = useState(false);
+	const [agentChatLoading, setAgentChatLoading] = useState(false);
+	const [previousMessageCount, setPreviousMessageCount] = useState(0);
 	const { user } = useCurrentUser();
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
 		useGroupMessages(actualGroupId);
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
+	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
 
-	// Auto-scroll to bottom when messages change
 	useEffect(() => {
-		if (messagesEndRef.current) {
+		if (actualGroupId) {
+			agentGroupChatRef.current = new AgentGroupChat(actualGroupId);
+		}
+	}, [actualGroupId]);
+
+	// Only auto-scroll when there are new messages
+	useEffect(() => {
+		const hasNewMessages = messages.length > previousMessageCount;
+		
+		if (hasNewMessages && messagesEndRef.current) {
 			messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
 		}
-	}, [messages]);
-
-	console.log("messages", messages);
+		
+		setPreviousMessageCount(messages.length);
+	}, [messages, previousMessageCount]);
 
 	const handleSendMessage = async (content: string) => {
-		if (!user || !actualGroupId) return;
-		await sendMessage(content, user.id);
+		if (!user || !actualGroupId || !agentGroupChatRef.current) return;
+
+		try {
+			// Send the human message first
+			await sendMessage(content, user.id);
+
+			// Trigger agent conversation
+			setAgentChatLoading(true);
+
+			// Wait a moment for the message to be saved, then trigger agent responses
+			setTimeout(async () => {
+				try {
+					await agentGroupChatRef.current!.processHumanMessage(
+						content,
+						user.id,
+						messages
+					);
+				} catch (error) {
+					console.error("Error in agent conversation:", error);
+				} finally {
+					setAgentChatLoading(false);
+				}
+			}, 500);
+		} catch (error) {
+			console.error("Error sending message:", error);
+			setAgentChatLoading(false);
+		}
 	};
 
 	const handleReaction = async (messageId: string, emoji: string) => {
@@ -128,11 +166,14 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	if (loading) {
 		return (
-			<main className="flex-1 flex flex-col justify-center items-center px-0 sm:px-8 py-8 relative min-h-screen">
-				<div className="text-neutral-500 dark:text-neutral-400">
-					Loading...
-				</div>
-			</main>
+			<>
+				<main className="flex-1 flex flex-col justify-center items-center px-0 sm:px-8 py-8 relative min-h-screen">
+					<div className="text-neutral-500 dark:text-neutral-400">
+						Loading...
+					</div>
+				</main>
+				<SidebarRight groupId={actualGroupId} />
+			</>
 		);
 	}
 
@@ -141,14 +182,20 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	}
 
 	return (
-		<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
-			<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
-				<div className="flex flex-col">
-					{renderMessagesWithDividers()}
-					<div ref={messagesEndRef} />
-				</div>
-			</section>
-			<GroupInputArea onSendMessage={handleSendMessage} />
-		</main>
+		<>
+			<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
+				<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
+					<div className="flex flex-col">
+						{renderMessagesWithDividers()}
+						<div ref={messagesEndRef} />
+					</div>
+				</section>
+				<GroupInputArea
+					onSendMessage={handleSendMessage}
+					agentChatLoading={agentChatLoading}
+				/>
+			</main>
+			<SidebarRight groupId={actualGroupId} />
+		</>
 	);
 }

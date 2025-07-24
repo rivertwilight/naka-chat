@@ -102,6 +102,28 @@ export class NakaChatDB extends Dexie {
 
 export const db = new NakaChatDB();
 
+// Initialize database with auto-seeding if needed
+export async function initializeDatabase() {
+	try {
+		// Import dynamically to avoid circular dependency
+		const { isDatabaseSeeded, seedDatabase } = await import('./seedData');
+		
+		const isSeeded = await isDatabaseSeeded();
+		if (!isSeeded) {
+			console.log("Database is empty, auto-seeding...");
+			await seedDatabase();
+			console.log("Database initialized and seeded successfully!");
+			return true;
+		}
+		
+		console.log("Database already initialized");
+		return false;
+	} catch (error) {
+		console.error("Error initializing database:", error);
+		throw error;
+	}
+}
+
 // Helper functions for database operations
 export const dbHelpers = {
 	// Create a new user
@@ -306,3 +328,11 @@ export const dbHelpers = {
 		return session;
 	},
 };
+
+// Extended message type with sender details (re-export from useDatabase.ts)
+export interface MessageWithDetails extends Message {
+	reactions: { emoji: string; count: number }[];
+	senderUser?: User;
+	senderAgent?: Agent;
+	session?: Session;
+}

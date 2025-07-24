@@ -9,208 +9,154 @@ export async function isDatabaseSeeded(): Promise<boolean> {
 }
 
 // Seed the database with initial data
-export async function seedDatabase(): Promise<void> {
-  try {
-    // Check if already seeded
-    if (await isDatabaseSeeded()) {
-      console.log('Database already seeded');
-      return;
-    }
+export async function seedDatabase() {
+	try {
+		// Check if already seeded to prevent duplicate data
+		const isSeeded = await isDatabaseSeeded();
+		if (isSeeded) {
+			console.log("Database already seeded, skipping...");
+			return null;
+		}
 
-    console.log('Seeding database...');
+		console.log("Starting database seed...");
 
-    // Create users
-    const yukiUser = await dbHelpers.createUser({
-      name: 'Yuki',
-      email: 'yuki@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face',
-    });
+		// Create users
+		const user1 = await dbHelpers.createUser({
+			name: "Alex Chen",
+			email: "alex@example.com",
+			avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=alex",
+		});
 
-    const alexUser = await dbHelpers.createUser({
-      name: 'Alex',
-      email: 'alex@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face',
-    });
+		console.log("Created user:", user1);
 
-    const minaUser = await dbHelpers.createUser({
-      name: 'Mina',
-      email: 'mina@example.com',
-      avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face',
-    });
+		// Create agents with different specializations
+		const pmAgent = await dbHelpers.createAgent({
+			name: "Maya",
+			title: "Product Manager",
+			system_prompt: `You are Maya, an experienced Product Manager. You focus on:
+- Understanding user needs and business requirements
+- Breaking down complex projects into manageable features
+- Prioritizing features and managing scope
+- Coordinating between different team members
+- Asking clarifying questions about requirements and goals
+- Providing strategic direction and product vision
 
-    const currentUser = await dbHelpers.createUser({
-      name: 'You',
-      email: 'you@example.com',
-    });
+You are collaborative, analytical, and always think about the bigger picture while keeping user value at the center of decisions.`,
+			model: "gemini-2.0-flash-exp",
+			temperature: 0.7,
+			max_output_tokens: 1000,
+			avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=maya",
+		});
 
-    // Create agents
-    const kimiAgent = await dbHelpers.createAgent({
-      name: 'Kimi',
-      title: 'AI Assistant',
-      system_prompt: 'You are Kimi, a helpful AI assistant.',
-      model: 'kimi-k2',
-      temperature: 0.7,
-      max_output_tokens: 2048,
-      avatar_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=32&h=32&fit=crop&crop=face',
-    });
+		const designerAgent = await dbHelpers.createAgent({
+			name: "Zara",
+			title: "UX/UI Designer",
+			system_prompt: `You are Zara, a creative UX/UI Designer. You specialize in:
+- User experience design and user interface design
+- Creating wireframes, prototypes, and design systems
+- Understanding user journeys and interaction patterns
+- Accessibility and inclusive design principles
+- Visual design and design system consistency
+- Collaborating with developers on implementation feasibility
 
-    // Create groups
-    const group1 = await dbHelpers.createGroup({
-      name: 'Team Chat',
-      description: 'Main team collaboration space',
-      created_by: currentUser.id,
-    });
+You think visually, prioritize user experience, and balance aesthetics with functionality. You often suggest design patterns and user research insights.`,
+			model: "gemini-2.0-flash-exp",
+			temperature: 0.8,
+			max_output_tokens: 1000,
+			avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zara",
+		});
 
-    const group2 = await dbHelpers.createGroup({
-      name: 'Design Review',
-      description: 'UI/UX design discussions',
-      created_by: minaUser.id,
-    });
+		const developerAgent = await dbHelpers.createAgent({
+			name: "Sam",
+			title: "Full-Stack Developer",
+			system_prompt: `You are Sam, a skilled Full-Stack Developer. You focus on:
+- Technical implementation and architecture decisions
+- Frontend and backend development considerations
+- Database design and API development
+- Performance optimization and scalability
+- Code quality, testing, and development best practices
+- Technical feasibility and implementation timelines
+- Modern web technologies and frameworks
 
-    const group3 = await dbHelpers.createGroup({
-      name: 'Research Lab',
-      description: 'AI research and development',
-      created_by: yukiUser.id,
-    });
+You are pragmatic, detail-oriented, and always consider technical trade-offs. You provide realistic estimates and suggest technical solutions.`,
+			model: "gemini-2.0-flash-exp",
+			temperature: 0.6,
+			max_output_tokens: 1200,
+			avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam",
+		});
 
-    // Add members to groups
-    await dbHelpers.addGroupMember({
-      group_id: group1.id,
-      user_id: yukiUser.id,
-      role: 'human',
-      status: 'active',
-    });
+		console.log("Created agents:", { pmAgent, designerAgent, developerAgent });
 
-    await dbHelpers.addGroupMember({
-      group_id: group1.id,
-      user_id: alexUser.id,
-      role: 'human',
-      status: 'active',
-    });
+		// Create a test group
+		const group = await dbHelpers.createGroup({
+			name: "Product Development Team",
+			description: "A collaborative space for product development discussions",
+			created_by: user1.id,
+		});
 
-    await dbHelpers.addGroupMember({
-      group_id: group1.id,
-      user_id: minaUser.id,
-      role: 'human',
-      status: 'active',
-    });
+		console.log("Created group:", group);
 
-    await dbHelpers.addGroupMember({
-      group_id: group1.id,
-      user_id: currentUser.id,
-      role: 'human',
-      status: 'active',
-    });
+		// Add members to the group
+		await dbHelpers.addGroupMember({
+			group_id: group.id,
+			user_id: user1.id,
+			role: "human",
+			status: "active",
+		});
 
-    await dbHelpers.addGroupMember({
-      group_id: group1.id,
-      agent_id: kimiAgent.id,
-      role: 'agent',
-      status: 'active',
-    });
+		await dbHelpers.addGroupMember({
+			group_id: group.id,
+			agent_id: pmAgent.id,
+			role: "agent",
+			status: "active",
+		});
 
-    // Create multiple sessions for the first group
-    const session1 = await dbHelpers.createSession({
-      group_id: group1.id,
-      name: 'Daily Standup',
-    });
+		await dbHelpers.addGroupMember({
+			group_id: group.id,
+			agent_id: designerAgent.id,
+			role: "agent",
+			status: "active",
+		});
 
-    // Add a small delay to ensure different timestamps
-    await new Promise(resolve => setTimeout(resolve, 10));
+		await dbHelpers.addGroupMember({
+			group_id: group.id,
+			agent_id: developerAgent.id,
+			role: "agent",
+			status: "active",
+		});
 
-    const session2 = await dbHelpers.createSession({
-      group_id: group1.id,
-      name: 'Project Discussion',
-    });
+		console.log("Added group members");
 
-    // Create messages for session 1 (Daily Standup)
-    const message1 = await dbHelpers.sendMessage({
-      session_id: session1.id,
-      sender_user_id: yukiUser.id,
-      content: `おはようございます！How is everyone today?\n\nHere's today's agenda:\n\n- Review last week's progress\n- Discuss new research papers\n- Plan next steps`,
-    });
+		// Create an initial session
+		const session = await dbHelpers.createSession({
+			group_id: group.id,
+			name: "Welcome Session",
+			context: {
+				topic: "Getting started with the team",
+				summary: "Initial team introduction and setup",
+			},
+		});
 
-    const message2 = await dbHelpers.sendMessage({
-      session_id: session1.id,
-      sender_user_id: alexUser.id,
-      content: `Good morning! Here's a code snippet for the new UI proposal:\n\n\`\`\`tsx\nfunction KansoButton() {\n  return <button className="kanso">Kanso</button>;\n}\`\`\`\n\nLet me know your thoughts.`,
-    });
+		console.log("Created session:", session);
 
-    const message3 = await dbHelpers.sendMessage({
-      session_id: session1.id,
-      sender_user_id: minaUser.id,
-      content: `@Alex The code looks great!\n\n**Design assets** are available [here](https://figma.com).\n\n- [x] Logo\n- [ ] Color palette\n- [ ] Icons`,
-    });
+		// Add a welcome message
+		await dbHelpers.sendMessage({
+			session_id: session.id,
+			sender_user_id: user1.id,
+			content: "Welcome to our Product Development Team! Let's collaborate on building amazing products together. 🚀",
+		});
 
-    // Create messages for session 2 (Project Discussion) 
-    await new Promise(resolve => setTimeout(resolve, 10));
-
-    const message4 = await dbHelpers.sendMessage({
-      session_id: session2.id,
-      sender_user_id: yukiUser.id,
-      content: `Thank you, everyone! Let's discuss the project roadmap.\n\nLet's aim to finish the color palette by tomorrow. 😊`,
-    });
-
-    const message5 = await dbHelpers.sendMessage({
-      session_id: session2.id,
-      sender_user_id: alexUser.id,
-      content: `Sounds good! I'll focus on the technical implementation.\n\n "Simplicity is the ultimate sophistication." — Leonardo da Vinci`,
-    });
-
-    const message6 = await dbHelpers.sendMessage({
-      session_id: session2.id,
-      sender_user_id: currentUser.id,
-      content: `Thanks everyone! I'll work on the color palette today. 🙏\n\nLet me know if you need any help with the implementation.`,
-    });
-
-    // Add reactions to match the mock data
-    await dbHelpers.addReaction({
-      message_id: message1.id,
-      emoji: '👍',
-      user_id: alexUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message1.id,
-      emoji: '👍',
-      user_id: minaUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message1.id,
-      emoji: '😊',
-      user_id: currentUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message3.id,
-      emoji: '❤️',
-      user_id: alexUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message5.id,
-      emoji: '😊',
-      user_id: minaUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message6.id,
-      emoji: '🙏',
-      user_id: yukiUser.id,
-    });
-
-    await dbHelpers.addReaction({
-      message_id: message6.id,
-      emoji: '🙏',
-      user_id: alexUser.id,
-    });
-
-    console.log('Database seeded successfully!');
-  } catch (error) {
-    console.error('Error seeding database:', error);
-    throw error;
-  }
+		console.log("Database seeded successfully!");
+		return {
+			user: user1,
+			agents: [pmAgent, designerAgent, developerAgent],
+			group,
+			session,
+		};
+	} catch (error) {
+		console.error("Error seeding database:", error);
+		throw error;
+	}
 }
 
 // Helper to get user-friendly group IDs (1, 2, 3) mapped to actual UUIDs

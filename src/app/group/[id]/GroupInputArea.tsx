@@ -4,6 +4,7 @@ import React, { useState } from "react";
 
 interface GroupInputAreaProps {
 	onSendMessage?: (content: string) => void;
+	agentChatLoading?: boolean;
 }
 
 const GroupInputArea: React.FC<GroupInputAreaProps> = ({ onSendMessage }) => {

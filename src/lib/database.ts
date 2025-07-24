@@ -106,8 +106,8 @@ export const db = new NakaChatDB();
 export async function initializeDatabase() {
 	try {
 		// Import dynamically to avoid circular dependency
-		const { isDatabaseSeeded, seedDatabase } = await import('./seedData');
-		
+		const { isDatabaseSeeded, seedDatabase } = await import("./seedData");
+
 		const isSeeded = await isDatabaseSeeded();
 		if (!isSeeded) {
 			console.log("Database is empty, auto-seeding...");
@@ -115,7 +115,7 @@ export async function initializeDatabase() {
 			console.log("Database initialized and seeded successfully!");
 			return true;
 		}
-		
+
 		console.log("Database already initialized");
 		return false;
 	} catch (error) {
@@ -347,5 +347,3 @@ export interface MessageWithDetails extends Message {
 	senderAgent?: Agent;
 	session?: Session;
 }
-
-export { dbHelpers };

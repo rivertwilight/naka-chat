@@ -3,8 +3,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import React from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, X, Check } from "lucide-react";
 import { useTheme } from "next-themes";
+import { Tooltip } from "@lobehub/ui";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -29,17 +30,11 @@ export default function Sidebar() {
 		>
 			<nav className="flex flex-col gap-1">
 				{mockGroups.map((group) => (
-					<Link
+					<GroupListItem
 						key={group.id}
-						href={`/group/${group.id}`}
-						className={`text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 ${
-							groupId === group.id
-								? "font-semibold bg-neutral-100 dark:bg-neutral-800"
-								: ""
-						}`}
-					>
-						{group.name}
-					</Link>
+						group={group}
+						selected={groupId === group.id}
+					/>
 				))}
 			</nav>
 			<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -51,6 +46,48 @@ export default function Sidebar() {
 				<DarkModeSwitch />
 			</div>
 		</aside>
+	);
+}
+
+function GroupListItem({ group, selected }: { group: { id: number; name: string }; selected: boolean }) {
+	const [showCheck, setShowCheck] = React.useState(false);
+	return (
+		<Link
+			href={`/group/${group.id}`}
+			className={`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
+				(selected ? " font-semibold bg-neutral-100 dark:bg-neutral-800" : "")}
+		>
+			<span>{group.name}</span>
+			<span
+				className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex items-center"
+				onClick={e => {
+					e.preventDefault();
+					setShowCheck((v) => !v);
+				}}
+			>
+				{showCheck ? (
+					<button
+						type="button"
+						tabIndex={-1}
+						className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
+						onBlur={() => setShowCheck(false)}
+					>
+						<Check size={16} />
+					</button>
+				) : (
+					<Tooltip title="Remove group" placement="top">
+						<button
+							type="button"
+							tabIndex={-1}
+							className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
+							onBlur={() => setShowCheck(false)}
+						>
+							<X size={16} />
+						</button>
+					</Tooltip>
+				)}
+			</span>
+		</Link>
 	);
 }
 

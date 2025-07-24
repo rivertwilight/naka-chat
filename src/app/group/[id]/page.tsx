@@ -62,7 +62,7 @@ export default function GroupPage({ params }: { params: { id: string } }) {
 									>
 										{msg.sender}
 									</span>
-									<span className="text-[10px] text-neutral-400 dark:text-neutral-500">
+									<span className="text-xs text-neutral-400 dark:text-neutral-500">
 										{msg.time}
 									</span>
 									<div className="flex-1 border-b border-dotted border-neutral-300 dark:border-neutral-700 ml-2" />

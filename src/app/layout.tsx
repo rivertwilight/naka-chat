@@ -24,12 +24,16 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressContentEditableWarning>
+		<html lang="en" suppressHydrationWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<UiProvider>
-					<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+					>
 						<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
 							<Sidebar />
 							<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">

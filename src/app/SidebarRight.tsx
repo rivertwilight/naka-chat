@@ -1,12 +1,13 @@
 "use client";
 import React from "react";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, X, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SliderWithInput } from "@lobehub/ui";
 
 interface Member {
 	name: string;
 	role: string;
+	thinking?: boolean;
 }
 
 interface SidebarRightProps {
@@ -45,7 +46,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 									background: "none",
 								}}
 							>
-								<span className="text-neutral-900 dark:text-neutral-100 font-medium flex items-center">
+								<span className={`text-neutral-900 dark:text-neutral-100 font-medium flex items-center `}>
 									{member.name}
 									<span className="ml-2 relative flex items-center">
 										<ArrowRight
@@ -54,8 +55,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 										/>
 									</span>
 								</span>
-								<span className="text-xs text-neutral-500 dark:text-neutral-400">
-									{member.role}
+								<span className={`text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 ${member.thinking ? 'animate-pulse' : ''}`}>
+									{member.thinking ? 'Thinking' : member.role}
+									{member.thinking && (
+										<span className="mr-1">
+											<Loader className="animate-spin" size={14} />
+										</span>
+									)}
 								</span>
 							</button>
 						))}
@@ -116,7 +122,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ members }) => {
 
 							{/* Temperature slider */}
 							<div className="w-full flex flex-col gap-1 mt-4">
-								<span className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Temperature</span>
+								<span className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+									Temperature
+								</span>
 								<SliderWithInput
 									min={0}
 									max={2}

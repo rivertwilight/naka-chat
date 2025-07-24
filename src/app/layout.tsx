@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 const mockMembers = [
 	{ name: "Yuki", role: "Owner" },
-	{ name: "Alex", role: "Member" },
+	{ name: "Alex", role: "Member", thinking: true },
 	{ name: "Mina", role: "Member" },
 ];
 

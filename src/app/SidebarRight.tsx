@@ -9,6 +9,9 @@ import { dbHelpers } from "../lib/database";
 import Dialog from "../components/Dialog";
 import { db } from "../lib/database";
 
+const FIRST_NAMES = ["Alex", "Jamie", "Taylor", "Jordan", "Morgan", "Casey", "Riley", "Avery", "Skyler", "Quinn"];
+const LAST_NAMES = ["Chen", "Smith", "Lee", "Patel", "Kim", "Garcia", "Singh", "Khan", "Nguyen", "Yamamoto"];
+
 interface Member {
 	id: string;
 	name: string;
@@ -16,6 +19,7 @@ interface Member {
 	status: "active" | "muted";
 	type: "human" | "agent";
 	thinking?: boolean;
+	system_prompt?: string;
 }
 
 interface SidebarRightProps {
@@ -24,7 +28,8 @@ interface SidebarRightProps {
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const { members: dbMembers, loading } = useGroupMembers(groupId);
-	const { group, loading: groupLoading } = useGroup(groupId);
+	const [groupVersion, setGroupVersion] = React.useState(0);
+	const { group, loading: groupLoading } = useGroup(groupId, groupVersion);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
 		null
 	);
@@ -46,6 +51,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [selectedType, setSelectedType] = React.useState<
 		"agent" | "human" | ""
 	>("");
+	const [promptEdit, setPromptEdit] = React.useState<string>("");
 
 	React.useEffect(() => {
 		if (group && !nameEditing) setNameEdit(group.name || "");
@@ -81,6 +87,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		await dbHelpers.updateGroup(groupId, { name: nameEdit });
 		setNameEditing(false);
 		setNameSaving(false);
+		setGroupVersion((v) => v + 1);
 	};
 
 	const handleDescSave = async () => {
@@ -89,28 +96,22 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		await dbHelpers.updateGroup(groupId, { description: descEdit });
 		setDescEditing(false);
 		setDescSaving(false);
+		setGroupVersion((v) => v + 1);
 	};
 
-	const handleAddMember = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!groupId || !selectedId || !selectedType) return;
-		setAddLoading(true);
-		setAddError("");
-		try {
-			await dbHelpers.addGroupMember({
-				group_id: groupId,
-				user_id: selectedType === "human" ? selectedId : undefined,
-				agent_id: selectedType === "agent" ? selectedId : undefined,
-				role: selectedType,
-				status: "active",
-			});
-			setAddOpen(false);
-		} catch (e) {
-			setAddError("Failed to add member");
-		} finally {
-			setAddLoading(false);
-		}
-	};
+	// Remove FIRST_NAMES, LAST_NAMES, getRandomName, getRandomAvatar for user, and only use for agent
+	// In the Invite Member button, change logic to create a new agent:
+	function getRandomName() {
+		const first =
+			FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+		const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+		return `${first} ${last}`;
+	}
+	function getRandomAvatar(name: string) {
+		return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+			name
+		)}`;
+	}
 
 	// Transform database members to component format
 	const members: Member[] = React.useMemo(() => {
@@ -125,6 +126,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 				status: dbMember.status,
 				type: dbMember.role,
 				thinking: thinkingStates[dbMember.id] || false,
+				system_prompt: isAgent ? details?.system_prompt : undefined,
 			};
 		});
 	}, [dbMembers, thinkingStates]);
@@ -136,6 +138,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 			[memberId]: !prev[memberId],
 		}));
 	};
+
+	// When selectedMember changes, set promptEdit to the agent's system_prompt
+	React.useEffect(() => {
+		if (selectedMember && selectedMember.type === "agent") {
+			setPromptEdit(selectedMember.system_prompt || "");
+		}
+	}, [selectedMember]);
 
 	if (loading || groupLoading) {
 		return (
@@ -203,7 +212,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										/>
 									)}
 								</div>
-								{/* Editable group description (existing code) */}
 								<div className="flex items-start gap-2">
 									{descEditing ? (
 										<textarea
@@ -221,6 +229,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												);
 												setDescEditing(false);
 												setDescSaving(false);
+												setGroupVersion((v) => v + 1);
 											}}
 											autoFocus
 											rows={2}
@@ -252,17 +261,58 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								</div>
 							</div>
 						)}
-						{/* Add a member button */}
-						<div className="flex items-end gap-2 mb-4">
-							<button
-								type="button"
-								className="mt-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
-								onClick={() => setAddOpen(true)}
-							>
+						<button
+							type="button"
+							className="mt-2 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+							onClick={async () => {
+								if (!groupId) return;
+								setAddLoading(true);
+								try {
+									const name = getRandomName();
+									const avatar_url = getRandomAvatar(name);
+									// Create agent in DB
+									const agent = await dbHelpers.createAgent({
+										name,
+										title: "Agent",
+										system_prompt: "",
+										model: "gemini-2.0-flash-exp",
+										temperature: 1,
+										max_output_tokens: 1000,
+										avatar_url,
+									});
+									await dbHelpers.addGroupMember({
+										group_id: groupId,
+										agent_id: agent.id,
+										role: "agent",
+										status: "active",
+									});
+								} catch (e) {
+									// Optionally handle error
+								} finally {
+									setAddLoading(false);
+								}
+							}}
+							disabled={addLoading}
+						>
+							{addLoading ? (
+								<Loader size={16} className="animate-spin" />
+							) : (
 								<Plus size={16} />
-								<span>Add a member</span>
-							</button>
-						</div>
+							)}
+							<span>
+								{addLoading
+									? "Creating..."
+									: "Create new agent"}
+							</span>
+						</button>
+						<button
+							type="button"
+							className="mt-1 mb-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+							onClick={() => setAddOpen(true)}
+						>
+							<Plus size={16} />
+							<span>Invite member</span>
+						</button>
 						{members.map((member) => (
 							<button
 								key={member.id}
@@ -290,12 +340,14 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									} font-medium flex items-center`}
 								>
 									{member.name}
-									<span className="ml-2 relative flex items-center">
-										<ArrowRight
-											size={16}
-											className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-										/>
-									</span>
+									{member.type === "agent" && (
+										<span className="ml-2 relative flex items-center">
+											<ArrowRight
+												size={16}
+												className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+											/>
+										</span>
+									)}
 								</span>
 								<span
 									className={`text-xs ${
@@ -385,9 +437,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									<div className="w-full flex flex-col gap-1 mt-4">
 										<textarea
 											id="prompt-input"
-											rows={5}
+											rows={8}
 											className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
 											placeholder="Enter prompt..."
+											value={promptEdit}
+											onChange={(e) =>
+												setPromptEdit(e.target.value)
+											}
 										/>
 									</div>
 									<div className="w-full flex items-center justify-between mt-4">
@@ -432,102 +488,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 					</motion.div>
 				)}
 			</AnimatePresence>
-			{/* Add Member Dialog */}
-			<Dialog
-				open={isAddOpen}
-				onClose={() => setAddOpen(false)}
-				variant="modal"
-			>
-				<div className="p-6 w-full max-w-md">
-					<div className="mb-4 text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-						Add a member
-					</div>
-					<form onSubmit={handleAddMember}>
-						<div className="mb-4">
-							<div className="mb-2 text-sm text-neutral-500 dark:text-neutral-400">
-								Select an agent or user to add:
-							</div>
-							<div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-								{allAgents.map((agent) => (
-									<label
-										key={agent.id}
-										className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
-									>
-										<input
-											type="radio"
-											name="member"
-											checked={
-												selectedId === agent.id &&
-												selectedType === "agent"
-											}
-											onChange={() => {
-												setSelectedId(agent.id);
-												setSelectedType("agent");
-											}}
-										/>
-										<span className="text-neutral-800 dark:text-neutral-100">
-											🤖 {agent.name}{" "}
-											<span className="text-xs text-neutral-400 ml-1">
-												(Agent)
-											</span>
-										</span>
-									</label>
-								))}
-								{allUsers.map((user) => (
-									<label
-										key={user.id}
-										className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
-									>
-										<input
-											type="radio"
-											name="member"
-											checked={
-												selectedId === user.id &&
-												selectedType === "human"
-											}
-											onChange={() => {
-												setSelectedId(user.id);
-												setSelectedType("human");
-											}}
-										/>
-										<span className="text-neutral-800 dark:text-neutral-100">
-											🧑 {user.name}{" "}
-											<span className="text-xs text-neutral-400 ml-1">
-												(User)
-											</span>
-										</span>
-									</label>
-								))}
-								{allAgents.length === 0 &&
-									allUsers.length === 0 && (
-										<div className="text-neutral-400 text-sm">
-											No available members to add.
-										</div>
-									)}
-							</div>
-						</div>
-						{addError && (
-							<div className="text-red-500 text-sm mb-2">
-								{addError}
-							</div>
-						)}
-						<button
-							type="submit"
-							className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
-							disabled={addLoading || !selectedId}
-						>
-							{addLoading ? (
-								<Loader size={16} className="animate-spin" />
-							) : (
-								<ArrowRight size={16} />
-							)}
-							<span>
-								{addLoading ? "Adding..." : "Add to group"}
-							</span>
-						</button>
-					</form>
-				</div>
-			</Dialog>
 		</aside>
 	);
 };

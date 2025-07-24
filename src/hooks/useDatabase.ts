@@ -605,7 +605,7 @@ export function useGroupSession(groupId: string | null) {
 }
 
 // Hook for getting group details
-export function useGroup(groupId: string | null) {
+export function useGroup(groupId: string | null, version: number = 0) {
 	const [group, setGroup] = useState<Group | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -632,7 +632,7 @@ export function useGroup(groupId: string | null) {
 		};
 
 		loadGroup();
-	}, [groupId]);
+	}, [groupId, version]);
 
 	return {
 		group,

@@ -1,0 +1,170 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { notFound } from "next/navigation";
+import { Geist_Mono } from "next/font/google";
+import GroupInputArea from "./GroupInputArea";
+import MessageItem from "./MessageItem";
+import {
+	useGroupMessages,
+	useCurrentUser,
+	useGroup,
+} from "../../../hooks/useDatabase";
+import { seedDatabase, getGroupIdMapping } from "../../../lib/seedData";
+
+const geistMono = Geist_Mono({
+	weight: ["400"],
+	subsets: ["latin"],
+});
+
+interface ChatClientProps {
+	groupId: string;
+}
+
+export default function ChatClient({ groupId }: ChatClientProps) {
+	const [actualGroupId, setActualGroupId] = useState<string | null>(null);
+	const [loading, setLoading] = useState(true);
+	const { user } = useCurrentUser();
+	const { group } = useGroup(actualGroupId);
+	const { messages, sendMessage, addReaction } =
+		useGroupMessages(actualGroupId);
+
+	console.log("messages", messages);
+
+	useEffect(() => {
+		const initializeDatabase = async () => {
+			try {
+				// Seed database if needed
+				await seedDatabase();
+
+				// Get group ID mapping
+				const mapping = await getGroupIdMapping();
+				const mappedGroupId = mapping[groupId];
+
+				if (!mappedGroupId && !["1", "2", "3"].includes(groupId)) {
+					notFound();
+				}
+
+				setActualGroupId(mappedGroupId);
+			} catch (error) {
+				console.error("Failed to initialize database:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		initializeDatabase();
+	}, [groupId]);
+
+	const handleSendMessage = async (content: string) => {
+		if (!user || !actualGroupId) return;
+		await sendMessage(content, user.id);
+	};
+
+	const handleReaction = async (messageId: string, emoji: string) => {
+		if (!user) return;
+		await addReaction(messageId, emoji, user.id);
+	};
+
+	// Format time from Date to HH:MM
+	const formatTime = (date: Date) => {
+		return date.toLocaleTimeString("en-US", {
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		});
+	};
+
+	// Format date for session divider
+	const formatDate = (date: Date) => {
+		return date.toLocaleDateString("en-US", {
+			year: "numeric",
+			month: "long",
+			day: "numeric",
+		});
+	};
+
+	// Get sender name from message
+	const getSenderName = (message: any) => {
+		if (message.senderUser) {
+			return user && message.senderUser.id === user.id
+				? "You"
+				: message.senderUser.name;
+		}
+		if (message.senderAgent) {
+			return message.senderAgent.name;
+		}
+		return "Unknown";
+	};
+
+	// Group messages by session and add dividers
+	const renderMessagesWithDividers = () => {
+		if (messages.length === 0) return null;
+
+		const result: React.ReactElement[] = [];
+		let currentSessionId: string | null = null;
+
+		messages.forEach((msg, idx) => {
+			// Add session divider if this is a new session
+			if (msg.session && msg.session.id !== currentSessionId) {
+				currentSessionId = msg.session.id;
+				result.push(
+					<div
+						key={`divider-${msg.session.id}`}
+						className="flex items-center justify-center gap-4 py-4 my-4"
+					>
+						<div className="px-4 py-2 italic">
+							<span className="text-xs font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wide italic">
+								{msg.session.name || "Session"} -{" "}
+								{formatDate(msg.session.created_at)}
+							</span>
+						</div>
+					</div>
+				);
+			}
+
+			// Add the message
+			result.push(
+				<React.Fragment key={msg.id}>
+					<MessageItem
+						messageId={msg.id}
+						sender={getSenderName(msg)}
+						time={formatTime(msg.created_at)}
+						content={msg.content}
+						geistMono={geistMono}
+						idx={idx}
+						reactions={msg.reactions || []}
+						onReact={(emoji) => handleReaction(msg.id, emoji)}
+					/>
+				</React.Fragment>
+			);
+		});
+
+		return result;
+	};
+
+	if (loading) {
+		return (
+			<main className="flex-1 flex flex-col justify-center items-center px-0 sm:px-8 py-8 relative min-h-screen">
+				<div className="text-neutral-500 dark:text-neutral-400">
+					Loading...
+				</div>
+			</main>
+		);
+	}
+
+	if (!actualGroupId) {
+		notFound();
+	}
+
+	return (
+		<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
+			<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
+				<div className="flex flex-col">
+					{renderMessagesWithDividers()}
+				</div>
+			</section>
+			<GroupInputArea onSendMessage={handleSendMessage} />
+		</main>
+	);
+}

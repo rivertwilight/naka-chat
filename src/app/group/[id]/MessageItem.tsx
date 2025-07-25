@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Markdown } from "@lobehub/ui";
-import { User as UserIcon } from "lucide-react";
+import { Avatar, Markdown } from "@lobehub/ui";
 
 interface MessageItemProps {
 	messageId: string;
@@ -15,8 +14,6 @@ interface MessageItemProps {
 	onReact?: (emoji: string) => void;
 	avatar_url?: string;
 }
-
-const EMOJI_LIST = ["👍", "😊", "🎉", "❤️", "😂", "😮"];
 
 const MessageItem: React.FC<MessageItemProps> = ({
 	messageId,
@@ -32,19 +29,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
 
-	const Avatar = () =>
-		avatar_url ? (
-			<img
-				src={avatar_url}
-				alt={sender}
-				className="w-7 h-7 rounded-full object-cover border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 mr-2"
-			/>
-		) : (
-			<span className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800 mr-2">
-				<UserIcon className="w-5 h-5 text-neutral-400" />
-			</span>
-		);
-
 	return (
 		<div
 			className={`flex flex-col gap-4 py-2 mt-2 ${
@@ -59,8 +43,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
 				}`}
 			>
 				{!isHuman && (
-					<span className="flex items-center">
-						<Avatar />
+					<span className="flex items-center gap-2">
+						<Avatar src={avatar_url} size={24} />
 						<span
 							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 						>
@@ -77,8 +61,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
 					}`}
 				/>
 				{isHuman && (
-					<span className="flex items-center">
-						<Avatar />
+					<span className="flex items-center gap-2">
+						<Avatar src={avatar_url} size={24} />
 						<span
 							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 						>

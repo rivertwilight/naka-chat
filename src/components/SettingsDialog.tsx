@@ -1,81 +1,11 @@
 import React, { useState } from "react";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
-import { DarkModeSwitch } from "../app/Sidebar";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
 	subsets: ["latin"],
 });
-
-const settingItems = [
-	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Username
-		</label>
-		<input
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
-			placeholder="Your name"
-		/>
-	</>,
-	<>
-		<label
-			htmlFor="api"
-			className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-		>
-			API Key
-		</label>
-		<input
-			id="api"
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
-			placeholder="Your API Key"
-		/>
-	</>,
-	<>
-		<label
-			htmlFor="base-url"
-			className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-		>
-			Base URL
-		</label>
-		<input
-			id="base-url"
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
-			placeholder="Your Base URL"
-		/>
-	</>,
-	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Language
-		</label>
-		<select className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition">
-			<option>English</option>
-			<option>日本語</option>
-		</select>
-	</>,
-	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Notifications
-		</label>
-		<div className="flex items-center gap-3">
-			<input
-				type="checkbox"
-				className="accent-neutral-700 dark:accent-neutral-200 h-4 w-4"
-			/>
-			<span className="text-neutral-700 dark:text-neutral-200">
-				Enable notifications
-			</span>
-		</div>
-	</>,
-	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Theme
-		</label>
-		<div className="text-neutral-700 dark:text-neutral-200">
-			<DarkModeSwitch />
-		</div>
-	</>,
-];
 
 const sidebarNav = [
 	{ key: "general", label: "General" },
@@ -83,28 +13,78 @@ const sidebarNav = [
 	{ key: "about", label: "About" },
 ];
 
-const generalItems = settingItems;
-const modelItems = [
-	<div className="text-neutral-600 dark:text-neutral-300">
-		Model settings coming soon...
-	</div>,
-];
-const aboutItems = [
-	<div className="text-neutral-600 dark:text-neutral-300">
-		<div className="text-lg mb-2 font-semibold">NakaChat</div>
-		<div className="text-sm">
-			AI multi-agent chat UI. Inspired by Japanese Kanso and Wabi-sabi
-			aesthetics.
-		</div>
-		<div className="mt-4 text-xs text-neutral-400">Version 1.0.0</div>
-	</div>,
-];
+function GeneralSection() {
+	return (
+		<>
+			<div className="flex gap-4">
+				<div className="flex-1">
+					<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">
+						First Name
+					</label>
+					<input
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+						placeholder="Your first name"
+					/>
+				</div>
+				<div className="flex-1">
+					<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">
+						Last Name
+					</label>
+					<input
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+						placeholder="Your last name"
+					/>
+				</div>
+			</div>
+		</>
+	);
+}
 
-const tabContent: Record<string, React.ReactNode[]> = {
-	general: generalItems,
-	model: modelItems,
-	about: aboutItems,
-};
+function ModelSection() {
+	return (
+		<>
+			<div>
+				<label
+					htmlFor="api"
+					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1"
+				>
+					API Key
+				</label>
+				<input
+					id="api"
+					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+					placeholder="Your API Key"
+				/>
+			</div>
+			<div className="mt-4">
+				<label
+					htmlFor="base-url"
+					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1"
+				>
+					Base URL
+				</label>
+				<input
+					id="base-url"
+					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+					placeholder="Your Base URL"
+				/>
+			</div>
+		</>
+	);
+}
+
+function AboutSection() {
+	return (
+		<div className="text-neutral-600 dark:text-neutral-300">
+			<div className="text-lg mb-2 font-semibold">NakaChat</div>
+			<div className="text-sm">
+				AI multi-agent chat UI. Inspired by Japanese Kanso and Wabi-sabi
+				aesthetics.
+			</div>
+			<div className="mt-4 text-xs text-neutral-400">Version 1.0.0</div>
+		</div>
+	);
+}
 
 interface SettingsDialogProps {
 	open: boolean;
@@ -147,11 +127,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 				<div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
 					<div className="w-full max-w-2xl mx-auto">
 						<form className="flex flex-col gap-4">
-							{tabContent[selectedTab].map((item, index) => (
-								<React.Fragment key={index}>
-									{item}
-								</React.Fragment>
-							))}
+							{selectedTab === "general" && <GeneralSection />}
+							{selectedTab === "model" && <ModelSection />}
+							{selectedTab === "about" && <AboutSection />}
 						</form>
 					</div>
 				</div>

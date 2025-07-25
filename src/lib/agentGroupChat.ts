@@ -1,9 +1,11 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-	apiKey: process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_API_KEY,
-});
+export interface ProviderConfig {
+	provider: "Google";
+	apiKey: string;
+	baseUrl?: string;
+}
 
 const AGENT_RESPONSE_DELAY_MIN_MS = 1000; // 1s
 const AGENT_RESPONSE_DELAY_MAX_MS = 120000; // 120s
@@ -28,9 +30,11 @@ export interface SupervisorDecision {
 
 export class AgentGroupChat {
 	private groupId: string;
+	private providerConfig: ProviderConfig;
 
-	constructor(groupId: string) {
+	constructor(groupId: string, providerConfig: ProviderConfig) {
 		this.groupId = groupId;
+		this.providerConfig = providerConfig;
 	}
 
 	/**
@@ -133,6 +137,7 @@ Rules:
 - Consider the natural flow of collaboration (PM → Designer → Developer, etc.)`;
 
 		try {
+			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
 			console.log("Supervisor prompt:", prompt);
 
 			const response = await ai.models.generateContent({
@@ -220,6 +225,7 @@ ${conversationHistory}
 Provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content.`;
 
 		try {
+			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
 			const response = await ai.models.generateContent({
 				model: "gemini-2.5-pro",
 				contents: [{ role: "user", parts: [{ text: prompt }] }],

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
-import SettingItem from "./settings/SettingItem";
+import { usePersistance } from "./PersistanceContext";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -15,23 +15,38 @@ const sidebarNav = [
 ];
 
 function GeneralSection() {
+	const { firstName, lastName, setFirstName, setLastName } = usePersistance();
 	return (
 		<>
 			<div className="flex gap-4">
 				<div className="flex-1">
-					<SettingItem
-						type="input"
-						label="First Name"
+					<label
+						htmlFor="first-name"
+						className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+					>
+						First Name
+					</label>
+					<input
 						id="first-name"
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 						placeholder="Your first name"
+						value={firstName}
+						onChange={(e) => setFirstName(e.target.value)}
 					/>
 				</div>
 				<div className="flex-1">
-					<SettingItem
-						type="input"
-						label="Last Name"
+					<label
+						htmlFor="last-name"
+						className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+					>
+						Last Name
+					</label>
+					<input
 						id="last-name"
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 						placeholder="Your last name"
+						value={lastName}
+						onChange={(e) => setLastName(e.target.value)}
 					/>
 				</div>
 			</div>
@@ -40,24 +55,72 @@ function GeneralSection() {
 }
 
 function ModelSection() {
+	const { provider, setProvider, apiKey, setApiKey, baseUrl, setBaseUrl } =
+		usePersistance();
 	return (
 		<>
+			<div className="mb-4">
+				<label
+					htmlFor="provider"
+					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+				>
+					Provider
+				</label>
+				<div className="relative">
+					<select
+						id="provider"
+						value={provider}
+						onChange={(e) => setProvider(e.target.value)}
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
+					>
+						<option value="Google">Google</option>
+						<option value="Anthropic">Anthropic</option>
+						<option value="OpenAI">OpenAI</option>
+						<option value="Custom">Custom</option>
+					</select>
+					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center px-2 text-neutral-500">
+						<svg
+							className="fill-current h-4 w-4"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+						>
+							<path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+						</svg>
+					</div>
+				</div>
+			</div>
 			<div>
-				<SettingItem
-					type="input"
-					label="API Key"
+				<label
+					htmlFor="api"
+					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+				>
+					API Key
+				</label>
+				<input
 					id="api"
+					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 					placeholder="Your API Key"
+					value={apiKey}
+					onChange={(e) => setApiKey(e.target.value)}
 				/>
 			</div>
-			<div className="mt-4">
-				<SettingItem
-					type="input"
-					label="Base URL"
-					id="base-url"
-					placeholder="Your Base URL"
-				/>
-			</div>
+			{provider === "Custom" && (
+				<div className="mt-4">
+					<label
+						htmlFor="base-url"
+						className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+					>
+						Base URL
+					</label>
+					<input
+						id="base-url"
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+						placeholder="Your Base URL"
+						value={baseUrl}
+						onChange={(e) => setBaseUrl(e.target.value)}
+					/>
+				</div>
+			)}
 		</>
 	);
 }
@@ -81,7 +144,7 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
-	const [selectedTab, setSelectedTab] = useState("general");
+	const [selectedTab, setSelectedTab] = React.useState("general");
 	return (
 		<Dialog open={open} onClose={onClose} variant="fullscreen">
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">

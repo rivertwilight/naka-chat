@@ -5,6 +5,7 @@ import React from "react";
 import Sidebar from "./Sidebar";
 import { ThemeProvider } from "next-themes";
 import { UiProvider } from "../components/UiContext";
+import { PersistanceProvider } from "../components/PersistanceContext";
 
 import "./globals.css";
 
@@ -28,20 +29,22 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				<UiProvider>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="system"
-						enableSystem
-					>
-						<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
-							<Sidebar />
-							<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
-								{children}
+				<PersistanceProvider>
+					<UiProvider>
+						<ThemeProvider
+							attribute="class"
+							defaultTheme="system"
+							enableSystem
+						>
+							<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
+								<Sidebar />
+								<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
+									{children}
+								</div>
 							</div>
-						</div>
-					</ThemeProvider>
-				</UiProvider>
+						</ThemeProvider>
+					</UiProvider>
+				</PersistanceProvider>
 			</body>
 		</html>
 	);

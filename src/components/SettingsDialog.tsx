@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
+import SettingItem from "./settings/SettingItem";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -18,20 +19,18 @@ function GeneralSection() {
 		<>
 			<div className="flex gap-4">
 				<div className="flex-1">
-					<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">
-						First Name
-					</label>
-					<input
-						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+					<SettingItem
+						type="input"
+						label="First Name"
+						id="first-name"
 						placeholder="Your first name"
 					/>
 				</div>
 				<div className="flex-1">
-					<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1">
-						Last Name
-					</label>
-					<input
-						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+					<SettingItem
+						type="input"
+						label="Last Name"
+						id="last-name"
 						placeholder="Your last name"
 					/>
 				</div>
@@ -44,28 +43,18 @@ function ModelSection() {
 	return (
 		<>
 			<div>
-				<label
-					htmlFor="api"
-					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1"
-				>
-					API Key
-				</label>
-				<input
+				<SettingItem
+					type="input"
+					label="API Key"
 					id="api"
-					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 					placeholder="Your API Key"
 				/>
 			</div>
 			<div className="mt-4">
-				<label
-					htmlFor="base-url"
-					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-1"
-				>
-					Base URL
-				</label>
-				<input
+				<SettingItem
+					type="input"
+					label="Base URL"
 					id="base-url"
-					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 					placeholder="Your Base URL"
 				/>
 			</div>

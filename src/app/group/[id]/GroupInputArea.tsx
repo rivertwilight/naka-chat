@@ -6,10 +6,12 @@ import { Image as ImageIcon, ArrowUp } from "lucide-react";
 interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
+	typingUsers?: string[];
 }
 
 const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	onSendMessage,
+	typingUsers = [],
 }) => {
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
@@ -40,6 +42,8 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 
 	const handleCompositionStart = () => setIsComposing(true);
 	const handleCompositionEnd = () => setIsComposing(false);
+
+	const typingUsersString = typingUsers.join(", ") + " are typing...";
 
 	return (
 		<div className="fixed left-96 right-96 bottom-0 z-30 max-w-3xl mx-auto">
@@ -87,7 +91,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 				</div>
 			</form>
 			<div className="text-xs bg-neutral-100/20 dark:bg-neutral-800/20 backdrop-blur-xs mx-auto text-center py-1 text-neutral-500 dark:text-neutral-400">
-				Alex, Taylor are typing...
+				{typingUsers.length > 0 ? typingUsersString : "No one is typing"}
 			</div>
 		</div>
 	);

@@ -299,7 +299,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						{members.map((member) => (
 							<button
 								key={member.id}
-								className={`flex flex-col items-start group relative py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
+								className={`flex items-center gap-4 group relative py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
 									member.status === "muted"
 										? "opacity-60 cursor-not-allowed"
 										: ""
@@ -315,42 +315,53 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								}}
 								disabled={member.status === "muted"}
 							>
-								<span
-									className={`${
-										member.status === "muted"
-											? "text-neutral-400 dark:text-neutral-600"
-											: "text-neutral-900 dark:text-neutral-100"
-									} font-medium flex items-center`}
-								>
-									{member.name}
-									{member.type === "agent" && (
-										<span className="ml-2 relative flex items-center">
-											<ArrowRight
-												size={16}
-												className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-											/>
-										</span>
-									)}
-								</span>
-								<span
-									className={`text-xs ${
-										member.status === "muted"
-											? "text-neutral-400 dark:text-neutral-600"
-											: "text-neutral-500 dark:text-neutral-400"
-									} flex items-center gap-1 ${
-										member.thinking ? "animate-pulse" : ""
-									}`}
-								>
-									{member.thinking ? "Thinking" : member.role}
-									{member.thinking && (
-										<span className="mr-1">
-											<Loader
-												className="animate-spin"
-												size={14}
-											/>
-										</span>
-									)}
-								</span>
+								<Avatar
+									src={member.avatar_url}
+									size={30}
+									name={member.name}
+								/>
+								<div className="flex flex-col gap-0.5">
+									<span
+										className={`${
+											member.status === "muted"
+												? "text-neutral-400 dark:text-neutral-600"
+												: "text-neutral-900 dark:text-neutral-100"
+										} font-medium flex items-center`}
+									>
+										{member.name}
+										{member.type === "agent" && (
+											<span className="ml-2 relative flex items-center">
+												<ArrowRight
+													size={16}
+													className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+												/>
+											</span>
+										)}
+									</span>
+									<span
+										className={`text-xs ${
+											member.status === "muted"
+												? "text-neutral-400 dark:text-neutral-600"
+												: "text-neutral-500 dark:text-neutral-400"
+										} flex items-center gap-1 ${
+											member.thinking
+												? "animate-pulse"
+												: ""
+										}`}
+									>
+										{member.thinking
+											? "Thinking"
+											: member.role}
+										{member.thinking && (
+											<span className="mr-1">
+												<Loader
+													className="animate-spin"
+													size={14}
+												/>
+											</span>
+										)}
+									</span>
+								</div>
 							</button>
 						))}
 					</motion.ul>

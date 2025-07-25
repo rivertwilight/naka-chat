@@ -47,10 +47,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 
 	return (
 		<div className="fixed left-96 right-96 bottom-0 z-30 max-w-3xl mx-auto">
-			<form
-				onSubmit={handleSubmit}
-				className="flex items-center gap-4 w-full"
-			>
+			<form onSubmit={handleSubmit} className="flex items-center gap-4 w-full">
 				<div className="flex items-center gap-2 flex-1 border border-neutral-200 dark:border-neutral-700 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
 					{/* <button
 						type="button"

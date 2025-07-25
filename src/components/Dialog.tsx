@@ -47,7 +47,7 @@ const Dialog: React.FC<DialogProps> = ({
 					>
 						{showCloseButton && (
 							<button
-								className="absolute z-50 bottom-8 left-12 p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+								className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
 								onClick={onClose}
 								aria-label="Close dialog"
 								type="button"

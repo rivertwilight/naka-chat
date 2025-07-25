@@ -1,7 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar, Markdown } from "@lobehub/ui";
+import { Avatar, Dropdown, Markdown } from "@lobehub/ui";
+
+import { type DropdownProps, Icon } from "@lobehub/ui";
+import { AtSign, Settings } from "lucide-react";
+
+export const menu: DropdownProps["menu"] = {
+	items: [
+		{
+			icon: <Icon icon={AtSign} />,
+			key: "copy",
+			label: "Mention",
+		},
+		{
+			icon: <Icon icon={Settings} />,
+			key: "selectAll",
+			label: "Customize",
+		},
+	],
+};
 
 interface MessageItemProps {
 	messageId: string;
@@ -52,14 +70,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
 				}`}
 			>
 				{!isHuman && (
-					<span className="flex items-center gap-2">
-						<Avatar src={avatar_url} size={24} />
-						<span
-							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
-						>
-							{sender}
+					<Dropdown menu={menu} trigger={["click"]}>
+						<span className="flex items-center gap-2 cursor-pointer">
+							<Avatar src={avatar_url} size={24} />
+							<span
+								className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
+							>
+								{sender}
+							</span>
 						</span>
-					</span>
+					</Dropdown>
 				)}
 				<span className="text-xs text-neutral-400 dark:text-neutral-500">
 					{time}

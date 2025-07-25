@@ -45,7 +45,7 @@ export default function SettingItem<T extends SettingItemProps>({
 					<div className="relative">
 						<select
 							id={id}
-							className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none dark:focus:border-neutral-600 transition"
+							className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
 						>
 							{options?.map((option) => (
 								<option key={option}>{option}</option>

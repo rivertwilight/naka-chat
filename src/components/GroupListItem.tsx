@@ -20,9 +20,9 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 		<Link
 			href={`/group/${group.id}`}
 			className={
-				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
+				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-50 dark:hover:bg-neutral-900 flex items-center justify-between` +
 				(selected
-					? " font-semibold bg-neutral-100 dark:bg-neutral-800"
+					? " font-semibold bg-white dark:bg-neutral-900"
 					: "")
 			}
 		>

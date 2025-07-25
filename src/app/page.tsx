@@ -81,7 +81,9 @@ export default function HomePage() {
 				status: "active",
 			});
 			// Add selected agents as members
-			const selectedAgentIds = agents.filter((_, idx) => checked[idx]).map(a => a.id);
+			const selectedAgentIds = agents
+				.filter((_, idx) => checked[idx])
+				.map((a) => a.id);
 			for (const agentId of selectedAgentIds) {
 				await dbHelpers.addGroupMember({
 					group_id: group.id,
@@ -117,7 +119,7 @@ export default function HomePage() {
 
 	return (
 		<div className="min-h-screen flex flex-col justify-center items-center">
-			<div className="container mx-auto px-4 py-16">
+			<div className="container mx-auto px-4 py-16 pl-24">
 				{/* Header */}
 				<div className="text-center mb-16">
 					<div className="flex items-center justify-center mb-6">
@@ -140,7 +142,7 @@ export default function HomePage() {
 
 				{/* Agent Cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10 max-w-4xl mx-auto">
-					{agents.map((agent: Agent, index: number) => (
+					{agents.slice(0, 9).map((agent: Agent, index: number) => (
 						<div
 							key={agent.id}
 							className={
@@ -208,7 +210,7 @@ export default function HomePage() {
 												src: agent.avatar_url,
 												key: agent.id,
 												name: agent.name,
-											}
+										  }
 										: undefined
 								)
 								.filter(
@@ -218,19 +220,20 @@ export default function HomePage() {
 													src: string;
 													key: string;
 													name: string;
-												}
+											  }
 											| undefined
 									): item is {
 										src: string;
 										key: string;
 										name: string;
 									} => Boolean(item)
-								)
-							}
+								)}
 						/>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+						</div>
 					)}
 				</div>
 			</div>

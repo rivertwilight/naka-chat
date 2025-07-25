@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
 	db,
 	dbHelpers,
-	initializeDatabase,
+	initializeDatabaseOnce,
 	Message,
 	User,
 	Agent,
@@ -195,7 +195,7 @@ export function useGroupMessages(groupId: string | null) {
 				(a, b) => a.created_at.getTime() - b.created_at.getTime()
 			);
 			setMessages(allMessages);
-			
+
 			// Update lastLoadTime to prevent immediate polling reload
 			lastLoadTimeRef.current = Date.now();
 		} catch (err) {
@@ -693,8 +693,6 @@ export function useCurrentUser() {
 			try {
 				setLoading(true);
 
-				await initializeDatabase();
-
 				// For now, get the first user - in a real app, this would come from auth
 				const users = await db.users.toArray();
 				if (users.length > 0) {
@@ -747,7 +745,9 @@ export function useUserGroups(version: number = 0) {
 					.toArray();
 
 				// Get the group details for each membership
-				const groupIds = memberships.map((membership) => membership.group_id);
+				const groupIds = memberships.map(
+					(membership) => membership.group_id
+				);
 				const userGroups = await Promise.all(
 					groupIds.map(async (groupId) => {
 						const group = await db.groups.get(groupId);
@@ -758,7 +758,10 @@ export function useUserGroups(version: number = 0) {
 				// Filter out any null groups and sort by creation date
 				const validGroups = userGroups
 					.filter((group): group is Group => group !== undefined)
-					.sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+					.sort(
+						(a, b) =>
+							a.created_at.getTime() - b.created_at.getTime()
+					);
 
 				setGroups(validGroups);
 			} catch (err) {
@@ -784,57 +787,102 @@ export function useUserGroups(version: number = 0) {
 
 // Hook for getting the latest message for each group in a list
 export function useLatestGroupMessages(groupIds: string[]) {
-  const [latestMessages, setLatestMessages] = useState<Record<string, MessageWithDetails | null>>({});
-  useEffect(() => {
-    if (!groupIds || groupIds.length === 0) {
-      setLatestMessages({});
-      return;
-    }
-    let cancelled = false;
-    const fetchLatest = async () => {
-      const result: Record<string, MessageWithDetails | null> = {};
-      for (const groupId of groupIds) {
-        // Get all sessions for the group
-        const sessions = await db.sessions.where("group_id").equals(groupId).toArray();
-        if (!sessions.length) {
-          result[groupId] = null;
-          continue;
-        }
-        // Get all messages for all sessions
-        let allMessages: MessageWithDetails[] = [];
-        for (const session of sessions) {
-          const sessionMessages = await dbHelpers.getMessagesWithReactions(session.id);
-          // Enhance messages with sender details
-          const enhancedMessages = await Promise.all(
-            sessionMessages.map(async (message) => {
-              let senderUser: User | undefined;
-              let senderAgent: Agent | undefined;
-              if (message.sender_user_id) {
-                senderUser = await db.users.get(message.sender_user_id);
-              }
-              if (message.sender_agent_id) {
-                senderAgent = await db.agents.get(message.sender_agent_id);
-              }
-              return {
-                ...message,
-                senderUser,
-                senderAgent,
-                session,
-              };
-            })
-          );
-          allMessages.push(...enhancedMessages);
-        }
-        // Sort and get the latest
-        allMessages.sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
-        result[groupId] = allMessages[0] || null;
-      }
-      if (!cancelled) setLatestMessages(result);
-    };
-    fetchLatest();
-    return () => {
-      cancelled = true;
-    };
-  }, [JSON.stringify(groupIds)]);
-  return latestMessages;
+	const [latestMessages, setLatestMessages] = useState<
+		Record<string, MessageWithDetails | null>
+	>({});
+	useEffect(() => {
+		if (!groupIds || groupIds.length === 0) {
+			setLatestMessages({});
+			return;
+		}
+		let cancelled = false;
+		const fetchLatest = async () => {
+			const result: Record<string, MessageWithDetails | null> = {};
+			for (const groupId of groupIds) {
+				// Get all sessions for the group
+				const sessions = await db.sessions
+					.where("group_id")
+					.equals(groupId)
+					.toArray();
+				if (!sessions.length) {
+					result[groupId] = null;
+					continue;
+				}
+				// Get all messages for all sessions
+				let allMessages: MessageWithDetails[] = [];
+				for (const session of sessions) {
+					const sessionMessages =
+						await dbHelpers.getMessagesWithReactions(session.id);
+					// Enhance messages with sender details
+					const enhancedMessages = await Promise.all(
+						sessionMessages.map(async (message) => {
+							let senderUser: User | undefined;
+							let senderAgent: Agent | undefined;
+							if (message.sender_user_id) {
+								senderUser = await db.users.get(
+									message.sender_user_id
+								);
+							}
+							if (message.sender_agent_id) {
+								senderAgent = await db.agents.get(
+									message.sender_agent_id
+								);
+							}
+							return {
+								...message,
+								senderUser,
+								senderAgent,
+								session,
+							};
+						})
+					);
+					allMessages.push(...enhancedMessages);
+				}
+				// Sort and get the latest
+				allMessages.sort(
+					(a, b) => b.created_at.getTime() - a.created_at.getTime()
+				);
+				result[groupId] = allMessages[0] || null;
+			}
+			if (!cancelled) setLatestMessages(result);
+		};
+		fetchLatest();
+		return () => {
+			cancelled = true;
+		};
+	}, [JSON.stringify(groupIds)]);
+	return latestMessages;
+}
+
+// Hook for getting all agents
+export function useAgents() {
+	const [agents, setAgents] = useState<Agent[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const loadAgents = async () => {
+			try {
+				setLoading(true);
+				await initializeDatabaseOnce();
+				const allAgents = await db.agents.toArray();
+				setAgents(allAgents);
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: "Failed to load agents or initialize database"
+				);
+			} finally {
+				setLoading(false);
+			}
+		};
+		loadAgents();
+	}, []);
+
+	return {
+		agents,
+		loading,
+		error,
+	};
 }

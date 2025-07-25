@@ -112,11 +112,9 @@ export async function initializeDatabase() {
 			console.log("Database is empty, auto-seeding...");
 			await seedDatabase();
 			console.log("Database initialized and seeded successfully!");
-			return true;
+		} else {
+			console.log("Database already initialized");
 		}
-
-		console.log("Database already initialized");
-		return false;
 	} catch (error) {
 		console.error("Error initializing database:", error);
 		throw error;
@@ -335,6 +333,28 @@ export const dbHelpers = {
 
 		return session;
 	},
+
+	// Update user details (e.g., name)
+	async updateUser(
+		userId: string,
+		updates: Partial<Pick<User, "name" | "avatar_url" | "email">>
+	): Promise<void> {
+		await db.users.update(userId, {
+			...updates,
+			updated_at: new Date(),
+		});
+	},
+
+	// Update agent details (e.g., name)
+	async updateAgent(
+		agentId: string,
+		updates: Partial<Pick<Agent, "name" | "avatar_url" | "title" | "system_prompt" | "model" | "temperature" | "max_output_tokens">>
+	): Promise<void> {
+		await db.agents.update(agentId, {
+			...updates,
+			updated_at: new Date(),
+		});
+	},
 };
 
 // Extended message type with sender details (re-export from useDatabase.ts)
@@ -343,4 +363,13 @@ export interface MessageWithDetails extends Message {
 	senderUser?: User;
 	senderAgent?: Agent;
 	session?: Session;
+}
+
+// Singleton for database initialization
+let dbInitPromise: Promise<void> | null = null;
+export function initializeDatabaseOnce() {
+  if (!dbInitPromise) {
+    dbInitPromise = initializeDatabase();
+  }
+  return dbInitPromise;
 }

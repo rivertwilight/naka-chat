@@ -256,7 +256,15 @@ Rules:
 	}
 
 	private parseDecision(responseText: string): SupervisorDecision {
-		return JSON.parse(responseText) as SupervisorDecision;
+		// Remove markdown code block wrappers if present
+		let cleaned = responseText.trim();
+		if (cleaned.startsWith("```")) {
+			// Remove the opening code block (optionally with language)
+			cleaned = cleaned.replace(/^```[a-zA-Z0-9]*\s*/, "");
+			// Remove the closing code block
+			cleaned = cleaned.replace(/```\s*$/, "");
+		}
+		return JSON.parse(cleaned) as SupervisorDecision;
 	}
 
 	private validateDecision(
@@ -678,12 +686,12 @@ export class AgentGroupChat {
 		context: ConversationContext,
 		isSingleAgent: boolean = false
 	): Promise<void> {
-		this.typingPool.add(agent.id);
 		const delay = isSingleAgent ? 500 : this.calculateResponseDelay(); // Minimal delay for single agent
 
 		return new Promise<void>((resolve) => {
 			setTimeout(async () => {
 				try {
+					this.typingPool.add(agent.id); // Mark as typing only when making the request
 					await this.executeAgentResponse(agent, context);
 				} finally {
 					this.typingPool.remove(agent.id);

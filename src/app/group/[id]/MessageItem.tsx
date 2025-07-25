@@ -1,10 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar, Dropdown, Markdown } from "@lobehub/ui";
+import { Avatar, Dropdown, Markdown, Tooltip } from "@lobehub/ui";
 
 import { type DropdownProps, Icon } from "@lobehub/ui";
-import { AtSign, Settings } from "lucide-react";
+import {
+	AtSign,
+	Settings,
+	Copy,
+	Reply,
+	Smile,
+	Trash,
+	MoreHorizontal,
+	Flag,
+} from "lucide-react";
 
 export const menu: DropdownProps["menu"] = {
 	items: [
@@ -17,6 +26,21 @@ export const menu: DropdownProps["menu"] = {
 			icon: <Icon icon={Settings} />,
 			key: "selectAll",
 			label: "Customize",
+		},
+	],
+};
+
+export const messageMenu: DropdownProps["menu"] = {
+	items: [
+		{
+			icon: <Icon icon={Trash} />,
+			key: "delete",
+			label: "Delete",
+		},
+		{
+			icon: <Icon icon={Flag} />,
+			key: "report",
+			label: "Report",
 		},
 	],
 };
@@ -48,6 +72,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
+	const [copied, setCopied] = useState(false);
 
 	// Calculate opacity: messages older than 1 hour use minOpacity, else full opacity
 	const now = Date.now();
@@ -101,7 +126,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
 				)}
 			</div>
 			<div
-				className={`w-full ${isHuman ? "flex justify-end" : ""}`}
+				className={`w-full ${
+					isHuman ? "flex justify-end" : ""
+				} relative`}
 				style={{ opacity }}
 			>
 				<Markdown
@@ -111,6 +138,43 @@ const MessageItem: React.FC<MessageItemProps> = ({
 				>
 					{content}
 				</Markdown>
+				{/* Action row: only show on hover, positioned relative to message bubble */}
+				{showEmojis && !isHuman && (
+					<div className="flex gap-2 absolute right-2 -bottom-4 z-10 bg-white/80 dark:bg-neutral-900/80 px-2 py-1 transition-opacity text-neutral-500 dark:text-neutral-400">
+						<Tooltip
+							title={copied ? "Copied" : "Copy"}
+							placement="top"
+						>
+							<button
+								onClick={async () => {
+									await navigator.clipboard.writeText(
+										content
+									);
+									setCopied(true);
+									setTimeout(() => setCopied(false), 1500);
+								}}
+								className="hover:text-orange-600"
+								title="Copy"
+							>
+								<Copy size={18} />
+							</button>
+						</Tooltip>
+						<button className="hover:text-orange-600" title="Reply">
+							<Reply size={18} />
+						</button>
+						<button className="hover:text-orange-600" title="React">
+							<Smile size={18} />
+						</button>
+						<Dropdown menu={messageMenu} trigger={["click"]}>
+							<button
+								className="hover:text-orange-600"
+								title="React"
+							>
+								<MoreHorizontal size={18} />
+							</button>
+						</Dropdown>
+					</div>
+				)}
 			</div>
 			<div
 				className={`flex items-center gap-2 mt-1 ${

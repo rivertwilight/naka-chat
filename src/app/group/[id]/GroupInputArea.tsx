@@ -1,18 +1,38 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Image as ImageIcon, ArrowUp } from "lucide-react";
+import {
+	Image as ImageIcon,
+	ArrowUp,
+	Command,
+	Settings,
+	AtSign,
+	Share,
+} from "lucide-react";
+import { Dropdown, DropdownProps, Tooltip, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
 	typingUsers?: string[];
+	groupName?: string;
 }
+
+export const menu: DropdownProps["menu"] = {
+	items: [
+		{
+			icon: <Icon icon={Share} />,
+			key: "copy",
+			label: "Share Chat",
+		},
+	],
+};
 
 const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	onSendMessage,
 	agentChatLoading,
 	typingUsers = [],
+	groupName,
 }) => {
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
@@ -57,7 +77,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	const handleCompositionStart = () => setIsComposing(true);
 	const handleCompositionEnd = () => setIsComposing(false);
 
-	const typingUsersString = typingUsers.join(", ") + " are typing...";
+	const typingUsersString = typingUsers.join(", ") + " are typing";
 
 	return (
 		<div className="fixed left-96 right-96 bottom-0 z-30 max-w-3xl mx-auto">
@@ -75,13 +95,16 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 								: "flex-center",
 					}}
 				>
-					{/* <button
-						type="button"
-						className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
-						aria-label="Add emoji"
-					>
-						<Smile size={20} />
-					</button> */}
+					<Dropdown menu={menu} trigger={["click"]}>
+						<button
+							type="button"
+							className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
+							aria-label="Attach image"
+						>
+							<Command size={20} />
+						</button>
+					</Dropdown>
+
 					<textarea
 						ref={textareaRef}
 						value={message}
@@ -90,11 +113,12 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 						onCompositionStart={handleCompositionStart}
 						onCompositionEnd={handleCompositionEnd}
 						className="flex-1 bg-transparent outline-none border-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 resize-none overflow-y-auto"
-						placeholder="Type a message..."
+						placeholder={`Message ${groupName}`}
 						disabled={sending}
 						rows={1}
 						style={{ maxHeight: "128px" }}
 					/>
+
 					<button
 						type="button"
 						className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
@@ -104,7 +128,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 					</button>
 					<button
 						type="submit"
-						className={`ml-2 p-2 rounded-lg transition-colors flex items-center gap-2 ${
+						className={`ml-2 p-1.5 rounded-lg transition-colors flex items-center gap-2 ${
 							message.trim() && !sending
 								? "bg-orange-500 dark:bg-orange-600 text-white hover:bg-orange-600 dark:hover:bg-orange-700"
 								: "bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 cursor-not-allowed"
@@ -116,7 +140,11 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 				</div>
 			</form>
 			<div className="text-xs h-6 bg-neutral-100/20 dark:bg-neutral-800/20 backdrop-blur-xs mx-auto text-center py-1 text-neutral-500 dark:text-neutral-400">
-				{typingUsers.length > 0 ? typingUsersString : ""}
+				{typingUsers.length > 0 ? (
+					<span className="animate-pulse">{typingUsersString}</span>
+				) : (
+					""
+				)}
 			</div>
 		</div>
 	);

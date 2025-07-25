@@ -1,8 +1,8 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
-import React, { useEffect } from "react";
 import { Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -10,13 +10,13 @@ import {
 	useUserGroups,
 	useLatestGroupMessages,
 	useCurrentUser,
-} from "../hooks/useDatabase";
-import GroupListItem from "../components/GroupListItem";
-import SettingsDialog from "../components/SettingsDialog";
-import { useUiContext } from "../components/UiContext";
-import { useState } from "react";
-import { dbHelpers } from "../lib/database";
+} from "@/hooks/useDatabase";
+import GroupListItem from "@/components/GroupListItem";
+import SettingsDialog from "@/components/SettingsDialog";
+import { useUiContext } from "@/components/UiContext";
+import { dbHelpers } from "@/lib/database";
 import { Settings } from "lucide-react";
+import { format } from "date-fns";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -30,26 +30,11 @@ export default function Sidebar() {
 	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
 		useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
-	const { groups, loading, error } = useUserGroups(groupsVersion); // Pass version
+	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
 	const [errorMsg, setErrorMsg] = useState("");
-	const [groupName, setGroupName] = useState("");
-	const [groupDesc, setGroupDesc] = useState("");
-
-	function SettingsButton() {
-		return (
-			<button
-				onClick={openSettingsPanel}
-				aria-label="Open settings"
-				className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-				type="button"
-			>
-				<Settings size={16} />
-			</button>
-		);
-	}
 
 	const handleCreateGroup = async () => {
 		if (!user) return;
@@ -79,10 +64,20 @@ export default function Sidebar() {
 	const groupIds = groups.map((g) => g.id);
 	const latestMessages = useLatestGroupMessages(groupIds);
 
+	function formatMessageTime(date: Date | undefined): string {
+		if (!date) return "";
+		const now = new Date();
+		const isToday =
+			date.getDate() === now.getDate() &&
+			date.getMonth() === now.getMonth() &&
+			date.getFullYear() === now.getFullYear();
+		return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
+	}
+
 	return (
 		<>
 			<aside
-				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none"
+				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				<nav className="flex flex-col gap-1">
@@ -104,7 +99,9 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -113,6 +110,7 @@ export default function Sidebar() {
 									group={group}
 									selected={groupId === group.id}
 									messagePreview={preview}
+									lastMessageTime={formatMessageTime(msg?.created_at)}
 								/>
 							);
 						})
@@ -120,15 +118,19 @@ export default function Sidebar() {
 					{/* Add Group Button */}
 					<button
 						type="button"
-						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
 						onClick={handleCreateGroup}
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+						</div>
 					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -139,12 +141,22 @@ export default function Sidebar() {
 						NakaChat
 					</div>
 					<div className="flex items-center gap-2">
-						<SettingsButton />
+						<button
+							onClick={openSettingsPanel}
+							aria-label="Open settings"
+							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+							type="button"
+						>
+							<Settings size={16} />
+						</button>
 						<DarkModeSwitch />
 					</div>
 				</div>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

@@ -8,33 +8,40 @@ interface GroupListItemProps {
 	group: Group;
 	selected: boolean;
 	messagePreview?: string;
+	lastMessageTime?: string; // new prop
 }
 
 const GroupListItem: React.FC<GroupListItemProps> = ({
 	group,
 	selected,
 	messagePreview,
+	lastMessageTime,
 }) => {
 	const [showCheck, setShowCheck] = React.useState(false);
 	return (
 		<Link
 			href={`/group/${group.id}`}
 			className={
-				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between` +
-				(selected
-					? " font-semibold bg-neutral-100 dark:bg-neutral-800"
-					: "")
+				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-50 dark:hover:bg-neutral-900 flex items-center justify-between` +
+				(selected ? " font-semibold bg-white dark:bg-neutral-900" : "")
 			}
 		>
 			<div className="flex flex-col flex-1 min-w-0">
-				<span className="truncate">{group.name}</span>
+				<div className="flex items-center justify-between w-full">
+					<span className="truncate">{group.name}</span>
+					{lastMessageTime && (
+						<span className="ml-2 text-xs text-neutral-400 dark:text-neutral-500 whitespace-nowrap">
+							{lastMessageTime}
+						</span>
+					)}
+				</div>
 				{messagePreview && (
 					<span className="truncate text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
 						{messagePreview}
 					</span>
 				)}
 			</div>
-			<span
+			{/* <span
 				className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex items-center"
 				onClick={(e) => {
 					e.preventDefault();
@@ -62,7 +69,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 						</button>
 					</Tooltip>
 				)}
-			</span>
+			</span> */}
 		</Link>
 	);
 };

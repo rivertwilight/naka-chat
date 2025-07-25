@@ -12,6 +12,7 @@ import {
 	useGroup,
 } from "../../../hooks/useDatabase";
 import { AgentGroupChat } from "../../../lib/agentGroupChat";
+import { usePersistance } from "../../../components/PersistanceContext";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -31,15 +32,20 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
 		useGroupMessages(actualGroupId);
+	const { provider, apiKey, baseUrl } = usePersistance();
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
 
 	useEffect(() => {
 		if (actualGroupId) {
-			agentGroupChatRef.current = new AgentGroupChat(actualGroupId);
+			agentGroupChatRef.current = new AgentGroupChat(actualGroupId, {
+				provider,
+				apiKey,
+				baseUrl,
+			});
 		}
-	}, [actualGroupId]);
+	}, [actualGroupId, provider, apiKey, baseUrl]);
 
 	// Only auto-scroll when there are new messages
 	useEffect(() => {

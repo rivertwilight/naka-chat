@@ -1,16 +1,39 @@
 "use client";
+
 import React from "react";
-import { ArrowRight, X, Loader, Plus } from "lucide-react";
+import { ArrowRight, X, Loader, Plus, Globe, Cloud } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SliderWithInput } from "@lobehub/ui";
+import { Avatar } from "@lobehub/ui";
+
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
-import Dialog from "../components/Dialog";
 import { db } from "../lib/database";
 
-const FIRST_NAMES = ["Alex", "Jamie", "Taylor", "Jordan", "Morgan", "Casey", "Riley", "Avery", "Skyler", "Quinn"];
-const LAST_NAMES = ["Chen", "Smith", "Lee", "Patel", "Kim", "Garcia", "Singh", "Khan", "Nguyen", "Yamamoto"];
+const FIRST_NAMES = [
+	"Alex",
+	"Jamie",
+	"Taylor",
+	"Jordan",
+	"Morgan",
+	"Casey",
+	"Riley",
+	"Avery",
+	"Skyler",
+	"Quinn",
+];
+const LAST_NAMES = [
+	"Chen",
+	"Smith",
+	"Lee",
+	"Patel",
+	"Kim",
+	"Garcia",
+	"Singh",
+	"Khan",
+	"Nguyen",
+	"Yamamoto",
+];
 
 interface Member {
 	id: string;
@@ -102,8 +125,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	// Remove FIRST_NAMES, LAST_NAMES, getRandomName, getRandomAvatar for user, and only use for agent
 	// In the Invite Member button, change logic to create a new agent:
 	function getRandomName() {
-		const first =
-			FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+		const first = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
 		const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
 		return `${first} ${last}`;
 	}
@@ -157,9 +179,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	}
 
 	return (
-		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
-			{/* Group name and description */}
-
+		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none overflow-y-auto">
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul
@@ -181,11 +201,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									{nameEditing ? (
 										<input
 											type="text"
-											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition"
+											className="w-full rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none transition"
 											value={nameEdit}
-											onChange={(e) =>
-												setNameEdit(e.target.value)
-											}
+											onChange={(e) => setNameEdit(e.target.value)}
 											onBlur={handleNameSave}
 											onKeyDown={(e) => {
 												if (e.key === "Enter") {
@@ -206,10 +224,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										</span>
 									)}
 									{nameSaving && (
-										<Loader
-											size={18}
-											className="animate-spin ml-2"
-										/>
+										<Loader size={18} className="animate-spin ml-2" />
 									)}
 								</div>
 								<div className="flex items-start gap-2">
@@ -217,16 +232,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										<textarea
 											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
 											value={descEdit}
-											onChange={(e) =>
-												setDescEdit(e.target.value)
-											}
+											onChange={(e) => setDescEdit(e.target.value)}
 											onBlur={async () => {
 												if (!groupId) return;
 												setDescSaving(true);
-												await dbHelpers.updateGroup(
-													groupId,
-													{ description: descEdit }
-												);
+												await dbHelpers.updateGroup(groupId, {
+													description: descEdit,
+												});
 												setDescEditing(false);
 												setDescSaving(false);
 												setGroupVersion((v) => v + 1);
@@ -240,9 +252,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											<span
 												className="text-md text-neutral-500 dark:text-neutral-400 break-words whitespace-pre-line flex-1 cursor-pointer"
 												style={{ minHeight: "2.5rem" }}
-												onClick={() =>
-													setDescEditing(true)
-												}
+												onClick={() => setDescEditing(true)}
 											>
 												{group.description || (
 													<span className="italic text-neutral-300 dark:text-neutral-600">
@@ -251,10 +261,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												)}
 											</span>
 											{descSaving && (
-												<Loader
-													size={14}
-													className="animate-spin ml-2"
-												/>
+												<Loader size={14} className="animate-spin ml-2" />
 											)}
 										</div>
 									)}
@@ -299,11 +306,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 							) : (
 								<Plus size={16} />
 							)}
-							<span>
-								{addLoading
-									? "Creating..."
-									: "Create new agent"}
-							</span>
+							<span>{addLoading ? "Creating..." : "Create new agent"}</span>
 						</button>
 						<button
 							type="button"
@@ -322,8 +325,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										: ""
 								}`}
 								onClick={() =>
-									member.status === "active" &&
-									setSelectedMember(member)
+									member.status === "active" && setSelectedMember(member)
 								}
 								style={{
 									outline: "none",
@@ -361,10 +363,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									{member.thinking ? "Thinking" : member.role}
 									{member.thinking && (
 										<span className="mr-1">
-											<Loader
-												className="animate-spin"
-												size={14}
-											/>
+											<Loader className="animate-spin" size={14} />
 										</span>
 									)}
 								</span>
@@ -415,11 +414,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										<input
 											type="checkbox"
 											checked={selectedMember.thinking}
-											onChange={() =>
-												toggleThinking(
-													selectedMember.id
-												)
-											}
+											onChange={() => toggleThinking(selectedMember.id)}
 											className="sr-only peer"
 										/>
 										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
@@ -441,9 +436,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
 											placeholder="Enter prompt..."
 											value={promptEdit}
-											onChange={(e) =>
-												setPromptEdit(e.target.value)
-											}
+											onChange={(e) => setPromptEdit(e.target.value)}
 										/>
 									</div>
 									<div className="w-full flex items-center justify-between mt-4">

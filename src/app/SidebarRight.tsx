@@ -1,16 +1,22 @@
 "use client";
 import React from "react";
-import { ArrowRight, X, Loader, Plus } from "lucide-react";
+import {
+	ArrowRight,
+	X,
+	Loader,
+	Plus,
+	Globe,
+	SunSnow,
+	Cloud,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SliderWithInput } from "@lobehub/ui";
+import { Avatar, SliderWithInput } from "@lobehub/ui";
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
 import Dialog from "../components/Dialog";
 import { db } from "../lib/database";
-
-const FIRST_NAMES = ["Alex", "Jamie", "Taylor", "Jordan", "Morgan", "Casey", "Riley", "Avery", "Skyler", "Quinn"];
-const LAST_NAMES = ["Chen", "Smith", "Lee", "Patel", "Kim", "Garcia", "Singh", "Khan", "Nguyen", "Yamamoto"];
+import { getRandomName, getRandomAvatar } from "../utils/randomUtils";
 
 interface Member {
 	id: string;
@@ -18,6 +24,7 @@ interface Member {
 	role: string;
 	status: "active" | "muted";
 	type: "human" | "agent";
+	avatar_url?: string;
 	thinking?: boolean;
 	system_prompt?: string;
 }
@@ -44,7 +51,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [nameSaving, setNameSaving] = React.useState(false);
 	const [isAddOpen, setAddOpen] = React.useState(false);
 	const [addLoading, setAddLoading] = React.useState(false);
-	const [addError, setAddError] = React.useState("");
 	const [allAgents, setAllAgents] = React.useState<any[]>([]);
 	const [allUsers, setAllUsers] = React.useState<any[]>([]);
 	const [selectedId, setSelectedId] = React.useState<string>("");
@@ -99,20 +105,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		setGroupVersion((v) => v + 1);
 	};
 
-	// Remove FIRST_NAMES, LAST_NAMES, getRandomName, getRandomAvatar for user, and only use for agent
-	// In the Invite Member button, change logic to create a new agent:
-	function getRandomName() {
-		const first =
-			FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-		const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-		return `${first} ${last}`;
-	}
-	function getRandomAvatar(name: string) {
-		return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
-			name
-		)}`;
-	}
-
 	// Transform database members to component format
 	const members: Member[] = React.useMemo(() => {
 		return dbMembers.map((dbMember) => {
@@ -125,19 +117,12 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 				role: isAgent ? details?.title || "Agent" : "Human",
 				status: dbMember.status,
 				type: dbMember.role,
+				avatar_url: details?.avatar_url,
 				thinking: thinkingStates[dbMember.id] || false,
 				system_prompt: isAgent ? details?.system_prompt : undefined,
 			};
 		});
 	}, [dbMembers, thinkingStates]);
-
-	// Helper to toggle thinking state
-	const toggleThinking = (memberId: string) => {
-		setThinkingStates((prev) => ({
-			...prev,
-			[memberId]: !prev[memberId],
-		}));
-	};
 
 	// When selectedMember changes, set promptEdit to the agent's system_prompt
 	React.useEffect(() => {
@@ -158,8 +143,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 
 	return (
 		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
-			{/* Group name and description */}
-
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul
@@ -215,7 +198,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								<div className="flex items-start gap-2">
 									{descEditing ? (
 										<textarea
-											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none transition resize-none"
 											value={descEdit}
 											onChange={(e) =>
 												setDescEdit(e.target.value)
@@ -246,7 +229,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											>
 												{group.description || (
 													<span className="italic text-neutral-300 dark:text-neutral-600">
-														説明がありません
+														No description
 													</span>
 												)}
 											</span>
@@ -392,21 +375,38 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 							<X size={20} />
 						</button>
 						<div className="flex flex-col flex-1 gap-2">
-							<span
-								className={`text-lg font-semibold ${
+							<div
+								className={`text-lg flex items-center gap-4 font-semibold ${
 									selectedMember?.status === "muted"
 										? "text-neutral-300 dark:text-neutral-600"
 										: "text-neutral-900 dark:text-neutral-100"
 								}`}
 							>
+								<Avatar
+									src={selectedMember.avatar_url}
+									size={28}
+								/>
 								{selectedMember.name}
-							</span>
+							</div>
 
-							{/* Show thinking toggle for agents */}
-							{selectedMember.type === "agent" && (
-								<div className="w-full flex items-center justify-between mt-4">
-									<span className="text-sm text-neutral-500 dark:text-neutral-400">
-										Mute
+							<div className="w-full flex flex-col gap-1 mt-4">
+								<textarea
+									id="prompt-input"
+									rows={8}
+									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+									placeholder="e.g. A 18 yo girl comes from bay area"
+									value={promptEdit}
+									onChange={(e) =>
+										setPromptEdit(e.target.value)
+									}
+								/>
+							</div>
+
+							{/* Tools */}
+							<div className="w-full mt-2 overflow-hidden bg-neutral-100 dark:bg-neutral-800 rounded-md flex flex-col gap-0.5">
+								<div className="w-full flex items-center justify-between p-3">
+									<span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+										<Globe size={16} /> Web Search
 									</span>
 									<label
 										className="relative inline-flex items-center cursor-pointer select-none"
@@ -414,76 +414,63 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									>
 										<input
 											type="checkbox"
-											checked={selectedMember.thinking}
-											onChange={() =>
-												toggleThinking(
-													selectedMember.id
-												)
-											}
+											value=""
 											className="sr-only peer"
 										/>
 										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
 										<span
 											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
-											style={{ pointerEvents: "none" }}
+											style={{
+												pointerEvents: "none",
+											}}
 										/>
 									</label>
 								</div>
-							)}
-
-							{/* Member config panel UI - only show for agents */}
-							{selectedMember.type === "agent" && (
-								<>
-									<div className="w-full flex flex-col gap-1 mt-4">
-										<textarea
-											id="prompt-input"
-											rows={8}
-											className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
-											placeholder="Enter prompt..."
-											value={promptEdit}
-											onChange={(e) =>
-												setPromptEdit(e.target.value)
-											}
+								<div className="w-full flex items-center justify-between p-3">
+									<span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+										<Cloud size={16} /> Get Weather
+									</span>
+									<label
+										className="relative inline-flex items-center cursor-pointer select-none"
+										style={{ minWidth: "2.25rem" }}
+									>
+										<input
+											type="checkbox"
+											value=""
+											className="sr-only peer"
 										/>
-									</div>
-									<div className="w-full flex items-center justify-between mt-4">
-										<span className="text-xs text-neutral-500 dark:text-neutral-400">
-											Web Search
-										</span>
-										<label
-											className="relative inline-flex items-center cursor-pointer select-none"
-											style={{ minWidth: "2.25rem" }}
-										>
-											<input
-												type="checkbox"
-												value=""
-												className="sr-only peer"
-											/>
-											<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
-											<span
-												className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
-												style={{
-													pointerEvents: "none",
-												}}
-											/>
-										</label>
-									</div>
-
-									{/* Temperature slider */}
-									<div className="w-full flex flex-col gap-1 mt-4">
-										<span className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-											Temperature
-										</span>
-										<SliderWithInput
-											min={0}
-											max={2}
-											step={0.01}
-											defaultValue={1}
-											className="w-full"
+										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
+										<span
+											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
+											style={{
+												pointerEvents: "none",
+											}}
 										/>
-									</div>
-								</>
-							)}
+									</label>
+								</div>
+							</div>
+
+							<button
+								type="button"
+								className="mt-2 flex items-center gap-2 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors text-md font-medium focus:outline-none"
+								onClick={async () => {
+									if (!selectedMember) return;
+									// Find the dbMember by id
+									const dbMember = dbMembers.find(
+										(m) => m.id === selectedMember.id
+									);
+									if (!dbMember) return;
+									await db.groupMembers.update(dbMember.id, {
+										status: "muted",
+										left_at: new Date(),
+									});
+									setSelectedMember(null);
+									setGroupVersion((v) => v + 1);
+								}}
+							>
+								<X size={16} />
+								<span>Remove from group</span>
+							</button>
 						</div>
 					</motion.div>
 				)}

@@ -90,8 +90,8 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 					</button>
 				</div>
 			</form>
-			<div className="text-xs bg-neutral-100/20 dark:bg-neutral-800/20 backdrop-blur-xs mx-auto text-center py-1 text-neutral-500 dark:text-neutral-400">
-				{typingUsers.length > 0 ? typingUsersString : "No one is typing"}
+			<div className="text-xs h-4 bg-neutral-100/20 dark:bg-neutral-800/20 backdrop-blur-xs mx-auto text-center py-1 text-neutral-500 dark:text-neutral-400">
+				{typingUsers.length > 0 ? typingUsersString : ""}
 			</div>
 		</div>
 	);

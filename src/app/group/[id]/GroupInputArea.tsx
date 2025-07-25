@@ -25,7 +25,8 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 		if (textarea) {
 			textarea.style.height = "auto";
 			const maxHeight = 32 * 4; // 4 lines * 32px
-			textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + "px";
+			textarea.style.height =
+				Math.min(textarea.scrollHeight, maxHeight) + "px";
 		}
 	}, [message]);
 
@@ -60,11 +61,18 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 
 	return (
 		<div className="fixed left-96 right-96 bottom-0 z-30 max-w-3xl mx-auto">
-			<form onSubmit={handleSubmit} className="flex items-center gap-4 w-full">
+			<form
+				onSubmit={handleSubmit}
+				className="flex items-center gap-4 w-full"
+			>
 				<div
-					className="flex items-end gap-2 flex-1 border border-neutral-200 dark:border-neutral-700 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800"
+					className="flex items-center gap-2 flex-1 border border-neutral-200 dark:border-neutral-700 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800"
 					style={{
 						minHeight: "40px",
+						alignItems:
+							message.split("\n").length === 1
+								? "center"
+								: "flex-center",
 					}}
 				>
 					{/* <button
@@ -81,7 +89,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 						onKeyDown={handleKeyDown}
 						onCompositionStart={handleCompositionStart}
 						onCompositionEnd={handleCompositionEnd}
-						className="flex-1 self-center bg-transparent outline-none border-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 resize-none overflow-y-auto"
+						className="flex-1 bg-transparent outline-none border-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 resize-none overflow-y-auto"
 						placeholder="Type a message..."
 						disabled={sending}
 						rows={1}

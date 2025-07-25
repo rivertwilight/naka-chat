@@ -5,10 +5,6 @@ const ai = new GoogleGenAI({
 	apiKey: process.env.NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
-const AGENT_RESPONSE_DELAY_MIN_MS = 1000; // 1s
-const AGENT_RESPONSE_DELAY_MAX_MS = 120000; // 120s
-const AGENT_TYPING_POOL_MAX = 4; // Max concurrent agents typing/responding
-
 export interface GroupChatMember {
 	id: string;
 	name: string;
@@ -88,19 +84,14 @@ export class AgentGroupChat {
 	private async decideBySupervisor(
 		members: GroupChatMember[],
 		conversationHistory: string,
-		groupName: string,
-		groupDescription: string
+		lastSpeaker?: string
 	): Promise<SupervisorDecision> {
 		const membersList = members
 			.filter((m) => m.role === "agent")
 			.map((m) => `- ${m.name} (${m.title})`)
 			.join("\n");
 
-		const prompt = `You are a supervisor agent managing a group chat discussion named "${groupName}". Your role is to decide who should speak next based on the conversation context and each agent's expertise.
-
-<groupDescription>
-${groupDescription}
-</groupDescription>
+		const prompt = `You are a supervisor agent managing a group chat discussion. Your role is to decide who should speak next based on the conversation context and each agent's expertise.
 
 <groupMembers>
 ${membersList}
@@ -196,28 +187,23 @@ Rules:
 			.map((m) => `- ${m.name} (${m.title})`)
 			.join("\n");
 
-		const prompt = `<YourBio>
-${agent.system_prompt}
-</YourBio>
+		const prompt = `${agent.system_prompt}
 
-You are participating in a group chat in real world.
-
-<GroupMembers>
+You are participating in a group chat with the following members:
 ${membersList}
-</GroupMembers>
 
 Guidelines:
 - Stay in character as ${agent.name} (${agent.title})
-- Be concise and natural, behave like a real person
+- Be concise and natural, behave like a real person. You can use emojis to make the message more natural.
 - Each message should no more than 150 words or 50 chinese characters unless it's a code block or a long quote
 - Collaborate effectively with other team members
 - Follow user's language
 
-<ConversationHistory>
-${conversationHistory}
-</ConversationHistory>
+Conversation so far:
 
-Provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content.`;
+${conversationHistory}
+
+As ${agent.name} (${agent.title}), provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content.`;
 
 		try {
 			const response = await ai.models.generateContent({
@@ -272,12 +258,10 @@ Provide your response to continue this discussion. Focus on your area of experti
 	async processHumanMessage(
 		userMessage: string,
 		userId: string,
-		conversationHistory: MessageWithDetails[],
-		groupName: string,
-		groupDescription: string
+		conversationHistory: MessageWithDetails[]
 	): Promise<void> {
 		const members = await this.getGroupMembers();
-
+		// Add human message to history for context
 		const updatedHistory = [
 			...conversationHistory,
 			{
@@ -287,211 +271,37 @@ Provide your response to continue this discussion. Focus on your area of experti
 				},
 			} as MessageWithDetails,
 		];
-
+		let lastSpeaker = members.find((m) => m.id === userId)?.name || "User";
 		let currentHistory = this.formatConversationHistory(updatedHistory);
-
-		// Agent typing pool: Set of agent IDs currently responding
-		const agentTypingPool = new Set<string>();
-
-		// Supervisor trigger state
-		let lastMessageTimestamp = Date.now();
-		let idleTimeout: NodeJS.Timeout | null = null;
-		let supervisorActive = false;
-
-		const triggerSupervisor = async () => {
-			if (supervisorActive) {
-				console.log("Supervisor request discarded: already active");
-				return;
-			}
-			supervisorActive = true;
-			try {
-				while (true) {
-					// Exclude agents in the pool from supervisor decision
-					const availableMembers = members.filter(
-						(m) => m.role !== "agent" || !agentTypingPool.has(m.id)
-					);
-					const decision = await this.decideBySupervisor(
-						availableMembers,
-						currentHistory,
-						groupName,
-						groupDescription
-					);
-					console.log("Supervisor decision:", decision);
-					if (
-						decision.shouldStop ||
-						decision.nextSpeaker.includes("human")
-					) {
-						break;
-					}
-					const nextAgents = decision.nextSpeaker
-						.map((speaker) =>
-							members.find(
-								(m) =>
-									(m.name === speaker || m.id === speaker) &&
-									m.role === "agent" &&
-									!agentTypingPool.has(m.id)
-							)
-						)
-						.filter(Boolean) as GroupChatMember[];
-					if (nextAgents.length === 0) {
-						console.error(
-							"Agent(s) not found or already typing:",
-							decision.nextSpeaker
-						);
-						break;
-					}
-					// Limit pool size
-					const agentsToStart = nextAgents.slice(
-						0,
-						AGENT_TYPING_POOL_MAX - agentTypingPool.size
-					);
-					if (agentsToStart.length === 0) {
-						// Pool is full, wait for some agents to finish
-						await new Promise((resolve) =>
-							setTimeout(resolve, 1000)
-						);
-						continue;
-					}
-					const agentPromises = agentsToStart.map((agent) => {
-						agentTypingPool.add(agent.id);
-						const delay =
-							Math.floor(
-								Math.random() *
-									(AGENT_RESPONSE_DELAY_MAX_MS -
-										AGENT_RESPONSE_DELAY_MIN_MS +
-										1)
-							) + AGENT_RESPONSE_DELAY_MIN_MS;
-						return new Promise<void>((resolve) => {
-							setTimeout(async () => {
-								const latestMessages =
-									await this.getLatestSessionMessagesWithDetails();
-								const formattedHistory =
-									this.formatConversationHistory(
-										latestMessages
-									);
-								const response =
-									await this.generateAgentResponse(
-										agent,
-										formattedHistory,
-										members
-									);
-								const currentSession =
-									await dbHelpers.getCurrentSession(
-										this.groupId
-									);
-								await dbHelpers.sendMessage({
-									session_id: currentSession.id,
-									sender_agent_id: agent.id,
-									content: response,
-								});
-								agentTypingPool.delete(agent.id);
-								// Only update currentHistory, do not trigger supervisor again
-								const latestMessagesAfter =
-									await this.getLatestSessionMessagesWithDetails();
-								currentHistory =
-									this.formatConversationHistory(
-										latestMessagesAfter
-									);
-								lastMessageTimestamp = Date.now();
-								// Reset idle timer after agent message
-								if (idleTimeout) clearTimeout(idleTimeout);
-								idleTimeout = setTimeout(() => {
-									triggerSupervisor();
-								}, 5000);
-								resolve();
-							}, delay);
-						});
-					});
-					await Promise.all(agentPromises);
-					const latestMessages =
-						await this.getLatestSessionMessagesWithDetails();
-					currentHistory =
-						this.formatConversationHistory(latestMessages);
-					await new Promise((resolve) => setTimeout(resolve, 1000));
-				}
-			} finally {
-				supervisorActive = false;
-			}
-		};
-
-		// Human message: trigger supervisor immediately
-		if (idleTimeout) clearTimeout(idleTimeout);
-		await triggerSupervisor();
-
-		// Set idle timer for future inactivity
-		idleTimeout = setTimeout(() => {
-			triggerSupervisor();
-		}, 5000);
-	}
-
-	/**
-	 * Start a conversation with a specific topic or question
-	 */
-	async startConversation(
-		topic: string,
-		conversationHistory: MessageWithDetails[] = []
-	): Promise<void> {
-		const members = await this.getGroupMembers();
-		let currentHistory =
-			this.formatConversationHistory(conversationHistory) +
-			(conversationHistory.length > 0 ? "\n" : "") +
-			`Human: ${topic}`;
-		let lastSpeaker = "Human";
-
-		// Agent typing pool: Set of agent IDs currently responding
-		const agentTypingPool = new Set<string>();
-
+		// Continue the conversation with agents
 		while (true) {
-			// Exclude agents in the pool from supervisor decision
-			const availableMembers = members.filter(
-				(m) => m.role !== "agent" || !agentTypingPool.has(m.id)
-			);
 			const decision = await this.decideBySupervisor(
-				availableMembers,
+				members,
 				currentHistory,
-				lastSpeaker,
-				""
+				lastSpeaker
 			);
 			console.log("Supervisor decision:", decision);
 			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
+			// nextSpeaker is always an array
 			const nextAgents = decision.nextSpeaker
 				.map((speaker) =>
 					members.find(
 						(m) =>
 							(m.name === speaker || m.id === speaker) &&
-							m.role === "agent" &&
-							!agentTypingPool.has(m.id)
+							m.role === "agent"
 					)
 				)
 				.filter(Boolean) as GroupChatMember[];
 			if (nextAgents.length === 0) {
-				console.error(
-					"Agent(s) not found or already typing:",
-					decision.nextSpeaker
-				);
+				console.error("Agent(s) not found:", decision.nextSpeaker);
 				break;
 			}
-			// Limit pool size
-			const agentsToStart = nextAgents.slice(
-				0,
-				AGENT_TYPING_POOL_MAX - agentTypingPool.size
-			);
-			if (agentsToStart.length === 0) {
-				// Pool is full, wait for some agents to finish
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-				continue;
-			}
-			const agentPromises = agentsToStart.map((agent) => {
-				agentTypingPool.add(agent.id);
+			// For each agent, schedule response with random delay
+			const agentPromises = nextAgents.map((agent) => {
 				const delay =
-					Math.floor(
-						Math.random() *
-							(AGENT_RESPONSE_DELAY_MAX_MS -
-								AGENT_RESPONSE_DELAY_MIN_MS +
-								1)
-					) + AGENT_RESPONSE_DELAY_MIN_MS;
+					Math.floor(Math.random() * (180000 - 1000 + 1)) + 1000; // 1s to 180s
 				return new Promise<void>((resolve) => {
 					setTimeout(async () => {
 						// Fetch latest messages before responding
@@ -511,16 +321,6 @@ Provide your response to continue this discussion. Focus on your area of experti
 							sender_agent_id: agent.id,
 							content: response,
 						});
-						agentTypingPool.delete(agent.id);
-						// After agent finishes, immediately ask supervisor for next decision
-						const latestMessagesAfter =
-							await this.getLatestSessionMessagesWithDetails();
-						currentHistory =
-							this.formatConversationHistory(latestMessagesAfter);
-						if (agentsToStart.length > 0) {
-							lastSpeaker =
-								agentsToStart[agentsToStart.length - 1].name;
-						}
 						resolve();
 					}, delay);
 				});
@@ -531,6 +331,87 @@ Provide your response to continue this discussion. Focus on your area of experti
 			const latestMessages =
 				await this.getLatestSessionMessagesWithDetails();
 			currentHistory = this.formatConversationHistory(latestMessages);
+			// Set lastSpeaker to the last agent who responded
+			if (nextAgents.length > 0) {
+				lastSpeaker = nextAgents[nextAgents.length - 1].name;
+			}
+			// Small delay to prevent overwhelming the system
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+		}
+	}
+
+	/**
+	 * Start a conversation with a specific topic or question
+	 */
+	async startConversation(
+		topic: string,
+		conversationHistory: MessageWithDetails[] = []
+	): Promise<void> {
+		const members = await this.getGroupMembers();
+		let currentHistory =
+			this.formatConversationHistory(conversationHistory) +
+			(conversationHistory.length > 0 ? "\n" : "") +
+			`Human: ${topic}`;
+		let lastSpeaker = "Human";
+		while (true) {
+			const decision = await this.decideBySupervisor(
+				members,
+				currentHistory,
+				lastSpeaker
+			);
+			console.log("Supervisor decision:", decision);
+			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
+				break;
+			}
+			const nextAgents = decision.nextSpeaker
+				.map((speaker) =>
+					members.find(
+						(m) =>
+							(m.name === speaker || m.id === speaker) &&
+							m.role === "agent"
+					)
+				)
+				.filter(Boolean) as GroupChatMember[];
+			if (nextAgents.length === 0) {
+				console.error("Agent(s) not found:", decision.nextSpeaker);
+				break;
+			}
+			// For each agent, schedule response with random delay
+			const agentPromises = nextAgents.map((agent) => {
+				const delay =
+					Math.floor(Math.random() * (180000 - 1000 + 1)) + 1000; // 1s to 180s
+				return new Promise<void>((resolve) => {
+					setTimeout(async () => {
+						// Fetch latest messages before responding
+						const latestMessages =
+							await this.getLatestSessionMessagesWithDetails();
+						const formattedHistory =
+							this.formatConversationHistory(latestMessages);
+						const response = await this.generateAgentResponse(
+							agent,
+							formattedHistory,
+							members
+						);
+						const currentSession =
+							await dbHelpers.getCurrentSession(this.groupId);
+						await dbHelpers.sendMessage({
+							session_id: currentSession.id,
+							sender_agent_id: agent.id,
+							content: response,
+						});
+						resolve();
+					}, delay);
+				});
+			});
+			// Wait for all scheduled agent responses to complete
+			await Promise.all(agentPromises);
+			// After all agents have responded, fetch latest messages for next supervisor decision
+			const latestMessages =
+				await this.getLatestSessionMessagesWithDetails();
+			currentHistory = this.formatConversationHistory(latestMessages);
+			if (nextAgents.length > 0) {
+				lastSpeaker = nextAgents[nextAgents.length - 1].name;
+			}
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		}
 	}

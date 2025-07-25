@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
-import GroupInputArea from "./GroupInputArea";
+import MessageInputField from "./GroupInputArea";
 import MessageItem from "./MessageItem";
 import SidebarRight from "../../SidebarRight";
 import {
@@ -28,6 +28,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const [loading, setLoading] = useState(false);
 	const [agentChatLoading, setAgentChatLoading] = useState(false);
 	const [previousMessageCount, setPreviousMessageCount] = useState(0);
+	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]); // NEW
 	const { user } = useCurrentUser();
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
@@ -62,19 +63,46 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		if (!user || !actualGroupId || !agentGroupChatRef.current) return;
 
 		try {
-			// Send the human message first
 			await sendMessage(content, user.id);
-
-			// Trigger agent conversation
 			setAgentChatLoading(true);
 
 			// Wait a moment for the message to be saved, then trigger agent responses
 			setTimeout(async () => {
 				try {
-					await agentGroupChatRef.current!.processHumanMessage(
+					// Patch: Intercept supervisor decision to get nextSpeaker
+					const agentGroupChat = agentGroupChatRef.current!;
+					const members = await agentGroupChat["getGroupMembers"]();
+					const updatedHistory = [
+						...messages,
+						{
+							content,
+							senderUser: {
+								name: members.find((m) => m.id === user.id)?.name || "User",
+							},
+						} as any,
+					];
+					const currentHistory = agentGroupChat["formatConversationHistory"](updatedHistory);
+					const decision = await agentGroupChat["decideBySupervisor"](
+						members,
+						currentHistory,
+						group?.name || "Group",
+						group?.description || ""
+					);
+					// Only show agent names (not 'human')
+					const agentNames = decision.nextSpeaker
+						.filter((speaker) => speaker !== "human")
+						.map((speaker) => {
+							const found = members.find((m) => m.id === speaker || m.name === speaker);
+							return found?.name || speaker;
+						});
+					setPendingSpeakers(agentNames);
+					// Now trigger the normal process
+					await agentGroupChat.processHumanMessage(
 						content,
 						user.id,
-						messages
+						messages,
+						group?.name || "Group",
+						group?.description || ""
 					);
 				} catch (error) {
 					console.error("Error in agent conversation:", error);
@@ -176,6 +204,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						reactions={msg.reactions || []}
 						onReact={(emoji) => handleReaction(msg.id, emoji)}
 						avatar_url={getSenderAvatar(msg)}
+						created_at={msg.created_at}
 					/>
 				</React.Fragment>
 			);
@@ -183,6 +212,21 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 		return result;
 	};
+
+	// Remove agent from pendingSpeakers when their message arrives
+	useEffect(() => {
+		if (pendingSpeakers.length === 0) return;
+		const agentNames = pendingSpeakers;
+		const agentMessages = messages.filter(
+			msg => msg.senderAgent && agentNames.includes(msg.senderAgent.name)
+		);
+		if (agentMessages.length > 0) {
+			const stillPending = agentNames.filter(
+				name => !agentMessages.some(msg => msg.senderAgent.name === name)
+			);
+			setPendingSpeakers(stillPending);
+		}
+	}, [messages, pendingSpeakers]);
 
 	if (loading) {
 		return (
@@ -210,9 +254,10 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						<div ref={messagesEndRef} />
 					</div>
 				</section>
-				<GroupInputArea
+				<MessageInputField
 					onSendMessage={handleSendMessage}
 					agentChatLoading={agentChatLoading}
+					typingUsers={pendingSpeakers}
 				/>
 			</main>
 			<SidebarRight groupId={actualGroupId} />

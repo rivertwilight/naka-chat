@@ -6,38 +6,94 @@ import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import { Sawarabi_Mincho } from "next/font/google";
 
 interface Agent {
-	id: number;
+	id: string;
 	name: string;
 	title: string;
-	avatar: string;
+	avatar_url: string;
 	description: string;
 	color: string;
 }
 
 const defaultAgents: Agent[] = [
 	{
-		id: 1,
+		id: "1",
 		name: "Maya",
 		title: "Product Manager",
-		avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=maya",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=maya",
 		description: "Strategic planning & user needs",
 		color: "from-amber-50 to-amber-100",
 	},
 	{
-		id: 2,
+		id: "2",
 		name: "Zara",
 		title: "UX/UI Designer",
-		avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=zara",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zara",
 		description: "Creative design & user experience",
 		color: "from-purple-50 to-purple-100",
 	},
 	{
-		id: 3,
+		id: "3",
 		name: "Sam",
 		title: "Full-Stack Developer",
-		avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=sam",
 		description: "Technical implementation & architecture",
 		color: "from-blue-50 to-blue-100",
+	},
+	{
+		id: "4",
+		name: "Kai",
+		title: "Data Scientist",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=kai",
+		description: "Analytics & machine learning insights",
+		color: "from-emerald-50 to-emerald-100",
+	},
+	{
+		id: "5",
+		name: "Luna",
+		title: "Content Strategist",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=luna",
+		description: "Storytelling & brand messaging",
+		color: "from-rose-50 to-rose-100",
+	},
+	{
+		id: "6",
+		name: "Ravi",
+		title: "DevOps Engineer",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=ravi",
+		description: "Infrastructure & deployment automation",
+		color: "from-indigo-50 to-indigo-100",
+	},
+	{
+		id: "7",
+		name: "Aria",
+		title: "Marketing Specialist",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=aria",
+		description: "Growth strategies & audience engagement",
+		color: "from-cyan-50 to-cyan-100",
+	},
+	{
+		id: "8",
+		name: "Finn",
+		title: "Security Expert",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=finn",
+		description: "Cybersecurity & compliance",
+		color: "from-red-50 to-red-100",
+	},
+	{
+		id: "9",
+		name: "Nova",
+		title: "QA Engineer",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=nova",
+		description: "Testing & quality assurance",
+		color: "from-lime-50 to-lime-100",
+	},
+	{
+		id: "10",
+		name: "Echo",
+		title: "Business Analyst",
+		avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=echo",
+		description: "Requirements & process optimization",
+		color: "from-orange-50 to-orange-100",
 	},
 ];
 
@@ -83,9 +139,8 @@ export default function HomePage() {
 						NakaChat
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Collaborate with AI agents in a harmonious group chat
-						experience. Each agent brings unique expertise to your
-						conversations.
+						Collaborate with AI agents in a harmonious group chat experience.
+						Each agent brings unique expertise to your conversations.
 					</p>
 				</div>
 
@@ -105,7 +160,7 @@ export default function HomePage() {
 									<>
 										<div className="relative mr-3 flex-shrink-0">
 											<img
-												src={agent.avatar}
+												src={agent.avatar_url}
 												alt={agent.name}
 												className="w-12 h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
 											/>
@@ -124,7 +179,7 @@ export default function HomePage() {
 										<div className="ml-3 flex items-center">
 											<input
 												type="checkbox"
-												className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-amber-400 focus:ring-amber-400 transition-colors duration-200"
+												className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-3 focus:ring-amber-400 transition-colors duration-200"
 											/>
 										</div>
 									</>
@@ -139,7 +194,7 @@ export default function HomePage() {
 				<div className="flex justify-center mb-4">
 					<button
 						onClick={() => router.push(redirectTo)}
-						className="flex items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+						className="flex border-amber-500 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 border-2 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
 					>
 						Start Group Chat
 						<ArrowRight className="w-4 h-4" />

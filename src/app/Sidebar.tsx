@@ -90,9 +90,7 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name ||
-									msg.senderAgent?.name ||
-									"Unknown";
+									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -113,14 +111,10 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>
-							{creating ? "Creating..." : "Create new group"}
-						</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">
-							{errorMsg}
-						</div>
+						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
 					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -133,10 +127,7 @@ export default function Sidebar() {
 					<DarkModeSwitch />
 				</div>
 			</aside>
-			<SettingsDialog
-				open={isSettingsPanelOpen}
-				onClose={closeSettingsPanel}
-			/>
+			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
 		</>
 	);
 }
@@ -148,7 +139,7 @@ export function DarkModeSwitch() {
 		<button
 			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
 			aria-label="Toggle dark mode"
-			className="ml-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+			className="ml-2 p-2 rounded-full text-neutral-700 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 			type="button"
 		>
 			{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}

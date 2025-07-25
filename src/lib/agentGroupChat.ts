@@ -678,12 +678,12 @@ export class AgentGroupChat {
 		context: ConversationContext,
 		isSingleAgent: boolean = false
 	): Promise<void> {
-		this.typingPool.add(agent.id);
 		const delay = isSingleAgent ? 500 : this.calculateResponseDelay(); // Minimal delay for single agent
 
 		return new Promise<void>((resolve) => {
 			setTimeout(async () => {
 				try {
+					this.typingPool.add(agent.id); // Mark as typing only when making the request
 					await this.executeAgentResponse(agent, context);
 				} finally {
 					this.typingPool.remove(agent.id);

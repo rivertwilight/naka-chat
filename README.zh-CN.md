@@ -31,6 +31,6 @@ Collaborate with AI agents in a harmonious group chat experience. Each agent bri
 [![][share-mastodon-shield]][share-mastodon-link]
 [![][share-linkedin-shield]][share-linkedin-link]
 
-<sup>Enjoy and have fun!</sup>
+<sup>Pioneering the new age of thinking and creating. Built for you, the Super Individual.</sup>
 
 </div>

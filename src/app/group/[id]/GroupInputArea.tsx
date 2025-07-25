@@ -3,19 +3,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Smile, Image as ImageIcon, ArrowUp } from "lucide-react";
 
-interface GroupInputAreaProps {
+interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
 	typingUsers?: string[];
 }
 
-const GroupInputArea: React.FC<GroupInputAreaProps> = ({
+const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	onSendMessage,
 	typingUsers = [],
 }) => {
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
-	const [isComposing, setIsComposing] = useState(false);
+	const [isComposing, setIsComposing] = useState(false); // Track IME composition
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	// 动态调整 textarea 高度
@@ -63,6 +63,8 @@ const GroupInputArea: React.FC<GroupInputAreaProps> = ({
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (isComposing) return;
+
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			handleSubmit(e as any);
@@ -122,4 +124,4 @@ const GroupInputArea: React.FC<GroupInputAreaProps> = ({
 	);
 };
 
-export default GroupInputArea;
+export default MessageInputField;

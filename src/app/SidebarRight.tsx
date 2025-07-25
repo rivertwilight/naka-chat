@@ -110,7 +110,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 			return {
 				id: dbMember.id,
 				name: details?.name || "Unknown",
-				role: isAgent ? details?.title || "Agent" : "Human",
+				role: isAgent ? details?.title || "Agent" : "You",
 				status: dbMember.status,
 				type: dbMember.role,
 				avatar_url: details?.avatar_url,

@@ -461,8 +461,6 @@ export class AgentGroupChat {
 			members
 		);
 
-		alert("Asdfadsf")
-
 		this.clearIdleTimeout();
 		await this.triggerSupervisorCycle(
 			members,

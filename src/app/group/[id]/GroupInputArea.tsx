@@ -104,7 +104,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 					</button>
 					<button
 						type="submit"
-						className={`ml-2 p-2 rounded-lg transition-colors flex items-center gap-2 ${
+						className={`ml-2 p-1.5 rounded-lg transition-colors flex items-center gap-2 ${
 							message.trim() && !sending
 								? "bg-orange-500 dark:bg-orange-600 text-white hover:bg-orange-600 dark:hover:bg-orange-700"
 								: "bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 cursor-not-allowed"

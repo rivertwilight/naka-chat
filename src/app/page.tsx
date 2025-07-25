@@ -1,10 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Send, Sparkles } from "lucide-react";
 
-const agents = [
+interface Agent {
+	id: number;
+	name: string;
+	title: string;
+	avatar: string;
+	description: string;
+	color: string;
+}
+
+interface HomePageProps {
+	title?: string;
+	subtitle?: string;
+	agents?: Agent[];
+	onSubmit?: (input: string) => void;
+	redirectTo?: string;
+	children?: ReactNode;
+	className?: string;
+}
+
+const defaultAgents: Agent[] = [
 	{
 		id: 1,
 		name: "Maya",
@@ -31,7 +50,15 @@ const agents = [
 	},
 ];
 
-export default function Home() {
+export default function HomePage({
+	title = "Naka Chat",
+	subtitle = "Collaborate with AI agents in a harmonious group chat experience. Each agent brings unique expertise to your conversations.",
+	agents = defaultAgents,
+	onSubmit,
+	redirectTo = "/group/1",
+	children,
+	className = "",
+}: HomePageProps) {
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
@@ -42,14 +69,21 @@ export default function Home() {
 
 		setIsLoading(true);
 
-		// Simulate a brief loading state for smooth UX
+		// If custom onSubmit is provided, use it
+		if (onSubmit) {
+			onSubmit(input);
+			setIsLoading(false);
+			return;
+		}
+
+		// Default behavior: redirect after loading
 		setTimeout(() => {
-			router.push("/group/1");
+			router.push(redirectTo);
 		}, 800);
 	};
 
 	return (
-		<div className="min-h-screen">
+		<div className={`min-h-screen ${className}`}>
 			<div className="container mx-auto px-4 py-16">
 				{/* Header */}
 				<div className="text-center mb-16">
@@ -60,13 +94,15 @@ export default function Home() {
 						</div>
 					</div>
 					<h1 className="text-4xl md:text-6xl font-light text-neutral-800 dark:text-neutral-200 mb-4">
-						Naka Chat
+						{title}
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Collaborate with AI agents in a harmonious group chat experience.
-						Each agent brings unique expertise to your conversations.
+						{subtitle}
 					</p>
 				</div>
+
+				{/* Custom children content */}
+				{children && <div className="mb-16">{children}</div>}
 
 				{/* Agent Cards */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-4xl mx-auto">
@@ -147,4 +183,9 @@ export default function Home() {
 			</div>
 		</div>
 	);
+}
+
+// 为了保持向后兼容，导出一个默认的 Home 组件
+export function Home() {
+	return <HomePage />;
 }

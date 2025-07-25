@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
 import { DarkModeSwitch } from "../app/Sidebar";
+import SettingItem from "./settings/SettingItem";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -10,70 +11,44 @@ const sawarabi = Sawarabi_Mincho({
 
 const settingItems = [
 	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Username
-		</label>
-		<input
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+		<SettingItem
+			type="input"
+			label="Username"
+			id="user-name"
 			placeholder="Your name"
 		/>
 	</>,
 	<>
-		<label
-			htmlFor="api"
-			className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-		>
-			API Key
-		</label>
-		<input
+		<SettingItem
+			type="input"
+			label="API Key"
 			id="api"
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 			placeholder="Your API Key"
 		/>
 	</>,
 	<>
-		<label
-			htmlFor="base-url"
-			className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-		>
-			Base URL
-		</label>
-		<input
+		<SettingItem
+			type="input"
+			label="Base URL"
 			id="base-url"
-			className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 			placeholder="Your Base URL"
 		/>
 	</>,
 	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Language
-		</label>
-		<select className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition">
-			<option>English</option>
-			<option>日本語</option>
-		</select>
+		<SettingItem
+			type="select"
+			label="Language"
+			id="language"
+			options={["English", "日本語"]}
+		/>
 	</>,
 	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Notifications
-		</label>
-		<div className="flex items-center gap-3">
-			<input
-				type="checkbox"
-				className="accent-neutral-700 dark:accent-neutral-200 h-4 w-4"
-			/>
-			<span className="text-neutral-700 dark:text-neutral-200">
-				Enable notifications
-			</span>
-		</div>
+		<SettingItem type="checkbox" label="Notifications" id="notifications" />
 	</>,
 	<>
-		<label className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2">
-			Theme
-		</label>
-		<div className="text-neutral-700 dark:text-neutral-200">
+		<SettingItem type="label" label="Theme" id="dark-mode-switch">
 			<DarkModeSwitch />
-		</div>
+		</SettingItem>
 	</>,
 ];
 
@@ -148,9 +123,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 					<div className="w-full max-w-2xl mx-auto">
 						<form className="flex flex-col gap-4">
 							{tabContent[selectedTab].map((item, index) => (
-								<React.Fragment key={index}>
-									{item}
-								</React.Fragment>
+								<React.Fragment key={index}>{item}</React.Fragment>
 							))}
 						</form>
 					</div>

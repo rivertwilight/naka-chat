@@ -28,9 +28,18 @@ export interface SupervisorDecision {
 	shouldStop: boolean;
 }
 
+/**
+ * Organize a group chat with AI agents.
+ */
 export class AgentGroupChat {
 	private groupId: string;
 	private providerConfig: ProviderConfig;
+	private isSupervisorActive: boolean = false;
+	private agentTypingPool: Set<string> = new Set();
+
+	public members: GroupChatMember[] = [];
+	public groupName: string = "";
+	public groupDescription: string = "";
 
 	constructor(groupId: string, providerConfig: ProviderConfig) {
 		this.groupId = groupId;

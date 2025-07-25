@@ -38,6 +38,19 @@ export default function Sidebar() {
 	const [groupName, setGroupName] = useState("");
 	const [groupDesc, setGroupDesc] = useState("");
 
+	function SettingsButton() {
+		return (
+			<button
+				onClick={openSettingsPanel}
+				aria-label="Open settings"
+				className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+				type="button"
+			>
+				<Settings size={16} />
+			</button>
+		);
+	}
+
 	const handleCreateGroup = async () => {
 		if (!user) return;
 		setCreating(true);
@@ -91,9 +104,7 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name ||
-									msg.senderAgent?.name ||
-									"Unknown";
+									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -114,14 +125,10 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>
-							{creating ? "Creating..." : "Create new group"}
-						</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">
-							{errorMsg}
-						</div>
+						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
 					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -132,22 +139,12 @@ export default function Sidebar() {
 						NakaChat
 					</div>
 					<div className="flex items-center gap-2">
-						<button
-							onClick={openSettingsPanel}
-							aria-label="Open settings"
-							className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-							type="button"
-						>
-							<Settings size={16} />
-						</button>
+						<SettingsButton />
 						<DarkModeSwitch />
 					</div>
 				</div>
 			</aside>
-			<SettingsDialog
-				open={isSettingsPanelOpen}
-				onClose={closeSettingsPanel}
-			/>
+			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
 		</>
 	);
 }
@@ -164,14 +161,10 @@ export function DarkModeSwitch() {
 			id="dark-mode-switch"
 			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
 			aria-label="Toggle dark mode"
-			className="p-2 rounded-full z-[60] hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+			className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 			type="button"
 		>
-			{theme === "dark" ? (
-				<Sun size={16} />
-			) : (
-				<Moon size={16} className="text-neutral-700" />
-			)}
+			{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
 		</button>
 	) : (
 		<button

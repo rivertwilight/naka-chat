@@ -2,6 +2,7 @@ import React from "react";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
 import { usePersistance } from "./PersistanceContext";
+import { ProviderType } from "./PersistanceContext";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -70,7 +71,7 @@ function ModelSection() {
 					<select
 						id="provider"
 						value={provider}
-						onChange={(e) => setProvider(e.target.value)}
+						onChange={(e) => setProvider(e.target.value as ProviderType)}
 						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
 					>
 						<option value="Google">Google</option>

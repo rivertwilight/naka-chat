@@ -333,6 +333,28 @@ export const dbHelpers = {
 
 		return session;
 	},
+
+	// Update user details (e.g., name)
+	async updateUser(
+		userId: string,
+		updates: Partial<Pick<User, "name" | "avatar_url" | "email">>
+	): Promise<void> {
+		await db.users.update(userId, {
+			...updates,
+			updated_at: new Date(),
+		});
+	},
+
+	// Update agent details (e.g., name)
+	async updateAgent(
+		agentId: string,
+		updates: Partial<Pick<Agent, "name" | "avatar_url" | "title" | "system_prompt" | "model" | "temperature" | "max_output_tokens">>
+	): Promise<void> {
+		await db.agents.update(agentId, {
+			...updates,
+			updated_at: new Date(),
+		});
+	},
 };
 
 // Extended message type with sender details (re-export from useDatabase.ts)

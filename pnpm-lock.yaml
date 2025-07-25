@@ -23,6 +23,9 @@ importers:
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
+      '@zumer/snapdom':
+        specifier: ^1.9.6
+        version: 1.9.6
       ai:
         specifier: ^4.3.19
         version: 4.3.19(react@19.1.0)(zod@3.25.76)
@@ -1375,6 +1378,9 @@ packages:
     resolution: {integrity: sha512-Yy19y6O2GJq8f7CHf7L0nxL8bf4PZCPaVOCgJrusOeFHY1LvHgYXnmnXg6N5iwAnbgbZCDjo60SiM6IPJi9C5g==}
     peerDependencies:
       react: '>= 16.8.0'
+
+  '@zumer/snapdom@1.9.6':
+    resolution: {integrity: sha512-JxEJKoGCZpUfai/Nboii6a0vJWoYACO7ohGjnPSGRjhv0V0Mglq8acPaZcAGy4K+Mh4at+D05NAjBKqzQNTOHA==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -5721,6 +5727,8 @@ snapshots:
     dependencies:
       '@use-gesture/core': 10.3.1
       react: 19.1.0
+
+  '@zumer/snapdom@1.9.6': {}
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:

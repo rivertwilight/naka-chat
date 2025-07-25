@@ -54,6 +54,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		"agent" | "human" | ""
 	>("");
 	const [promptEdit, setPromptEdit] = React.useState<string>("");
+	const [memberNameEdit, setMemberNameEdit] = React.useState<string>("");
+	const [memberNameEditing, setMemberNameEditing] = React.useState(false);
+	const [memberNameSaving, setMemberNameSaving] = React.useState(false);
 
 	React.useEffect(() => {
 		if (group && !nameEditing) setNameEdit(group.name || "");
@@ -125,6 +128,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		if (selectedMember && selectedMember.type === "agent") {
 			setPromptEdit(selectedMember.system_prompt || "");
 		}
+	}, [selectedMember]);
+
+	// When selectedMember changes, set memberNameEdit
+	React.useEffect(() => {
+		if (selectedMember) setMemberNameEdit(selectedMember.name || "");
 	}, [selectedMember]);
 
 	if (loading || groupLoading) {
@@ -396,8 +404,113 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								<Avatar
 									src={selectedMember.avatar_url}
 									size={28}
+									className="flex-shrink-0"
 								/>
-								{selectedMember.name}
+								{memberNameEditing ? (
+									<input
+										type="text"
+										className="w-full rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-lg font-semibold focus:outline-none transition"
+										value={memberNameEdit}
+										onChange={(e) =>
+											setMemberNameEdit(e.target.value)
+										}
+										onBlur={async () => {
+											if (!selectedMember) return;
+											setMemberNameSaving(true);
+											// Find the dbMember for the selectedMember
+											const dbMember = dbMembers.find(
+												(m) =>
+													m.id === selectedMember.id
+											);
+											if (!dbMember) {
+												setMemberNameEditing(false);
+												setMemberNameSaving(false);
+												return;
+											}
+											if (
+												selectedMember.type === "agent"
+											) {
+												await dbHelpers.updateAgent(
+													dbMember.agent_id,
+													{ name: memberNameEdit }
+												);
+											} else {
+												await dbHelpers.updateUser(
+													dbMember.user_id,
+													{ name: memberNameEdit }
+												);
+											}
+											setMemberNameEditing(false);
+											setMemberNameSaving(false);
+											setGroupVersion((v) => v + 1);
+											// Update selectedMember with new name
+											setSelectedMember((prev) =>
+												prev
+													? {
+															...prev,
+															name: memberNameEdit,
+													  }
+													: prev
+											);
+										}}
+										onKeyDown={async (e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												if (!selectedMember) return;
+												setMemberNameSaving(true);
+												const dbMember = dbMembers.find(
+													(m) =>
+														m.id ===
+														selectedMember.id
+												);
+												if (!dbMember) {
+													setMemberNameEditing(false);
+													setMemberNameSaving(false);
+													return;
+												}
+												if (
+													selectedMember.type ===
+													"agent"
+												) {
+													await dbHelpers.updateAgent(
+														dbMember.agent_id,
+														{ name: memberNameEdit }
+													);
+												} else {
+													await dbHelpers.updateUser(
+														dbMember.user_id,
+														{ name: memberNameEdit }
+													);
+												}
+												setMemberNameEditing(false);
+												setMemberNameSaving(false);
+												setGroupVersion((v) => v + 1);
+											}
+										}}
+										autoFocus
+										maxLength={40}
+									/>
+								) : (
+									<span
+										className="cursor-pointer flex items-center gap-2"
+										title={selectedMember.name}
+										onClick={() =>
+											setMemberNameEditing(true)
+										}
+									>
+										{selectedMember.name}
+										<Edit
+											size={16}
+											className="text-neutral-400 dark:text-neutral-400"
+										/>
+									</span>
+								)}
+								{memberNameSaving && (
+									<Loader
+										size={18}
+										className="animate-spin ml-2"
+									/>
+								)}
 							</div>
 
 							<div className="w-full flex flex-col gap-1 mt-4">

@@ -256,7 +256,15 @@ Rules:
 	}
 
 	private parseDecision(responseText: string): SupervisorDecision {
-		return JSON.parse(responseText) as SupervisorDecision;
+		// Remove markdown code block wrappers if present
+		let cleaned = responseText.trim();
+		if (cleaned.startsWith("```")) {
+			// Remove the opening code block (optionally with language)
+			cleaned = cleaned.replace(/^```[a-zA-Z0-9]*\s*/, "");
+			// Remove the closing code block
+			cleaned = cleaned.replace(/```\s*$/, "");
+		}
+		return JSON.parse(cleaned) as SupervisorDecision;
 	}
 
 	private validateDecision(

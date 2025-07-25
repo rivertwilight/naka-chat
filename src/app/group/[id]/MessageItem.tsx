@@ -4,7 +4,16 @@ import React, { useState } from "react";
 import { Avatar, Dropdown, Markdown, Tooltip } from "@lobehub/ui";
 
 import { type DropdownProps, Icon } from "@lobehub/ui";
-import { AtSign, Settings, Copy, Reply, Smile } from "lucide-react";
+import {
+	AtSign,
+	Settings,
+	Copy,
+	Reply,
+	Smile,
+	Trash,
+	MoreHorizontal,
+	Flag,
+} from "lucide-react";
 
 export const menu: DropdownProps["menu"] = {
 	items: [
@@ -17,6 +26,21 @@ export const menu: DropdownProps["menu"] = {
 			icon: <Icon icon={Settings} />,
 			key: "selectAll",
 			label: "Customize",
+		},
+	],
+};
+
+export const messageMenu: DropdownProps["menu"] = {
+	items: [
+		{
+			icon: <Icon icon={Trash} />,
+			key: "delete",
+			label: "Delete",
+		},
+		{
+			icon: <Icon icon={Flag} />,
+			key: "report",
+			label: "Report",
 		},
 	],
 };
@@ -141,6 +165,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
 						<button className="hover:text-orange-600" title="React">
 							<Smile size={18} />
 						</button>
+						<Dropdown menu={messageMenu} trigger={["click"]}>
+							<button
+								className="hover:text-orange-600"
+								title="React"
+							>
+								<MoreHorizontal size={18} />
+							</button>
+						</Dropdown>
 					</div>
 				)}
 			</div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
-import GroupInputArea from "./GroupInputArea";
+import MessageInputField from "./GroupInputArea";
 import MessageItem from "./MessageItem";
 import SidebarRight from "../../SidebarRight";
 import {
@@ -170,6 +170,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						reactions={msg.reactions || []}
 						onReact={(emoji) => handleReaction(msg.id, emoji)}
 						avatar_url={getSenderAvatar(msg)}
+						created_at={msg.created_at}
 					/>
 				</React.Fragment>
 			);
@@ -204,7 +205,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						<div ref={messagesEndRef} />
 					</div>
 				</section>
-				<GroupInputArea
+				<MessageInputField
 					onSendMessage={handleSendMessage}
 					agentChatLoading={agentChatLoading}
 				/>

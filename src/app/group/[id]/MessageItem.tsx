@@ -13,6 +13,7 @@ interface MessageItemProps {
 	reactions?: { emoji: string; count: number }[];
 	onReact?: (emoji: string) => void;
 	avatar_url?: string;
+	created_at: Date;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
@@ -25,9 +26,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	reactions = [],
 	onReact,
 	avatar_url,
+	created_at,
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
+
+	// Calculate opacity: messages older than 1 hour use minOpacity, else full opacity
+	const now = Date.now();
+	const msgTime = new Date(created_at).getTime();
+	const oneHour = 1000 * 60 * 60;
+	const minOpacity = 0.75;
+	const opacity = now - msgTime >= oneHour ? minOpacity : 1;
 
 	return (
 		<div
@@ -71,7 +80,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
 					</span>
 				)}
 			</div>
-			<div className={`w-full ${isHuman ? "flex justify-end" : ""}`}>
+			<div
+				className={`w-full ${isHuman ? "flex justify-end" : ""}`}
+				style={{ opacity }}
+			>
 				<Markdown
 					className={`text-base text-neutral-900 dark:text-neutral-100 max-w-lg ${
 						isHuman ? "text-right" : "text-left"

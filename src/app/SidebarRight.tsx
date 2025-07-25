@@ -1,6 +1,14 @@
 "use client";
 import React from "react";
-import { ArrowRight, X, Loader, Plus } from "lucide-react";
+import {
+	ArrowRight,
+	X,
+	Loader,
+	Plus,
+	Globe,
+	SunSnow,
+	Cloud,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, SliderWithInput } from "@lobehub/ui";
 import { useGroupMembers } from "../hooks/useDatabase";
@@ -135,8 +143,6 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 
 	return (
 		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none">
-			{/* Group name and description */}
-
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul
@@ -192,7 +198,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								<div className="flex items-start gap-2">
 									{descEditing ? (
 										<textarea
-											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none transition resize-none"
 											value={descEdit}
 											onChange={(e) =>
 												setDescEdit(e.target.value)
@@ -223,7 +229,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											>
 												{group.description || (
 													<span className="italic text-neutral-300 dark:text-neutral-600">
-														説明がありません
+														No description
 													</span>
 												)}
 											</span>
@@ -383,22 +389,24 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								{selectedMember.name}
 							</div>
 
-							<>
-								<div className="w-full flex flex-col gap-1 mt-4">
-									<textarea
-										id="prompt-input"
-										rows={8}
-										className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
-										placeholder="e.g. A 18 yo girl comes from bay area"
-										value={promptEdit}
-										onChange={(e) =>
-											setPromptEdit(e.target.value)
-										}
-									/>
-								</div>
-								<div className="w-full flex items-center justify-between mt-4">
-									<span className="text-xs text-neutral-500 dark:text-neutral-400">
-										Web Search
+							<div className="w-full flex flex-col gap-1 mt-4">
+								<textarea
+									id="prompt-input"
+									rows={8}
+									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
+									placeholder="e.g. A 18 yo girl comes from bay area"
+									value={promptEdit}
+									onChange={(e) =>
+										setPromptEdit(e.target.value)
+									}
+								/>
+							</div>
+
+							{/* Tools */}
+							<div className="w-full mt-2 overflow-hidden bg-neutral-100 dark:bg-neutral-800 rounded-md flex flex-col gap-0.5">
+								<div className="w-full flex items-center justify-between p-3">
+									<span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+										<Globe size={16} /> Web Search
 									</span>
 									<label
 										className="relative inline-flex items-center cursor-pointer select-none"
@@ -418,46 +426,51 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										/>
 									</label>
 								</div>
-
-								{/* Temperature slider */}
-								<div className="w-full flex flex-col gap-1 mt-4">
-									<span className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-										Temperature
+								<div className="w-full flex items-center justify-between p-3">
+									<span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+										<Cloud size={16} /> Get Weather
 									</span>
-									<SliderWithInput
-										min={0}
-										max={2}
-										step={0.01}
-										defaultValue={1}
-										className="w-full"
-									/>
+									<label
+										className="relative inline-flex items-center cursor-pointer select-none"
+										style={{ minWidth: "2.25rem" }}
+									>
+										<input
+											type="checkbox"
+											value=""
+											className="sr-only peer"
+										/>
+										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
+										<span
+											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
+											style={{
+												pointerEvents: "none",
+											}}
+										/>
+									</label>
 								</div>
+							</div>
 
-								<button
-									type="button"
-									className="flex items-center gap-2 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors text-md font-medium focus:outline-none"
-									onClick={async () => {
-										if (!selectedMember) return;
-										// Find the dbMember by id
-										const dbMember = dbMembers.find(
-											(m) => m.id === selectedMember.id
-										);
-										if (!dbMember) return;
-										await db.groupMembers.update(
-											dbMember.id,
-											{
-												status: "muted",
-												left_at: new Date(),
-											}
-										);
-										setSelectedMember(null);
-										setGroupVersion((v) => v + 1);
-									}}
-								>
-									<X size={16} />
-									<span>Remove from group</span>
-								</button>
-							</>
+							<button
+								type="button"
+								className="mt-2 flex items-center gap-2 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors text-md font-medium focus:outline-none"
+								onClick={async () => {
+									if (!selectedMember) return;
+									// Find the dbMember by id
+									const dbMember = dbMembers.find(
+										(m) => m.id === selectedMember.id
+									);
+									if (!dbMember) return;
+									await db.groupMembers.update(dbMember.id, {
+										status: "muted",
+										left_at: new Date(),
+									});
+									setSelectedMember(null);
+									setGroupVersion((v) => v + 1);
+								}}
+							>
+								<X size={16} />
+								<span>Remove from group</span>
+							</button>
 						</div>
 					</motion.div>
 				)}

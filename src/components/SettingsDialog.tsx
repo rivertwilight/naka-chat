@@ -10,46 +10,34 @@ const sawarabi = Sawarabi_Mincho({
 });
 
 const settingItems = [
-	<>
-		<SettingItem
-			type="input"
-			label="Username"
-			id="user-name"
-			placeholder="Your name"
-		/>
-	</>,
-	<>
-		<SettingItem
-			type="input"
-			label="API Key"
-			id="api"
-			placeholder="Your API Key"
-		/>
-	</>,
-	<>
-		<SettingItem
-			type="input"
-			label="Base URL"
-			id="base-url"
-			placeholder="Your Base URL"
-		/>
-	</>,
-	<>
-		<SettingItem
-			type="select"
-			label="Language"
-			id="language"
-			options={["English", "日本語"]}
-		/>
-	</>,
-	<>
-		<SettingItem type="checkbox" label="Notifications" id="notifications" />
-	</>,
-	<>
-		<SettingItem type="label" label="Theme" id="dark-mode-switch">
-			<DarkModeSwitch />
-		</SettingItem>
-	</>,
+	<SettingItem
+		type="input"
+		label="Username"
+		id="user-name"
+		placeholder="Your name"
+	/>,
+	<SettingItem
+		type="input"
+		label="API Key"
+		id="api"
+		placeholder="Your API Key"
+	/>,
+	<SettingItem
+		type="input"
+		label="Base URL"
+		id="base-url"
+		placeholder="Your Base URL"
+	/>,
+	<SettingItem
+		type="select"
+		label="Language"
+		id="language"
+		options={["English", "日本語"]}
+	/>,
+	<SettingItem type="checkbox" label="Notifications" id="notifications" />,
+	<SettingItem type="label" label="Theme" id="dark-mode-switch">
+		<DarkModeSwitch />
+	</SettingItem>,
 ];
 
 const sidebarNav = [

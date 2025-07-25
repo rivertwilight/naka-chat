@@ -10,14 +10,14 @@ import {
 	useGroupMessages,
 	useCurrentUser,
 	useGroup,
-} from "../../../hooks/useDatabase";
-import { 
-	AgentGroupChat, 
-	GroupChatMember, 
+} from "@/hooks/useDatabase";
+import {
+	AgentGroupChat,
+	GroupChatMember,
 	SupervisorDecision,
-	MessageWithDetails 
-} from "../../../lib/agentGroupChat";
-import { usePersistance } from "../../../components/PersistanceContext";
+	MessageWithDetails,
+} from "@/lib/agentGroupChat";
+import { usePersistance } from "@/components/PersistanceContext";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -29,29 +29,27 @@ interface ChatClientProps {
 }
 
 export default function ChatClient({ groupId }: ChatClientProps) {
-	const [actualGroupId, setActualGroupId] = useState<string | null>(groupId);
 	const [loading, setLoading] = useState(false);
 	const [agentChatLoading, setAgentChatLoading] = useState(false);
 	const [previousMessageCount, setPreviousMessageCount] = useState(0);
 	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]);
 	const { user } = useCurrentUser();
-	const { group } = useGroup(actualGroupId);
-	const { messages, sendMessage, addReaction } =
-		useGroupMessages(actualGroupId);
+	const { group } = useGroup(groupId);
+	const { messages, sendMessage, addReaction } = useGroupMessages(groupId);
 	const { provider, apiKey, baseUrl } = usePersistance();
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
 
 	useEffect(() => {
-		if (actualGroupId && provider === "Google") {
-			agentGroupChatRef.current = new AgentGroupChat(actualGroupId, {
+		if (groupId && provider === "Google") {
+			agentGroupChatRef.current = new AgentGroupChat(groupId, {
 				provider,
 				apiKey,
 				baseUrl,
 			});
 		}
-	}, [actualGroupId, provider, apiKey, baseUrl]);
+	}, [groupId, provider, apiKey, baseUrl]);
 
 	// Only auto-scroll when there are new messages
 	useEffect(() => {
@@ -65,7 +63,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	}, [messages, previousMessageCount]);
 
 	const handleSendMessage = async (content: string) => {
-		if (!user || !actualGroupId || !agentGroupChatRef.current) return;
+		if (!user || !agentGroupChatRef.current) return;
 
 		try {
 			await sendMessage(content, user.id);
@@ -75,36 +73,47 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 			setTimeout(async () => {
 				try {
 					const agentGroupChat = agentGroupChatRef.current!;
-					const members: GroupChatMember[] = await agentGroupChat.getGroupMembers();
-					
+					const members: GroupChatMember[] =
+						await agentGroupChat.getGroupMembers();
+
 					const updatedHistory: MessageWithDetails[] = [
 						...messages,
 						{
 							content,
 							senderUser: {
-								name: members.find((m: GroupChatMember) => m.id === user.id)?.name || "User",
+								name:
+									members.find(
+										(m: GroupChatMember) => m.id === user.id
+									)?.name || "User",
 							},
 						} as MessageWithDetails,
 					];
-					
-					const currentHistory = agentGroupChat.formatConversationHistory(updatedHistory);
-					const decision: SupervisorDecision = await agentGroupChat.makeSupervisionDecision(
-						members,
-						currentHistory,
-						group?.name || "Group",
-						group?.description || ""
-					);
-					
+
+					const currentHistory =
+						agentGroupChat.formatConversationHistory(
+							updatedHistory
+						);
+					const decision: SupervisorDecision =
+						await agentGroupChat.makeSupervisionDecision(
+							members,
+							currentHistory,
+							group?.name || "Group",
+							group?.description || ""
+						);
+
 					// Only show agent names (not 'human')
 					const agentNames = decision.nextSpeaker
 						.filter((speaker: string) => speaker !== "human")
 						.map((speaker: string) => {
-							const found = members.find((m: GroupChatMember) => m.id === speaker || m.name === speaker);
+							const found = members.find(
+								(m: GroupChatMember) =>
+									m.id === speaker || m.name === speaker
+							);
 							return found?.name || speaker;
 						});
-					
+
 					setPendingSpeakers(agentNames);
-					
+
 					// Now trigger the normal process
 					await agentGroupChat.processHumanMessage(
 						content,
@@ -227,11 +236,13 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		if (pendingSpeakers.length === 0) return;
 		const agentNames = pendingSpeakers;
 		const agentMessages = messages.filter(
-			msg => msg.senderAgent && agentNames.includes(msg.senderAgent.name)
+			(msg) =>
+				msg.senderAgent && agentNames.includes(msg.senderAgent.name)
 		);
 		if (agentMessages.length > 0) {
 			const stillPending = agentNames.filter(
-				name => !agentMessages.some(msg => msg.senderAgent?.name === name)
+				(name) =>
+					!agentMessages.some((msg) => msg.senderAgent?.name === name)
 			);
 			setPendingSpeakers(stillPending);
 		}
@@ -245,12 +256,12 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						Loading...
 					</div>
 				</main>
-				<SidebarRight groupId={actualGroupId} />
+				<SidebarRight groupId={groupId} />
 			</>
 		);
 	}
 
-	if (!actualGroupId) {
+	if (!groupId) {
 		notFound();
 	}
 
@@ -269,7 +280,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 					typingUsers={pendingSpeakers}
 				/>
 			</main>
-			<SidebarRight groupId={actualGroupId} />
+			<SidebarRight groupId={groupId} />
 		</>
 	);
 }

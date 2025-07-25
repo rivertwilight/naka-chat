@@ -28,7 +28,10 @@ interface SidebarRightProps {
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [groupVersion, setGroupVersion] = React.useState(0);
-	const { members: dbMembers, loading } = useGroupMembers(groupId, groupVersion);
+	const { members: dbMembers, loading } = useGroupMembers(
+		groupId,
+		groupVersion
+	);
 	const { group, loading: groupLoading } = useGroup(groupId, groupVersion);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
 		null
@@ -135,7 +138,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	}
 
 	return (
-		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none overflow-y-auto">
+		<aside className="hidden md:flex flex-col gap-4 w-56 sm:w-72 h-screen fixed right-0 top-0 z-20 px-4 py-8 select-none overflow-y-auto overflow-x-hidden">
 			<AnimatePresence initial={false} mode="wait">
 				{!selectedMember ? (
 					<motion.ul
@@ -159,7 +162,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											type="text"
 											className="w-full rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none transition"
 											value={nameEdit}
-											onChange={(e) => setNameEdit(e.target.value)}
+											onChange={(e) =>
+												setNameEdit(e.target.value)
+											}
 											onBlur={handleNameSave}
 											onKeyDown={(e) => {
 												if (e.key === "Enter") {
@@ -180,21 +185,29 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										</span>
 									)}
 									{nameSaving && (
-										<Loader size={18} className="animate-spin ml-2" />
+										<Loader
+											size={18}
+											className="animate-spin ml-2"
+										/>
 									)}
 								</div>
 								<div className="flex items-start gap-2">
 									{descEditing ? (
 										<textarea
-											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none transition resize-none"
+											className="w-full p-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none transition resize-none"
 											value={descEdit}
-											onChange={(e) => setDescEdit(e.target.value)}
+											onChange={(e) =>
+												setDescEdit(e.target.value)
+											}
 											onBlur={async () => {
 												if (!groupId) return;
 												setDescSaving(true);
-												await dbHelpers.updateGroup(groupId, {
-													description: descEdit,
-												});
+												await dbHelpers.updateGroup(
+													groupId,
+													{
+														description: descEdit,
+													}
+												);
 												setDescEditing(false);
 												setDescSaving(false);
 												setGroupVersion((v) => v + 1);
@@ -208,16 +221,22 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											<span
 												className="text-md text-neutral-500 dark:text-neutral-400 break-words whitespace-pre-line flex-1 cursor-pointer"
 												style={{ minHeight: "2.5rem" }}
-												onClick={() => setDescEditing(true)}
+												onClick={() =>
+													setDescEditing(true)
+												}
 											>
 												{group.description || (
 													<span className="text-neutral-300 dark:text-neutral-600 flex items-center gap-2">
-														No description <Edit size={16} />
+														No description{" "}
+														<Edit size={16} />
 													</span>
 												)}
 											</span>
 											{descSaving && (
-												<Loader size={14} className="animate-spin ml-2" />
+												<Loader
+													size={14}
+													className="animate-spin ml-2"
+												/>
 											)}
 										</div>
 									)}
@@ -263,7 +282,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 							) : (
 								<Plus size={16} />
 							)}
-							<span>{addLoading ? "Creating..." : "Create new agent"}</span>
+							<span>
+								{addLoading
+									? "Creating..."
+									: "Create new agent"}
+							</span>
 						</button>
 						<button
 							type="button"
@@ -282,7 +305,8 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										: ""
 								}`}
 								onClick={() =>
-									member.status === "active" && setSelectedMember(member)
+									member.status === "active" &&
+									setSelectedMember(member)
 								}
 								style={{
 									outline: "none",
@@ -291,7 +315,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								}}
 								disabled={member.status === "muted"}
 							>
-								<Avatar src={member.avatar_url} size={30} name={member.name} />
+								<Avatar
+									src={member.avatar_url}
+									size={30}
+									name={member.name}
+								/>
 								<div className="flex flex-col gap-0.5">
 									<span
 										className={`${
@@ -316,13 +344,20 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												? "text-neutral-400 dark:text-neutral-600"
 												: "text-neutral-500 dark:text-neutral-400"
 										} flex items-center gap-1 ${
-											member.thinking ? "animate-pulse" : ""
+											member.thinking
+												? "animate-pulse"
+												: ""
 										}`}
 									>
-										{member.thinking ? "Thinking" : member.role}
+										{member.thinking
+											? "Thinking"
+											: member.role}
 										{member.thinking && (
 											<span className="mr-1">
-												<Loader className="animate-spin" size={14} />
+												<Loader
+													className="animate-spin"
+													size={14}
+												/>
 											</span>
 										)}
 									</span>
@@ -358,7 +393,10 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										: "text-neutral-900 dark:text-neutral-100"
 								}`}
 							>
-								<Avatar src={selectedMember.avatar_url} size={28} />
+								<Avatar
+									src={selectedMember.avatar_url}
+									size={28}
+								/>
 								{selectedMember.name}
 							</div>
 
@@ -369,7 +407,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									className="w-full px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition resize-none"
 									placeholder="e.g. A 18 yo girl comes from bay area"
 									value={promptEdit}
-									onChange={(e) => setPromptEdit(e.target.value)}
+									onChange={(e) =>
+										setPromptEdit(e.target.value)
+									}
 								/>
 							</div>
 
@@ -383,7 +423,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										className="relative inline-flex items-center cursor-pointer select-none"
 										style={{ minWidth: "2.25rem" }}
 									>
-										<input type="checkbox" value="" className="sr-only peer" />
+										<input
+											type="checkbox"
+											value=""
+											className="sr-only peer"
+										/>
 										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
 										<span
 											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
@@ -401,7 +445,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										className="relative inline-flex items-center cursor-pointer select-none"
 										style={{ minWidth: "2.25rem" }}
 									>
-										<input type="checkbox" value="" className="sr-only peer" />
+										<input
+											type="checkbox"
+											value=""
+											className="sr-only peer"
+										/>
 										<div className="w-9 h-5 bg-neutral-200 dark:bg-neutral-700 rounded-full transition-colors peer-focus:outline-none peer-checked:bg-neutral-400 dark:peer-checked:bg-neutral-500" />
 										<span
 											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"

@@ -112,11 +112,9 @@ export async function initializeDatabase() {
 			console.log("Database is empty, auto-seeding...");
 			await seedDatabase();
 			console.log("Database initialized and seeded successfully!");
-			return true;
+		} else {
+			console.log("Database already initialized");
 		}
-
-		console.log("Database already initialized");
-		return false;
 	} catch (error) {
 		console.error("Error initializing database:", error);
 		throw error;
@@ -343,4 +341,13 @@ export interface MessageWithDetails extends Message {
 	senderUser?: User;
 	senderAgent?: Agent;
 	session?: Session;
+}
+
+// Singleton for database initialization
+let dbInitPromise: Promise<void> | null = null;
+export function initializeDatabaseOnce() {
+  if (!dbInitPromise) {
+    dbInitPromise = initializeDatabase();
+  }
+  return dbInitPromise;
 }

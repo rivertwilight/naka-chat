@@ -1,8 +1,8 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
-import React, { useEffect } from "react";
 import { Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -10,12 +10,11 @@ import {
 	useUserGroups,
 	useLatestGroupMessages,
 	useCurrentUser,
-} from "../hooks/useDatabase";
-import GroupListItem from "../components/GroupListItem";
-import SettingsDialog from "../components/SettingsDialog";
-import { useUiContext } from "../components/UiContext";
-import { useState } from "react";
-import { dbHelpers } from "../lib/database";
+} from "@/hooks/useDatabase";
+import GroupListItem from "@/components/GroupListItem";
+import SettingsDialog from "@/components/SettingsDialog";
+import { useUiContext } from "@/components/UiContext";
+import { dbHelpers } from "@/lib/database";
 import { Settings } from "lucide-react";
 
 const sawarabi = Sawarabi_Mincho({
@@ -30,26 +29,11 @@ export default function Sidebar() {
 	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
 		useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
-	const { groups, loading, error } = useUserGroups(groupsVersion); // Pass version
+	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
 	const [errorMsg, setErrorMsg] = useState("");
-	const [groupName, setGroupName] = useState("");
-	const [groupDesc, setGroupDesc] = useState("");
-
-	function SettingsButton() {
-		return (
-			<button
-				onClick={openSettingsPanel}
-				aria-label="Open settings"
-				className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-				type="button"
-			>
-				<Settings size={16} />
-			</button>
-		);
-	}
 
 	const handleCreateGroup = async () => {
 		if (!user) return;
@@ -104,7 +88,9 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -125,10 +111,14 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+						</div>
 					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -139,12 +129,22 @@ export default function Sidebar() {
 						NakaChat
 					</div>
 					<div className="flex items-center gap-2">
-						<SettingsButton />
+						<button
+							onClick={openSettingsPanel}
+							aria-label="Open settings"
+							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+							type="button"
+						>
+							<Settings size={16} />
+						</button>
 						<DarkModeSwitch />
 					</div>
 				</div>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

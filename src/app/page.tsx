@@ -187,26 +187,15 @@ export default function HomePage() {
 											</p>
 										</div>
 										<div className="ml-3 flex items-center">
-											<div className="relative w-5 h-5">
-												<input
-													type="checkbox"
-													checked={checked[index]}
-													onChange={() => {
-														setChecked((prev) => {
-															const next = [
-																...prev,
-															];
-															next[index] =
-																!next[index];
-															return next;
-														});
-													}}
-													className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-amber-400 focus:ring-amber-400 transition-colors duration-200 cursor-pointer"
-												/>
+											<div
+												className={`w-5 h-5 flex items-center justify-center rounded-full border-2 transition-colors duration-200 ${
+													checked[index]
+														? "bg-amber-400 border-amber-400"
+														: "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-600"
+												}`}
+											>
 												{checked[index] && (
-													<span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-														<Check className="w-4 h-4 text-white" />
-													</span>
+													<Check className="w-4 h-4 text-white" />
 												)}
 											</div>
 										</div>

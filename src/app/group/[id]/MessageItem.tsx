@@ -31,9 +31,8 @@ interface MessageItemProps {
 	reactions?: { emoji: string; count: number }[];
 	onReact?: (emoji: string) => void;
 	avatar_url?: string;
+	created_at: Date;
 }
-
-const EMOJI_LIST = ["👍", "😊", "🎉", "❤️", "😂", "😮"];
 
 const MessageItem: React.FC<MessageItemProps> = ({
 	messageId,
@@ -45,22 +44,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	reactions = [],
 	onReact,
 	avatar_url,
+	created_at,
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
 
-	const Avatar = () =>
-		avatar_url ? (
-			<img
-				src={avatar_url}
-				alt={sender}
-				className="w-7 h-7 rounded-full object-cover border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 mr-2"
-			/>
-		) : (
-			<span className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800 mr-2">
-				<UserIcon className="w-5 h-5 text-neutral-400" />
-			</span>
-		);
+	// Calculate opacity: messages older than 1 hour use minOpacity, else full opacity
+	const now = Date.now();
+	const msgTime = new Date(created_at).getTime();
+	const oneHour = 1000 * 60 * 60;
+	const minOpacity = 0.75;
+	const opacity = now - msgTime >= oneHour ? minOpacity : 1;
 
 	return (
 		<div
@@ -96,8 +90,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
 					}`}
 				/>
 				{isHuman && (
-					<span className="flex items-center">
-						<Avatar />
+					<span className="flex items-center gap-2">
+						<Avatar src={avatar_url} size={24} />
 						<span
 							className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 						>
@@ -106,7 +100,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
 					</span>
 				)}
 			</div>
-			<div className={`w-full ${isHuman ? "flex justify-end" : ""}`}>
+			<div
+				className={`w-full ${isHuman ? "flex justify-end" : ""}`}
+				style={{ opacity }}
+			>
 				<Markdown
 					className={`text-base text-neutral-900 dark:text-neutral-100 max-w-lg ${
 						isHuman ? "text-right" : "text-left"

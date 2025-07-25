@@ -7,6 +7,7 @@ import { Sawarabi_Mincho } from "next/font/google";
 import { AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
+import Image from "next/image";
 
 interface Agent {
 	id: string;
@@ -123,10 +124,13 @@ export default function HomePage() {
 				{/* Header */}
 				<div className="text-center mb-16">
 					<div className="flex items-center justify-center mb-6">
-						<div className="relative">
-							<MessageCircle className="w-12 h-12 text-neutral-700 dark:text-neutral-300" />
-							<Sparkles className="w-6 h-6 text-amber-500 absolute -top-2 -right-2 animate-pulse" />
-						</div>
+						<Image
+							src="/android-icon-192x192.png"
+							alt="NakaChat"
+							width={96}
+							height={96}
+							className="mask mask-squircle"
+						/>
 					</div>
 					<h1
 						className={`text-3xl md:text-4xl font-light text-neutral-800 dark:text-neutral-200 mb-4 ${sawarabi.className}`}

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import React, { useEffect } from "react";
-import { Moon, Sun, X, Check, Plus } from "lucide-react";
+import { Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +16,7 @@ import SettingsDialog from "../components/SettingsDialog";
 import { useUiContext } from "../components/UiContext";
 import { useState } from "react";
 import { dbHelpers } from "../lib/database";
+import { Settings } from "lucide-react";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -90,7 +91,9 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -111,23 +114,40 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+						</div>
 					)}
 				</nav>
 				<div className="mt-8 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
-						onClick={openSettingsPanel}
+						onClick={() => router.push("/")}
 						className={`${sawarabi.className} text-xl text-neutral-700 dark:text-neutral-200 tracking-wide cursor-pointer transition-opacity hover:opacity-70`}
 					>
 						NakaChat
 					</div>
-					<DarkModeSwitch />
+					<div className="flex items-center gap-2">
+						<button
+							onClick={openSettingsPanel}
+							aria-label="Open settings"
+							className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+							type="button"
+						>
+							<Settings size={16} />
+						</button>
+						<DarkModeSwitch />
+					</div>
 				</div>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

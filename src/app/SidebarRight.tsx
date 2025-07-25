@@ -1,20 +1,13 @@
 "use client";
+
 import React from "react";
-import {
-	ArrowRight,
-	X,
-	Loader,
-	Plus,
-	Globe,
-	SunSnow,
-	Cloud,
-} from "lucide-react";
+import { ArrowRight, X, Loader, Plus, Globe, Cloud } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Avatar, SliderWithInput } from "@lobehub/ui";
+import { Avatar } from "@lobehub/ui";
+
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
-import Dialog from "../components/Dialog";
 import { db } from "../lib/database";
 import { getRandomName, getRandomAvatar } from "../utils/randomUtils";
 

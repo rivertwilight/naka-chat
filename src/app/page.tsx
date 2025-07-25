@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, MessageCircle, Send, Sparkles } from "lucide-react";
+import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import { Sawarabi_Mincho } from "next/font/google";
 
 interface Agent {
@@ -13,8 +13,6 @@ interface Agent {
 	description: string;
 	color: string;
 }
-
-// Remove HomePageProps and all props, hardcode values inside HomePage
 
 const defaultAgents: Agent[] = [
 	{
@@ -80,7 +78,7 @@ export default function HomePage() {
 						</div>
 					</div>
 					<h1
-						className={`text-4xl md:text-6xl font-light text-neutral-800 dark:text-neutral-200 mb-4 ${sawarabi.className}`}
+						className={`text-3xl md:text-4xl font-light text-neutral-800 dark:text-neutral-200 mb-4 ${sawarabi.className}`}
 					>
 						NakaChat
 					</h1>
@@ -98,11 +96,9 @@ export default function HomePage() {
 						return (
 							<div
 								key={index}
-								className={`group flex flex-row items-center bg-gradient-to-br ${
-									agent
-										? agent.color
-										: "from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-700"
-								} rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px]`}
+								className={
+									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px]"
+								}
 								style={{ animationDelay: `${index * 100}ms` }}
 							>
 								{agent ? (
@@ -113,11 +109,8 @@ export default function HomePage() {
 												alt={agent.name}
 												className="w-12 h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
 											/>
-											<div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border border-white dark:border-neutral-700 flex items-center justify-center">
-												<div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-											</div>
 										</div>
-										<div className="flex flex-col justify-center min-w-0">
+										<div className="flex flex-col justify-center min-w-0 flex-1">
 											<h3 className="text-base font-medium text-neutral-800 dark:text-neutral-200 truncate">
 												{agent.name}
 											</h3>
@@ -127,6 +120,12 @@ export default function HomePage() {
 											<p className="text-xs text-neutral-500 dark:text-neutral-500 leading-tight truncate">
 												{agent.description}
 											</p>
+										</div>
+										<div className="ml-3 flex items-center">
+											<input
+												type="checkbox"
+												className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-amber-400 focus:ring-amber-400 transition-colors duration-200"
+											/>
 										</div>
 									</>
 								) : (

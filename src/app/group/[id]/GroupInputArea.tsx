@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import {
-	Image as ImageIcon,
-	ArrowUp,
-	Command,
-	Settings,
-	AtSign,
-	Share,
-} from "lucide-react";
+import { Image as ImageIcon, ArrowUp, Command, Share } from "lucide-react";
 import { Dropdown, DropdownProps, Tooltip, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
@@ -80,7 +73,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	const typingUsersString = typingUsers.join(", ") + " are typing";
 
 	return (
-		<div className="fixed left-96 right-96 bottom-0 z-30 max-w-3xl mx-auto">
+		<div className="fixed left-96 right-96 bottom-0 z-20 max-w-3xl mx-auto">
 			<form
 				onSubmit={handleSubmit}
 				className="flex items-center gap-4 w-full"

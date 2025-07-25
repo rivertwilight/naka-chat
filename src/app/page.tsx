@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MessageCircle, Sparkles, Check } from "lucide-react";
 import { Sawarabi_Mincho } from "next/font/google";
-import { AvatarGroup } from "@lobehub/ui";
+import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
 import Image from "next/image";
@@ -138,9 +138,8 @@ export default function HomePage() {
 						NakaChat
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Collaborate with AI agents in a harmonious group chat
-						experience. Each agent brings unique expertise to your
-						conversations.
+						Group chat with AI agents. Brianstorm, werewolf, COC,
+						and more.
 					</p>
 				</div>
 
@@ -162,7 +161,7 @@ export default function HomePage() {
 							}}
 						>
 							<div className="relative mr-3 flex-shrink-0">
-								<img
+								<Avatar
 									src={agent.avatar_url}
 									alt={agent.name}
 									className="w-12 h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
@@ -183,7 +182,7 @@ export default function HomePage() {
 								<div
 									className={`w-5 h-5 flex items-center justify-center rounded-full border-2 transition-colors duration-200 ${
 										checked[index]
-											? "bg-amber-400 border-amber-400"
+											? "bg-amber-500 border-amber-500"
 											: "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-600"
 									}`}
 								>
@@ -202,8 +201,8 @@ export default function HomePage() {
 						disabled={isLoading}
 						className="flex hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60"
 					>
-						<ArrowRight className="w-4 h-4" />
-						{isLoading ? "Creating..." : "Start Group Chat"}
+						<ArrowRight className="w-5 h-5" />
+						{isLoading ? "Creating..." : "Create group with"}
 						<AvatarGroup
 							className="ml-1"
 							size={20}

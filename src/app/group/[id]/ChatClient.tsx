@@ -18,6 +18,7 @@ import {
 	MessageWithDetails,
 } from "@/lib/agentGroupChat";
 import { usePersistance } from "@/components/PersistanceContext";
+import { ArrowRight } from "lucide-react";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
@@ -40,6 +41,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
+	const messageInputRef = useRef<any>(null);
 
 	useEffect(() => {
 		if (groupId && provider === "Google") {
@@ -137,6 +139,36 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const handleReaction = async (messageId: string, emoji: string) => {
 		if (!user) return;
 		await addReaction(messageId, emoji, user.id);
+	};
+
+	const exampleSuggestions = [
+		"我们来模拟联合国，Morgan 是主持人，开始吧",
+		"我是皇上，你们是后宫的嫔妃",
+		"我们来玩 COC，我是 KP",
+		"我们来玩 DND, KP",
+		"你们开个辩论会，X 是主持人，不要让我干涉",
+		"我们来玩狼人杀，我是主持人",
+	];
+
+	// Randomly select 3 examples each render
+	const getRandomExamples = (examples: string[], count: number) => {
+		const shuffled = [...examples].sort(() => 0.5 - Math.random());
+		return shuffled.slice(0, count);
+	};
+	const [randomExamples, setRandomExamples] = useState<string[]>([]);
+
+	useEffect(() => {
+		setRandomExamples(getRandomExamples(exampleSuggestions, 3));
+		// Only run on mount, or if exampleSuggestions changes
+	}, []);
+
+	const handleExampleClick = (example: string) => {
+		if (
+			messageInputRef.current &&
+			typeof messageInputRef.current.fillMessage === "function"
+		) {
+			messageInputRef.current.fillMessage(example);
+		}
 	};
 
 	// Format time from Date to HH:MM
@@ -268,13 +300,31 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	return (
 		<>
 			<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
-				<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24">
-					<div className="flex flex-col">
-						{renderMessagesWithDividers()}
+				<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24 relative">
+					<div className="flex flex-col min-h-[200px]">
+						{messages.length === 0 ? (
+							<div className="absolute inset-0 flex flex-col items-start justify-end py-24 pointer-events-none select-none z-10">
+								{randomExamples.map((example, idx) => (
+									<button
+										key={idx}
+										onClick={() =>
+											handleExampleClick(example)
+										}
+										className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-white transition-colors duration-300 focus:outline-none"
+									>
+										<ArrowRight />
+										{example}
+									</button>
+								))}
+							</div>
+						) : (
+							renderMessagesWithDividers()
+						)}
 						<div ref={messagesEndRef} />
 					</div>
 				</section>
 				<MessageInputField
+					ref={messageInputRef}
 					onSendMessage={handleSendMessage}
 					agentChatLoading={agentChatLoading}
 					typingUsers={pendingSpeakers}

@@ -95,7 +95,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 	const [selectedTab, setSelectedTab] = useState("general");
 	return (
 		<Dialog open={open} onClose={onClose} variant="fullscreen">
-			{/* Header */}
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
 				<h2
 					className={`${sawarabi.className} text-2xl text-neutral-800 dark:text-neutral-100 tracking-wide`}
@@ -103,6 +102,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 					Settings
 				</h2>
 			</div>
+
 			<div className="flex flex-1 min-h-0 h-[calc(100vh-80px)] relative">
 				{/* Sidebar Navigation */}
 				<nav className="absolute left-0 top-0 w-56 sm:w-72 py-8 px-4 flex flex-col gap-2 bg-white dark:bg-neutral-900 select-none">

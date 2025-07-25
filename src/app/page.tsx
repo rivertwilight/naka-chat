@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Send, Sparkles } from "lucide-react";
+import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
+import { Sawarabi_Mincho } from "next/font/google";
 
 interface Agent {
 	id: number;
@@ -11,16 +12,6 @@ interface Agent {
 	avatar: string;
 	description: string;
 	color: string;
-}
-
-interface HomePageProps {
-	title?: string;
-	subtitle?: string;
-	agents?: Agent[];
-	onSubmit?: (input: string) => void;
-	redirectTo?: string;
-	children?: ReactNode;
-	className?: string;
 }
 
 const defaultAgents: Agent[] = [
@@ -50,31 +41,24 @@ const defaultAgents: Agent[] = [
 	},
 ];
 
-export default function HomePage({
-	title = "Naka Chat",
-	subtitle = "Collaborate with AI agents in a harmonious group chat experience. Each agent brings unique expertise to your conversations.",
-	agents = defaultAgents,
-	onSubmit,
-	redirectTo = "/group/1",
-	children,
-	className = "",
-}: HomePageProps) {
+const sawarabi = Sawarabi_Mincho({
+	weight: "400",
+	subsets: ["latin"],
+});
+
+export default function HomePage() {
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
+
+	const agents = defaultAgents;
+	const redirectTo = "/group/1";
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim()) return;
 
 		setIsLoading(true);
-
-		// If custom onSubmit is provided, use it
-		if (onSubmit) {
-			onSubmit(input);
-			setIsLoading(false);
-			return;
-		}
 
 		// Default behavior: redirect after loading
 		setTimeout(() => {
@@ -83,7 +67,7 @@ export default function HomePage({
 	};
 
 	return (
-		<div className={`min-h-screen ${className}`}>
+		<div className="min-h-screen flex flex-col justify-center items-center">
 			<div className="container mx-auto px-4 py-16">
 				{/* Header */}
 				<div className="text-center mb-16">
@@ -93,92 +77,73 @@ export default function HomePage({
 							<Sparkles className="w-6 h-6 text-amber-500 absolute -top-2 -right-2 animate-pulse" />
 						</div>
 					</div>
-					<h1 className="text-4xl md:text-6xl font-light text-neutral-800 dark:text-neutral-200 mb-4">
-						{title}
+					<h1
+						className={`text-3xl md:text-4xl font-light text-neutral-800 dark:text-neutral-200 mb-4 ${sawarabi.className}`}
+					>
+						NakaChat
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						{subtitle}
+						Collaborate with AI agents in a harmonious group chat
+						experience. Each agent brings unique expertise to your
+						conversations.
 					</p>
 				</div>
-
-				{/* Custom children content */}
-				{children && <div className="mb-16">{children}</div>}
 
 				{/* Agent Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-4xl mx-auto">
-					{agents.map((agent, index) => (
-						<div
-							key={agent.id}
-							className={`group relative bg-gradient-to-br ${agent.color} dark:from-neutral-800 dark:to-neutral-700 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-500 transform hover:-translate-y-1`}
-							style={{ animationDelay: `${index * 200}ms` }}
-						>
-							<div className="flex flex-col items-center text-center">
-								<div className="relative mb-4">
-									<img
-										src={agent.avatar}
-										alt={agent.name}
-										className="w-20 h-20 rounded-full border-4 border-white dark:border-neutral-700 shadow-lg group-hover:scale-105 transition-transform duration-300"
-									/>
-									<div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-neutral-700 flex items-center justify-center">
-										<div className="w-2 h-2 bg-white rounded-full"></div>
-									</div>
-								</div>
-								<h3 className="text-xl font-medium text-neutral-800 dark:text-neutral-200 mb-1">
-									{agent.name}
-								</h3>
-								<p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">
-									{agent.title}
-								</p>
-								<p className="text-xs text-neutral-500 dark:text-neutral-500 leading-relaxed">
-									{agent.description}
-								</p>
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10 max-w-4xl mx-auto">
+					{[...Array(9)].map((_, index) => {
+						const agent = agents[index];
+						return (
+							<div
+								key={index}
+								className={
+									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px]"
+								}
+								style={{ animationDelay: `${index * 100}ms` }}
+							>
+								{agent ? (
+									<>
+										<div className="relative mr-3 flex-shrink-0">
+											<img
+												src={agent.avatar}
+												alt={agent.name}
+												className="w-12 h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
+											/>
+										</div>
+										<div className="flex flex-col justify-center min-w-0 flex-1">
+											<h3 className="text-base font-medium text-neutral-800 dark:text-neutral-200 truncate">
+												{agent.name}
+											</h3>
+											<p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 truncate">
+												{agent.title}
+											</p>
+											<p className="text-xs text-neutral-500 dark:text-neutral-500 leading-tight truncate">
+												{agent.description}
+											</p>
+										</div>
+										<div className="ml-3 flex items-center">
+											<input
+												type="checkbox"
+												className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-amber-400 focus:ring-amber-400 transition-colors duration-200"
+											/>
+										</div>
+									</>
+								) : (
+									<div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center opacity-50 mr-3" />
+								)}
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 
-				{/* Input Section */}
-				<div className="max-w-2xl mx-auto">
-					<div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
-						<form onSubmit={handleSubmit} className="space-y-4">
-							<div className="text-center mb-6">
-								<h2 className="text-2xl font-light text-neutral-800 dark:text-neutral-200 mb-2">
-									Start Your Conversation
-								</h2>
-								<p className="text-sm text-neutral-600 dark:text-neutral-400">
-									Ask anything and let our AI team collaborate to help you
-								</p>
-							</div>
-
-							<div className="relative">
-								<textarea
-									value={input}
-									onChange={(e) => setInput(e.target.value)}
-									placeholder="Describe your project, ask a question, or share an idea..."
-									className="w-full h-24 px-4 py-3 text-neutral-800 dark:text-neutral-200 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300 placeholder-neutral-500 dark:placeholder-neutral-400"
-									disabled={isLoading}
-								/>
-								<button
-									type="submit"
-									disabled={!input.trim() || isLoading}
-									className="absolute bottom-3 right-3 p-2 bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 text-white rounded-lg transition-all duration-300 transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
-								>
-									{isLoading ? (
-										<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-									) : (
-										<Send className="w-5 h-5" />
-									)}
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-
-				{/* Footer */}
-				<div className="text-center mt-16">
-					<p className="text-sm text-neutral-500 dark:text-neutral-400">
-						Experience the power of collaborative AI conversations
-					</p>
+				<div className="flex justify-center mb-4">
+					<button
+						onClick={() => router.push(redirectTo)}
+						className="flex items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+					>
+						Start Group Chat
+						<ArrowRight className="w-4 h-4" />
+					</button>
 				</div>
 			</div>
 		</div>

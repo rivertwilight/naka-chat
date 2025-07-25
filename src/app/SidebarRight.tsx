@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, X, Loader, Plus, Globe, Cloud } from "lucide-react";
+import { ArrowRight, X, Loader, Plus, Globe, Cloud, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
 
@@ -27,8 +27,8 @@ interface SidebarRightProps {
 }
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
-	const { members: dbMembers, loading } = useGroupMembers(groupId);
 	const [groupVersion, setGroupVersion] = React.useState(0);
+	const { members: dbMembers, loading } = useGroupMembers(groupId, groupVersion);
 	const { group, loading: groupLoading } = useGroup(groupId, groupVersion);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
 		null
@@ -211,8 +211,8 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												onClick={() => setDescEditing(true)}
 											>
 												{group.description || (
-													<span className="italic text-neutral-300 dark:text-neutral-600">
-														No description
+													<span className="text-neutral-300 dark:text-neutral-600 flex items-center gap-2">
+														No description <Edit size={16} />
 													</span>
 												)}
 											</span>
@@ -253,6 +253,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									// Optionally handle error
 								} finally {
 									setAddLoading(false);
+									setGroupVersion((v) => v + 1);
 								}
 							}}
 							disabled={addLoading}

@@ -49,7 +49,7 @@ export default function Home() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800">
+		<div className="min-h-screen">
 			<div className="container mx-auto px-4 py-16">
 				{/* Header */}
 				<div className="text-center mb-16">

@@ -143,7 +143,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	const exampleSuggestions = [
 		"我们来模拟联合国，Morgan 是主持人，开始吧",
-		"我是皇上，你们是后宫的嫔妃",
+		"我是皇上，你们是后宫的嫔妃，背景是清朝",
 		"我们来玩 COC，我是 KP",
 		"我们来玩 DND, KP",
 		"你们开个辩论会，X 是主持人，不要让我干涉",

@@ -164,7 +164,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									{nameEditing ? (
 										<input
 											type="text"
-											className="w-full px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 transition"
+											className="w-full rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xl font-semibold focus:outline-none transition"
 											value={nameEdit}
 											onChange={(e) =>
 												setNameEdit(e.target.value)

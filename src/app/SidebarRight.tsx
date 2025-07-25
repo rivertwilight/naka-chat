@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, X, Loader, Plus, Globe, Cloud } from "lucide-react";
+import { ArrowRight, X, Loader, Plus, Globe, Cloud, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
 
@@ -27,8 +27,8 @@ interface SidebarRightProps {
 }
 
 const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
-	const { members: dbMembers, loading } = useGroupMembers(groupId);
 	const [groupVersion, setGroupVersion] = React.useState(0);
+	const { members: dbMembers, loading } = useGroupMembers(groupId, groupVersion);
 	const { group, loading: groupLoading } = useGroup(groupId, groupVersion);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
 		null
@@ -151,7 +151,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						className="flex flex-col gap-2"
 					>
 						{group && (
-							<div className="mb-2 flex flex-col gap-2 pb-4">
+							<div className="mb-2 flex flex-col gap-2 pb-4 px-2">
 								{/* Editable group name */}
 								<div className="flex items-start gap-2">
 									{nameEditing ? (
@@ -211,8 +211,8 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												onClick={() => setDescEditing(true)}
 											>
 												{group.description || (
-													<span className="italic text-neutral-300 dark:text-neutral-600">
-														No description
+													<span className="text-neutral-300 dark:text-neutral-600 flex items-center gap-2">
+														No description <Edit size={16} />
 													</span>
 												)}
 											</span>
@@ -226,7 +226,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						)}
 						<button
 							type="button"
-							className="mt-2 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+							className="mt-2 px-2 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
 							onClick={async () => {
 								if (!groupId) return;
 								setAddLoading(true);
@@ -253,6 +253,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									// Optionally handle error
 								} finally {
 									setAddLoading(false);
+									setGroupVersion((v) => v + 1);
 								}
 							}}
 							disabled={addLoading}
@@ -266,7 +267,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						</button>
 						<button
 							type="button"
-							className="mt-1 mb-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+							className="mt-1 px-2 mb-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
 							onClick={() => setAddOpen(true)}
 						>
 							<Plus size={16} />
@@ -275,7 +276,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						{members.map((member) => (
 							<button
 								key={member.id}
-								className={`flex items-center gap-4 group relative py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
+								className={`flex items-center gap-4 group relative p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left ${
 									member.status === "muted"
 										? "opacity-60 cursor-not-allowed"
 										: ""

@@ -642,7 +642,7 @@ export function useGroup(groupId: string | null, version: number = 0) {
 }
 
 // Hook for getting group members
-export function useGroupMembers(groupId: string | null) {
+export function useGroupMembers(groupId: string | null, version: number = 0) {
 	const [members, setMembers] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -673,7 +673,7 @@ export function useGroupMembers(groupId: string | null) {
 		};
 
 		loadMembers();
-	}, [groupId]);
+	}, [groupId, version]);
 
 	return {
 		members,

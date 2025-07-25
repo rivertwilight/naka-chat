@@ -1,15 +1,35 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
+
+// Re-export types for external use
+export type { MessageWithDetails } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
+// Configuration
+export const AGENT_CONFIG = {
+	RESPONSE_DELAY: {
+		MIN_MS: 1000,
+		MAX_MS: 120000,
+	},
+	TYPING_POOL: {
+		MAX_CONCURRENT: 4,
+	},
+	SUPERVISOR: {
+		IDLE_TIMEOUT_MS: 5000,
+		DECISION_RETRY_DELAY_MS: 1000,
+		POST_RESPONSE_DELAY_MS: 500,
+	},
+	RESPONSE_LIMITS: {
+		MAX_WORDS: 150,
+		MAX_CHINESE_CHARS: 50,
+	},
+} as const;
+
+// Types and Interfaces
 export interface ProviderConfig {
-	provider: "Google";
+	provider: "Google" | "Anthropic";
 	apiKey: string;
 	baseUrl?: string;
 }
-
-const AGENT_RESPONSE_DELAY_MIN_MS = 1000; // 1s
-const AGENT_RESPONSE_DELAY_MAX_MS = 120000; // 120s
-const AGENT_TYPING_POOL_MAX = 4; // Max concurrent agents typing/responding
 
 export interface GroupChatMember {
 	id: string;
@@ -23,33 +43,24 @@ export interface GroupChatMember {
 }
 
 export interface SupervisorDecision {
-	nextSpeaker: string[]; // Always an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
+	nextSpeaker: string[];
 	reasoning: string;
 	shouldStop: boolean;
 }
 
-/**
- * Organize a group chat with AI agents.
- */
-export class AgentGroupChat {
-	private groupId: string;
-	private providerConfig: ProviderConfig;
-	private isSupervisorActive: boolean = false;
-	private agentTypingPool: Set<string> = new Set();
+export interface ConversationContext {
+	groupId: string;
+	groupName: string;
+	groupDescription: string;
+	members: GroupChatMember[];
+	history: string;
+}
 
-	public members: GroupChatMember[] = [];
-	public groupName: string = "";
-	public groupDescription: string = "";
+// Service Classes
+class MemberService {
+	constructor(private groupId: string) {}
 
-	constructor(groupId: string, providerConfig: ProviderConfig) {
-		this.groupId = groupId;
-		this.providerConfig = providerConfig;
-	}
-
-	/**
-	 * Get all active members of the group (both users and agents)
-	 */
-	private async getGroupMembers(): Promise<GroupChatMember[]> {
+	async getGroupMembers(): Promise<GroupChatMember[]> {
 		const membersWithDetails = await dbHelpers.getGroupMembersWithDetails(
 			this.groupId
 		);
@@ -62,7 +73,9 @@ export class AgentGroupChat {
 					title: "Human User",
 					role: "human" as const,
 				};
-			} else if (member.role === "agent" && member.details) {
+			}
+
+			if (member.role === "agent" && member.details) {
 				const agentDetails = member.details as Agent;
 				return {
 					id: member.agent_id!,
@@ -75,44 +88,128 @@ export class AgentGroupChat {
 					max_output_tokens: agentDetails.max_output_tokens,
 				};
 			}
+
 			throw new Error("Invalid member data");
 		});
 	}
 
-	/**
-	 * Format conversation history for context
-	 */
-	private formatConversationHistory(messages: MessageWithDetails[]): string {
+	getAvailableAgents(
+		members: GroupChatMember[],
+		typingPool: Set<string>
+	): GroupChatMember[] {
+		return members.filter(
+			(m) => m.role === "agent" && !typingPool.has(m.id)
+		);
+	}
+
+	findMembersByIdentifiers(
+		members: GroupChatMember[],
+		identifiers: string[]
+	): GroupChatMember[] {
+		return identifiers
+			.map((identifier) =>
+				members.find(
+					(m) =>
+						(m.name === identifier || m.id === identifier) &&
+						m.role === "agent"
+				)
+			)
+			.filter(Boolean) as GroupChatMember[];
+	}
+}
+
+class ConversationService {
+	formatHistory(messages: MessageWithDetails[]): string {
 		return messages
 			.map((msg) => {
-				const sender = msg.senderUser
-					? msg.senderUser.name
-					: msg.senderAgent
-					? msg.senderAgent.name
-					: "Unknown";
+				const sender =
+					msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
 				return `${sender}: ${msg.content}`;
 			})
 			.join("\n");
 	}
 
-	/**
-	 * Supervisor agent decides who should speak next
-	 */
-	private async decideBySupervisor(
-		members: GroupChatMember[],
-		conversationHistory: string,
+	async getLatestSessionMessages(
+		groupId: string
+	): Promise<MessageWithDetails[]> {
+		const currentSession = await dbHelpers.getCurrentSession(groupId);
+		const sessionMessages = await dbHelpers.getMessagesWithReactions(
+			currentSession.id
+		);
+
+		const enhancedMessages = await Promise.all(
+			sessionMessages.map(async (message) => {
+				const senderUser = message.sender_user_id
+					? await db.users.get(message.sender_user_id)
+					: undefined;
+				const senderAgent = message.sender_agent_id
+					? await db.agents.get(message.sender_agent_id)
+					: undefined;
+
+				return {
+					...message,
+					senderUser,
+					senderAgent,
+					session: currentSession,
+				};
+			})
+		);
+
+		return enhancedMessages.sort(
+			(a, b) => a.created_at.getTime() - b.created_at.getTime()
+		);
+	}
+
+	createConversationContext(
+		groupId: string,
 		groupName: string,
-		groupDescription: string
+		groupDescription: string,
+		members: GroupChatMember[],
+		messages: MessageWithDetails[]
+	): ConversationContext {
+		return {
+			groupId,
+			groupName,
+			groupDescription,
+			members,
+			history: this.formatHistory(messages),
+		};
+	}
+}
+
+class SupervisorService {
+	constructor(private providerConfig: ProviderConfig) {}
+
+	async makeDecision(
+		context: ConversationContext,
+		availableMembers: GroupChatMember[]
 	): Promise<SupervisorDecision> {
-		const membersList = members
+		const prompt = this.buildSupervisorPrompt(context, availableMembers);
+
+		try {
+			const response = await this.callAI(prompt, "gemini-2.5-flash");
+			const decision = this.parseDecision(response);
+			this.validateDecision(decision, context.members);
+			return decision;
+		} catch (error) {
+			console.error("Supervisor decision error:", error);
+			return this.createFallbackDecision();
+		}
+	}
+
+	private buildSupervisorPrompt(
+		context: ConversationContext,
+		availableMembers: GroupChatMember[]
+	): string {
+		const membersList = availableMembers
 			.filter((m) => m.role === "agent")
 			.map((m) => `- ${m.name} (${m.title})`)
 			.join("\n");
 
-		const prompt = `You are a supervisor agent managing a group chat discussion named "${groupName}". Your role is to decide who should speak next based on the conversation context and each agent's expertise.
+		return `You are a supervisor agent managing a group chat discussion named "${context.groupName}". Your role is to decide who should speak next based on the conversation context and each agent's expertise.
 
 <groupDescription>
-${groupDescription}
+${context.groupDescription}
 </groupDescription>
 
 <groupMembers>
@@ -120,7 +217,7 @@ ${membersList}
 </groupMembers>
 
 <conversationHistory>
-${conversationHistory}
+${context.history}
 </conversationHistory>
 
 Analyze the conversation and decide:
@@ -128,14 +225,12 @@ Analyze the conversation and decide:
 1. Who should speak next? (Return an array of agent IDs/names and/or 'human', e.g., ['agent_id_1'], ['human'], or ['human', 'agent_id'])
 2. Should the conversation stop here? (true if waiting for human input or conversation has reached a natural conclusion)
 
-Respond in this exact JSON format, no other text, no markdown wrapper, such as:
+Respond in this exact JSON format, no other text, no markdown wrapper:
 
-<example>
 {
   "nextSpeaker": ["agent_id_1", "agent_id_2"],
   "shouldStop": false
 }
-</example>
 
 Rules:
 - Always return nextSpeaker as an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
@@ -144,94 +239,66 @@ Rules:
 - If the conversation seems complete, set shouldStop to true
 - Your goal is to make the conversation as natural as possible
 - Consider the natural flow of collaboration (PM → Designer → Developer, etc.)`;
+	}
 
-		try {
-			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
-			console.log("Supervisor prompt:", prompt);
+	private async callAI(prompt: string, model: string): Promise<string> {
+		const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
+		const response = await ai.models.generateContent({
+			model,
+			contents: [{ role: "user", parts: [{ text: prompt }] }],
+		});
 
-			const response = await ai.models.generateContent({
-				model: "gemini-2.5-flash",
-				contents: [{ role: "user", parts: [{ text: prompt }] }],
-			});
+		if (!response.text) {
+			throw new Error("Empty response from AI model");
+		}
 
-			console.log("Supervisor result:", response.text);
+		return response.text;
+	}
 
-			const responseText = response.text;
-			if (!responseText) {
-				throw new Error("Empty response from AI model");
+	private parseDecision(responseText: string): SupervisorDecision {
+		return JSON.parse(responseText) as SupervisorDecision;
+	}
+
+	private validateDecision(
+		decision: SupervisorDecision,
+		members: GroupChatMember[]
+	): void {
+		if (!Array.isArray(decision.nextSpeaker)) {
+			throw new Error("nextSpeaker must always be an array");
+		}
+
+		for (const speaker of decision.nextSpeaker) {
+			if (
+				speaker !== "human" &&
+				!members.find((m) => m.name === speaker || m.id === speaker)
+			) {
+				throw new Error(`Invalid nextSpeaker: ${speaker}`);
 			}
-
-			const decision = JSON.parse(responseText) as SupervisorDecision;
-
-			// Validate the decision
-			console.log("decision", decision);
-			console.log("members", members);
-
-			if (!Array.isArray(decision.nextSpeaker)) {
-				throw new Error("nextSpeaker must always be an array");
-			}
-			for (const speaker of decision.nextSpeaker) {
-				if (
-					speaker !== "human" &&
-					!members.find((m) => m.name === speaker || m.id === speaker)
-				) {
-					throw new Error(
-						"Invalid nextSpeaker in supervisor decision: " + speaker
-					);
-				}
-			}
-
-			return decision;
-		} catch (error) {
-			console.error("Supervisor decision error:", error);
-			// Fallback decision
-			return {
-				nextSpeaker: ["human"],
-				reasoning:
-					"Error in supervisor decision, defaulting to human input",
-				shouldStop: true,
-			};
 		}
 	}
 
-	/**
-	 * Generate agent response based on their role and the conversation
-	 */
-	private async generateAgentResponse(
+	private createFallbackDecision(): SupervisorDecision {
+		return {
+			nextSpeaker: ["human"],
+			reasoning:
+				"Error in supervisor decision, defaulting to human input",
+			shouldStop: true,
+		};
+	}
+}
+
+class AgentResponseService {
+	constructor(private providerConfig: ProviderConfig) {}
+
+	async generateResponse(
 		agent: GroupChatMember,
-		conversationHistory: string,
-		members: GroupChatMember[]
+		context: ConversationContext
 	): Promise<string> {
 		if (agent.role !== "agent") {
 			throw new Error("Cannot generate response for non-agent member");
 		}
 
-		const membersList = members
-			.map((m) => `- ${m.name} (${m.title})`)
-			.join("\n");
-
-		const prompt = `<YourBio>
-${agent.system_prompt}
-</YourBio>
-
-You are participating in a group chat in real world.
-
-<GroupMembers>
-${membersList}
-</GroupMembers>
-
-Guidelines:
-- Stay in character as ${agent.name} (${agent.title})
-- Be concise and natural, behave like a real person
-- Each message should no more than 150 words or 50 chinese characters unless it's a code block or a long quote
-- Collaborate effectively with other team members
-- Follow user's language
-
-<ConversationHistory>
-${conversationHistory}
-</ConversationHistory>
-
-Provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly returen the message content.`;
+		const prompt = this.buildAgentPrompt(agent, context);
 
 		try {
 			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
@@ -247,43 +314,138 @@ Provide your response to continue this discussion. Focus on your area of experti
 		}
 	}
 
-	// Helper to fetch latest messages with sender details for the current session
-	private async getLatestSessionMessagesWithDetails(): Promise<
-		MessageWithDetails[]
-	> {
-		const currentSession = await dbHelpers.getCurrentSession(this.groupId);
-		const sessionMessages = await dbHelpers.getMessagesWithReactions(
-			currentSession.id
-		);
-		// Enhance messages with sender details
-		const enhancedMessages = await Promise.all(
-			sessionMessages.map(async (message) => {
-				let senderUser;
-				let senderAgent;
-				if (message.sender_user_id) {
-					senderUser = await db.users.get(message.sender_user_id);
-				}
-				if (message.sender_agent_id) {
-					senderAgent = await db.agents.get(message.sender_agent_id);
-				}
-				return {
-					...message,
-					senderUser,
-					senderAgent,
-					session: currentSession,
-				};
-			})
-		);
-		// Sort by creation time
-		enhancedMessages.sort(
-			(a, b) => a.created_at.getTime() - b.created_at.getTime()
-		);
-		return enhancedMessages;
+	private buildAgentPrompt(
+		agent: GroupChatMember,
+		context: ConversationContext
+	): string {
+		const membersList = context.members
+			.map((m) => `- ${m.name} (${m.title})`)
+			.join("\n");
+
+		return `<YourBio>
+${agent.system_prompt}
+</YourBio>
+
+You are participating in a group chat in real world.
+
+<GroupMembers>
+${membersList}
+</GroupMembers>
+
+Guidelines:
+- Stay in character as ${agent.name} (${agent.title})
+- Be concise and natural, behave like a real person
+- Each message should no more than ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_WORDS} words or ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_CHINESE_CHARS} chinese characters unless it's a code block or a long quote
+- Collaborate effectively with other team members
+- Follow user's language
+
+<ConversationHistory>
+${context.history}
+</ConversationHistory>
+
+Provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly return the message content.`;
+	}
+}
+
+class AgentTypingPool {
+	private pool = new Set<string>();
+
+	add(agentId: string): void {
+		this.pool.add(agentId);
 	}
 
-	/**
-	 * Process a new human message and potentially trigger agent responses
-	 */
+	remove(agentId: string): void {
+		this.pool.delete(agentId);
+	}
+
+	has(agentId: string): boolean {
+		return this.pool.has(agentId);
+	}
+
+	get size(): number {
+		return this.pool.size;
+	}
+
+	getAvailableSlots(): number {
+		return AGENT_CONFIG.TYPING_POOL.MAX_CONCURRENT - this.size;
+	}
+
+	canAddMore(): boolean {
+		return this.getAvailableSlots() > 0;
+	}
+
+	clear(): void {
+		this.pool.clear();
+	}
+
+	// Add public getter for the pool
+	get typingAgents(): Set<string> {
+		return this.pool;
+	}
+}
+
+/**
+ * Organize a group chat with AI agents.
+ */
+export class AgentGroupChat {
+	private memberService: MemberService;
+	private conversationService: ConversationService;
+	private supervisorService: SupervisorService;
+	private responseService: AgentResponseService;
+	private typingPool = new AgentTypingPool();
+	private isSupervisorActive = false;
+	private idleTimeout: NodeJS.Timeout | null = null;
+
+	public members: GroupChatMember[] = [];
+	public groupName: string = "";
+	public groupDescription: string = "";
+
+	constructor(
+		private groupId: string,
+		private providerConfig: ProviderConfig
+	) {
+		this.memberService = new MemberService(groupId);
+		this.conversationService = new ConversationService();
+		this.supervisorService = new SupervisorService(providerConfig);
+		this.responseService = new AgentResponseService(providerConfig);
+	}
+
+	// Public methods for external access
+	async getGroupMembers(): Promise<GroupChatMember[]> {
+		return this.memberService.getGroupMembers();
+	}
+
+	formatConversationHistory(messages: MessageWithDetails[]): string {
+		return this.conversationService.formatHistory(messages);
+	}
+
+	async makeSupervisionDecision(
+		members: GroupChatMember[],
+		conversationHistory: string,
+		groupName: string,
+		groupDescription: string
+	): Promise<SupervisorDecision> {
+		const availableAgents = this.memberService.getAvailableAgents(
+			members,
+			this.typingPool.typingAgents
+		);
+		const availableMembers = [
+			...members.filter((m) => m.role === "human"),
+			...availableAgents,
+		];
+
+		const context = this.conversationService.createConversationContext(
+			this.groupId,
+			groupName,
+			groupDescription,
+			members,
+			[]
+		);
+		context.history = conversationHistory;
+
+		return this.supervisorService.makeDecision(context, availableMembers);
+	}
+
 	async processHumanMessage(
 		userMessage: string,
 		userId: string,
@@ -291,262 +453,316 @@ Provide your response to continue this discussion. Focus on your area of experti
 		groupName: string,
 		groupDescription: string
 	): Promise<void> {
-		const members = await this.getGroupMembers();
+		const members = await this.memberService.getGroupMembers();
+		const updatedHistory = this.createUpdatedHistory(
+			conversationHistory,
+			userMessage,
+			userId,
+			members
+		);
 
-		const updatedHistory = [
-			...conversationHistory,
-			{
-				content: userMessage,
-				senderUser: {
-					name: members.find((m) => m.id === userId)?.name || "User",
-				},
-			} as MessageWithDetails,
-		];
-
-		let currentHistory = this.formatConversationHistory(updatedHistory);
-
-		// Agent typing pool: Set of agent IDs currently responding
-		const agentTypingPool = new Set<string>();
-
-		// Supervisor trigger state
-		let lastMessageTimestamp = Date.now();
-		let idleTimeout: NodeJS.Timeout | null = null;
-		let supervisorActive = false;
-
-		const triggerSupervisor = async () => {
-			if (supervisorActive) {
-				console.log("Supervisor request discarded: already active");
-				return;
-			}
-			supervisorActive = true;
-			try {
-				while (true) {
-					// Exclude agents in the pool from supervisor decision
-					const availableMembers = members.filter(
-						(m) => m.role !== "agent" || !agentTypingPool.has(m.id)
-					);
-					const decision = await this.decideBySupervisor(
-						availableMembers,
-						currentHistory,
-						groupName,
-						groupDescription
-					);
-					console.log("Supervisor decision:", decision);
-					if (
-						decision.shouldStop ||
-						decision.nextSpeaker.includes("human")
-					) {
-						break;
-					}
-					const nextAgents = decision.nextSpeaker
-						.map((speaker) =>
-							members.find(
-								(m) =>
-									(m.name === speaker || m.id === speaker) &&
-									m.role === "agent" &&
-									!agentTypingPool.has(m.id)
-							)
-						)
-						.filter(Boolean) as GroupChatMember[];
-					if (nextAgents.length === 0) {
-						console.error(
-							"Agent(s) not found or already typing:",
-							decision.nextSpeaker
-						);
-						break;
-					}
-					// Limit pool size
-					const agentsToStart = nextAgents.slice(
-						0,
-						AGENT_TYPING_POOL_MAX - agentTypingPool.size
-					);
-					if (agentsToStart.length === 0) {
-						// Pool is full, wait for some agents to finish
-						await new Promise((resolve) =>
-							setTimeout(resolve, 1000)
-						);
-						continue;
-					}
-					const agentPromises = agentsToStart.map((agent) => {
-						agentTypingPool.add(agent.id);
-						const delay =
-							Math.floor(
-								Math.random() *
-									(AGENT_RESPONSE_DELAY_MAX_MS -
-										AGENT_RESPONSE_DELAY_MIN_MS +
-										1)
-							) + AGENT_RESPONSE_DELAY_MIN_MS;
-						return new Promise<void>((resolve) => {
-							setTimeout(async () => {
-								const latestMessages =
-									await this.getLatestSessionMessagesWithDetails();
-								const formattedHistory =
-									this.formatConversationHistory(
-										latestMessages
-									);
-								const response =
-									await this.generateAgentResponse(
-										agent,
-										formattedHistory,
-										members
-									);
-								const currentSession =
-									await dbHelpers.getCurrentSession(
-										this.groupId
-									);
-								await dbHelpers.sendMessage({
-									session_id: currentSession.id,
-									sender_agent_id: agent.id,
-									content: response,
-								});
-								agentTypingPool.delete(agent.id);
-								// Only update currentHistory, do not trigger supervisor again
-								const latestMessagesAfter =
-									await this.getLatestSessionMessagesWithDetails();
-								currentHistory =
-									this.formatConversationHistory(
-										latestMessagesAfter
-									);
-								lastMessageTimestamp = Date.now();
-								// Reset idle timer after agent message
-								if (idleTimeout) clearTimeout(idleTimeout);
-								idleTimeout = setTimeout(() => {
-									triggerSupervisor();
-								}, 5000);
-								resolve();
-							}, delay);
-						});
-					});
-					await Promise.all(agentPromises);
-					const latestMessages =
-						await this.getLatestSessionMessagesWithDetails();
-					currentHistory =
-						this.formatConversationHistory(latestMessages);
-					await new Promise((resolve) => setTimeout(resolve, 1000));
-				}
-			} finally {
-				supervisorActive = false;
-			}
-		};
-
-		// Human message: trigger supervisor immediately
-		if (idleTimeout) clearTimeout(idleTimeout);
-		await triggerSupervisor();
-
-		// Set idle timer for future inactivity
-		idleTimeout = setTimeout(() => {
-			triggerSupervisor();
-		}, 5000);
+		this.clearIdleTimeout();
+		await this.triggerSupervisorCycle(
+			members,
+			updatedHistory,
+			groupName,
+			groupDescription
+		);
+		this.setIdleTimeout(members, groupName, groupDescription);
 	}
 
-	/**
-	 * Start a conversation with a specific topic or question
-	 */
 	async startConversation(
 		topic: string,
 		conversationHistory: MessageWithDetails[] = []
 	): Promise<void> {
-		const members = await this.getGroupMembers();
+		const members = await this.memberService.getGroupMembers();
 		let currentHistory =
-			this.formatConversationHistory(conversationHistory) +
-			(conversationHistory.length > 0 ? "\n" : "") +
-			`Human: ${topic}`;
-		let lastSpeaker = "Human";
+			this.conversationService.formatHistory(conversationHistory);
 
-		// Agent typing pool: Set of agent IDs currently responding
-		const agentTypingPool = new Set<string>();
+		if (conversationHistory.length > 0) {
+			currentHistory += "\n";
+		}
+		currentHistory += `Human: ${topic}`;
+
+		await this.runConversationLoop(members, currentHistory);
+	}
+
+	private createUpdatedHistory(
+		conversationHistory: MessageWithDetails[],
+		userMessage: string,
+		userId: string,
+		members: GroupChatMember[]
+	): MessageWithDetails[] {
+		const userMember = members.find((m) => m.id === userId);
+		return [
+			...conversationHistory,
+			{
+				content: userMessage,
+				senderUser: {
+					name: userMember?.name || "User",
+				},
+			} as MessageWithDetails,
+		];
+	}
+
+	private async triggerSupervisorCycle(
+		members: GroupChatMember[],
+		initialHistory: MessageWithDetails[],
+		groupName: string,
+		groupDescription: string
+	): Promise<void> {
+		if (this.isSupervisorActive) {
+			console.log("Supervisor request discarded: already active");
+			return;
+		}
+
+		this.isSupervisorActive = true;
+		const currentHistory =
+			this.conversationService.formatHistory(initialHistory);
+
+		try {
+			await this.runSupervisorLoop(
+				members,
+				currentHistory,
+				groupName,
+				groupDescription
+			);
+		} finally {
+			this.isSupervisorActive = false;
+		}
+	}
+
+	private async runSupervisorLoop(
+		members: GroupChatMember[],
+		initialHistory: string,
+		groupName: string,
+		groupDescription: string
+	): Promise<void> {
+		let currentHistory = initialHistory;
 
 		while (true) {
-			// Exclude agents in the pool from supervisor decision
-			const availableMembers = members.filter(
-				(m) => m.role !== "agent" || !agentTypingPool.has(m.id)
+			const availableAgents = this.memberService.getAvailableAgents(
+				members,
+				this.typingPool.typingAgents
 			);
-			const decision = await this.decideBySupervisor(
-				availableMembers,
-				currentHistory,
-				lastSpeaker,
-				""
+			const availableMembers = [
+				...members.filter((m) => m.role === "human"),
+				...availableAgents,
+			];
+
+			const context = this.conversationService.createConversationContext(
+				this.groupId,
+				groupName,
+				groupDescription,
+				members,
+				[] // We pass empty array since we already have formatted history
+			);
+			context.history = currentHistory;
+
+			const decision = await this.supervisorService.makeDecision(
+				context,
+				availableMembers
 			);
 			console.log("Supervisor decision:", decision);
+
 			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
 				break;
 			}
-			const nextAgents = decision.nextSpeaker
-				.map((speaker) =>
-					members.find(
-						(m) =>
-							(m.name === speaker || m.id === speaker) &&
-							m.role === "agent" &&
-							!agentTypingPool.has(m.id)
-					)
-				)
-				.filter(Boolean) as GroupChatMember[];
+
+			const nextAgents = this.memberService.findMembersByIdentifiers(
+				availableAgents,
+				decision.nextSpeaker
+			);
+
 			if (nextAgents.length === 0) {
 				console.error(
-					"Agent(s) not found or already typing:",
+					"No available agents found:",
 					decision.nextSpeaker
 				);
 				break;
 			}
-			// Limit pool size
-			const agentsToStart = nextAgents.slice(
-				0,
-				AGENT_TYPING_POOL_MAX - agentTypingPool.size
-			);
-			if (agentsToStart.length === 0) {
-				// Pool is full, wait for some agents to finish
-				await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			if (!this.typingPool.canAddMore()) {
+				await this.waitForAgentsToFinish();
 				continue;
 			}
-			const agentPromises = agentsToStart.map((agent) => {
-				agentTypingPool.add(agent.id);
-				const delay =
-					Math.floor(
-						Math.random() *
-							(AGENT_RESPONSE_DELAY_MAX_MS -
-								AGENT_RESPONSE_DELAY_MIN_MS +
-								1)
-					) + AGENT_RESPONSE_DELAY_MIN_MS;
-				return new Promise<void>((resolve) => {
-					setTimeout(async () => {
-						// Fetch latest messages before responding
-						const latestMessages =
-							await this.getLatestSessionMessagesWithDetails();
-						const formattedHistory =
-							this.formatConversationHistory(latestMessages);
-						const response = await this.generateAgentResponse(
-							agent,
-							formattedHistory,
-							members
-						);
-						const currentSession =
-							await dbHelpers.getCurrentSession(this.groupId);
-						await dbHelpers.sendMessage({
-							session_id: currentSession.id,
-							sender_agent_id: agent.id,
-							content: response,
-						});
-						agentTypingPool.delete(agent.id);
-						// After agent finishes, immediately ask supervisor for next decision
-						const latestMessagesAfter =
-							await this.getLatestSessionMessagesWithDetails();
-						currentHistory =
-							this.formatConversationHistory(latestMessagesAfter);
-						if (agentsToStart.length > 0) {
-							lastSpeaker =
-								agentsToStart[agentsToStart.length - 1].name;
-						}
-						resolve();
-					}, delay);
-				});
-			});
-			// Wait for all scheduled agent responses to complete
-			await Promise.all(agentPromises);
-			// After all agents have responded, fetch latest messages for next supervisor decision
-			const latestMessages =
-				await this.getLatestSessionMessagesWithDetails();
-			currentHistory = this.formatConversationHistory(latestMessages);
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+
+			const agentsToStart = nextAgents.slice(
+				0,
+				this.typingPool.getAvailableSlots()
+			);
+			await this.processAgentResponses(agentsToStart, context);
+
+			currentHistory = await this.updateHistoryFromDatabase();
+			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
 		}
+	}
+
+	private async runConversationLoop(
+		members: GroupChatMember[],
+		initialHistory: string
+	): Promise<void> {
+		let currentHistory = initialHistory;
+
+		while (true) {
+			const availableAgents = this.memberService.getAvailableAgents(
+				members,
+				this.typingPool.typingAgents
+			);
+			const availableMembers = [
+				...members.filter((m) => m.role === "human"),
+				...availableAgents,
+			];
+
+			const context = this.conversationService.createConversationContext(
+				this.groupId,
+				"",
+				"",
+				members,
+				[]
+			);
+			context.history = currentHistory;
+
+			const decision = await this.supervisorService.makeDecision(
+				context,
+				availableMembers
+			);
+			console.log("Supervisor decision:", decision);
+
+			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
+				break;
+			}
+
+			const nextAgents = this.memberService.findMembersByIdentifiers(
+				availableAgents,
+				decision.nextSpeaker
+			);
+
+			if (nextAgents.length === 0) {
+				console.error(
+					"No available agents found:",
+					decision.nextSpeaker
+				);
+				break;
+			}
+
+			if (!this.typingPool.canAddMore()) {
+				await this.waitForAgentsToFinish();
+				continue;
+			}
+
+			const agentsToStart = nextAgents.slice(
+				0,
+				this.typingPool.getAvailableSlots()
+			);
+			await this.processAgentResponses(agentsToStart, context);
+
+			currentHistory = await this.updateHistoryFromDatabase();
+			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
+		}
+	}
+
+	private async processAgentResponses(
+		agents: GroupChatMember[],
+		context: ConversationContext
+	): Promise<void> {
+		const isSingleAgent = agents.length === 1;
+		const agentPromises = agents.map((agent) =>
+			this.scheduleAgentResponse(agent, context, isSingleAgent)
+		);
+		await Promise.all(agentPromises);
+	}
+
+	private async scheduleAgentResponse(
+		agent: GroupChatMember,
+		context: ConversationContext,
+		isSingleAgent: boolean = false
+	): Promise<void> {
+		this.typingPool.add(agent.id);
+		const delay = isSingleAgent ? 500 : this.calculateResponseDelay(); // Minimal delay for single agent
+
+		return new Promise<void>((resolve) => {
+			setTimeout(async () => {
+				try {
+					await this.executeAgentResponse(agent, context);
+				} finally {
+					this.typingPool.remove(agent.id);
+					resolve();
+				}
+			}, delay);
+		});
+	}
+
+	private async executeAgentResponse(
+		agent: GroupChatMember,
+		context: ConversationContext
+	): Promise<void> {
+		const latestMessages =
+			await this.conversationService.getLatestSessionMessages(
+				this.groupId
+			);
+		const updatedContext =
+			this.conversationService.createConversationContext(
+				context.groupId,
+				context.groupName,
+				context.groupDescription,
+				context.members,
+				latestMessages
+			);
+
+		const response = await this.responseService.generateResponse(
+			agent,
+			updatedContext
+		);
+		const currentSession = await dbHelpers.getCurrentSession(this.groupId);
+
+		await dbHelpers.sendMessage({
+			session_id: currentSession.id,
+			sender_agent_id: agent.id,
+			content: response,
+		});
+	}
+
+	private calculateResponseDelay(): number {
+		const { MIN_MS, MAX_MS } = AGENT_CONFIG.RESPONSE_DELAY;
+		return Math.floor(Math.random() * (MAX_MS - MIN_MS + 1)) + MIN_MS;
+	}
+
+	private async updateHistoryFromDatabase(): Promise<string> {
+		const latestMessages =
+			await this.conversationService.getLatestSessionMessages(
+				this.groupId
+			);
+		return this.conversationService.formatHistory(latestMessages);
+	}
+
+	private async waitForAgentsToFinish(): Promise<void> {
+		await this.delay(AGENT_CONFIG.SUPERVISOR.DECISION_RETRY_DELAY_MS);
+	}
+
+	private delay(ms: number): Promise<void> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	private clearIdleTimeout(): void {
+		if (this.idleTimeout) {
+			clearTimeout(this.idleTimeout);
+			this.idleTimeout = null;
+		}
+	}
+
+	private setIdleTimeout(
+		members: GroupChatMember[],
+		groupName: string,
+		groupDescription: string
+	): void {
+		this.idleTimeout = setTimeout(() => {
+			this.triggerSupervisorCycle(
+				members,
+				[],
+				groupName,
+				groupDescription
+			);
+		}, AGENT_CONFIG.SUPERVISOR.IDLE_TIMEOUT_MS);
 	}
 }

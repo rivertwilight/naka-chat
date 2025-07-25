@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, MessageCircle, Sparkles, Check } from "lucide-react";
 import { Sawarabi_Mincho } from "next/font/google";
+import { AvatarGroup } from "@lobehub/ui";
 
 interface Agent {
 	id: string;
@@ -105,6 +106,7 @@ const sawarabi = Sawarabi_Mincho({
 export default function HomePage() {
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [checked, setChecked] = useState<boolean[]>(Array(9).fill(false));
 	const router = useRouter();
 
 	const agents = defaultAgents;
@@ -139,8 +141,9 @@ export default function HomePage() {
 						NakaChat
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Collaborate with AI agents in a harmonious group chat experience.
-						Each agent brings unique expertise to your conversations.
+						Collaborate with AI agents in a harmonious group chat
+						experience. Each agent brings unique expertise to your
+						conversations.
 					</p>
 				</div>
 
@@ -152,9 +155,16 @@ export default function HomePage() {
 							<div
 								key={index}
 								className={
-									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px]"
+									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px] cursor-pointer select-none"
 								}
 								style={{ animationDelay: `${index * 100}ms` }}
+								onClick={() => {
+									setChecked((prev) => {
+										const next = [...prev];
+										next[index] = !next[index];
+										return next;
+									});
+								}}
 							>
 								{agent ? (
 									<>
@@ -177,10 +187,28 @@ export default function HomePage() {
 											</p>
 										</div>
 										<div className="ml-3 flex items-center">
-											<input
-												type="checkbox"
-												className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-3 focus:ring-amber-400 transition-colors duration-200"
-											/>
+											<div className="relative w-5 h-5">
+												<input
+													type="checkbox"
+													checked={checked[index]}
+													onChange={() => {
+														setChecked((prev) => {
+															const next = [
+																...prev,
+															];
+															next[index] =
+																!next[index];
+															return next;
+														});
+													}}
+													className="w-5 h-5 appearance-none rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 checked:bg-amber-400 checked:border-amber-400 focus:ring-amber-400 transition-colors duration-200 cursor-pointer"
+												/>
+												{checked[index] && (
+													<span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+														<Check className="w-4 h-4 text-white" />
+													</span>
+												)}
+											</div>
 										</div>
 									</>
 								) : (
@@ -194,10 +222,25 @@ export default function HomePage() {
 				<div className="flex justify-center mb-4">
 					<button
 						onClick={() => router.push(redirectTo)}
-						className="flex border-amber-500 hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 border-2 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+						className="flex hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
 					>
-						Start Group Chat
 						<ArrowRight className="w-4 h-4" />
+						Start Group Chat
+						<AvatarGroup
+							className="ml-1"
+							size={20}
+							items={agents
+								.map((agent, idx) =>
+									checked[idx]
+										? {
+												src: agent.avatar_url,
+												key: agent.id,
+												name: agent.name,
+										  }
+										: null
+								)
+								.filter(Boolean)}
+						/>
 					</button>
 				</div>
 			</div>

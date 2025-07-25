@@ -11,7 +11,12 @@ import {
 	useCurrentUser,
 	useGroup,
 } from "../../../hooks/useDatabase";
-import { AgentGroupChat } from "../../../lib/agentGroupChat";
+import { 
+	AgentGroupChat, 
+	GroupChatMember, 
+	SupervisorDecision,
+	MessageWithDetails 
+} from "../../../lib/agentGroupChat";
 import { usePersistance } from "../../../components/PersistanceContext";
 
 const geistMono = Geist_Mono({
@@ -28,7 +33,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const [loading, setLoading] = useState(false);
 	const [agentChatLoading, setAgentChatLoading] = useState(false);
 	const [previousMessageCount, setPreviousMessageCount] = useState(0);
-	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]); // NEW
+	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]);
 	const { user } = useCurrentUser();
 	const { group } = useGroup(actualGroupId);
 	const { messages, sendMessage, addReaction } =
@@ -39,7 +44,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
 
 	useEffect(() => {
-		if (actualGroupId) {
+		if (actualGroupId && provider === "Google") {
 			agentGroupChatRef.current = new AgentGroupChat(actualGroupId, {
 				provider,
 				apiKey,
@@ -69,33 +74,37 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 			// Wait a moment for the message to be saved, then trigger agent responses
 			setTimeout(async () => {
 				try {
-					// Patch: Intercept supervisor decision to get nextSpeaker
 					const agentGroupChat = agentGroupChatRef.current!;
-					const members = await agentGroupChat["getGroupMembers"]();
-					const updatedHistory = [
+					const members: GroupChatMember[] = await agentGroupChat.getGroupMembers();
+					
+					const updatedHistory: MessageWithDetails[] = [
 						...messages,
 						{
 							content,
 							senderUser: {
-								name: members.find((m) => m.id === user.id)?.name || "User",
+								name: members.find((m: GroupChatMember) => m.id === user.id)?.name || "User",
 							},
-						} as any,
+						} as MessageWithDetails,
 					];
-					const currentHistory = agentGroupChat["formatConversationHistory"](updatedHistory);
-					const decision = await agentGroupChat["decideBySupervisor"](
+					
+					const currentHistory = agentGroupChat.formatConversationHistory(updatedHistory);
+					const decision: SupervisorDecision = await agentGroupChat.makeSupervisionDecision(
 						members,
 						currentHistory,
 						group?.name || "Group",
 						group?.description || ""
 					);
+					
 					// Only show agent names (not 'human')
 					const agentNames = decision.nextSpeaker
-						.filter((speaker) => speaker !== "human")
-						.map((speaker) => {
-							const found = members.find((m) => m.id === speaker || m.name === speaker);
+						.filter((speaker: string) => speaker !== "human")
+						.map((speaker: string) => {
+							const found = members.find((m: GroupChatMember) => m.id === speaker || m.name === speaker);
 							return found?.name || speaker;
 						});
+					
 					setPendingSpeakers(agentNames);
+					
 					// Now trigger the normal process
 					await agentGroupChat.processHumanMessage(
 						content,
@@ -222,7 +231,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		);
 		if (agentMessages.length > 0) {
 			const stillPending = agentNames.filter(
-				name => !agentMessages.some(msg => msg.senderAgent.name === name)
+				name => !agentMessages.some(msg => msg.senderAgent?.name === name)
 			);
 			setPendingSpeakers(stillPending);
 		}

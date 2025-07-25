@@ -278,6 +278,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 					onSendMessage={handleSendMessage}
 					agentChatLoading={agentChatLoading}
 					typingUsers={pendingSpeakers}
+					groupName={group?.name}
 				/>
 			</main>
 			<SidebarRight groupId={groupId} />

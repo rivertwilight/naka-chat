@@ -15,6 +15,7 @@ interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
 	typingUsers?: string[];
+	groupName?: string;
 }
 
 export const menu: DropdownProps["menu"] = {
@@ -31,6 +32,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	onSendMessage,
 	agentChatLoading,
 	typingUsers = [],
+	groupName,
 }) => {
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
@@ -111,7 +113,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 						onCompositionStart={handleCompositionStart}
 						onCompositionEnd={handleCompositionEnd}
 						className="flex-1 bg-transparent outline-none border-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 resize-none overflow-y-auto"
-						placeholder="Type a message..."
+						placeholder={`Message ${groupName}`}
 						disabled={sending}
 						rows={1}
 						style={{ maxHeight: "128px" }}

@@ -1,13 +1,31 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Image as ImageIcon, ArrowUp } from "lucide-react";
+import {
+	Image as ImageIcon,
+	ArrowUp,
+	Command,
+	Settings,
+	AtSign,
+	Share,
+} from "lucide-react";
+import { Dropdown, DropdownProps, Tooltip, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
 	typingUsers?: string[];
 }
+
+export const menu: DropdownProps["menu"] = {
+	items: [
+		{
+			icon: <Icon icon={Share} />,
+			key: "copy",
+			label: "Share Chat",
+		},
+	],
+};
 
 const MessageInputField: React.FC<MessageInputFieldProps> = ({
 	onSendMessage,
@@ -75,13 +93,16 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 								: "flex-center",
 					}}
 				>
-					{/* <button
-						type="button"
-						className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
-						aria-label="Add emoji"
-					>
-						<Smile size={20} />
-					</button> */}
+					<Dropdown menu={menu} trigger={["click"]}>
+						<button
+							type="button"
+							className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
+							aria-label="Attach image"
+						>
+							<Command size={20} />
+						</button>
+					</Dropdown>
+
 					<textarea
 						ref={textareaRef}
 						value={message}
@@ -95,6 +116,7 @@ const MessageInputField: React.FC<MessageInputFieldProps> = ({
 						rows={1}
 						style={{ maxHeight: "128px" }}
 					/>
+
 					<button
 						type="button"
 						className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"

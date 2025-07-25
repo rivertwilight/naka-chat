@@ -155,7 +155,7 @@ export default function HomePage() {
 							<div
 								key={index}
 								className={
-									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px] cursor-pointer select-none"
+									"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px] cursor-pointer select-none"
 								}
 								style={{ animationDelay: `${index * 100}ms` }}
 								onClick={() => {

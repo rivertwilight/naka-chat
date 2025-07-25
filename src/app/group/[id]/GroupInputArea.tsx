@@ -6,11 +6,16 @@ import { Smile, Image as ImageIcon, ArrowUp } from "lucide-react";
 interface GroupInputAreaProps {
 	onSendMessage?: (content: string) => void;
 	agentChatLoading?: boolean;
+	typingUsers?: string[];
 }
 
-const GroupInputArea: React.FC<GroupInputAreaProps> = ({ onSendMessage }) => {
+const GroupInputArea: React.FC<GroupInputAreaProps> = ({
+	onSendMessage,
+	typingUsers = [],
+}) => {
 	const [message, setMessage] = useState("");
 	const [sending, setSending] = useState(false);
+	const [isComposing, setIsComposing] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	// 动态调整 textarea 高度
@@ -63,6 +68,11 @@ const GroupInputArea: React.FC<GroupInputAreaProps> = ({ onSendMessage }) => {
 			handleSubmit(e as any);
 		}
 	};
+
+	const handleCompositionStart = () => setIsComposing(true);
+	const handleCompositionEnd = () => setIsComposing(false);
+
+	const typingUsersString = typingUsers.join(", ") + " are typing...";
 
 	return (
 		<div className="fixed left-96 right-96 bottom-0 pb-6 z-30 max-w-3xl mx-auto">

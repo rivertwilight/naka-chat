@@ -16,6 +16,7 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
 import { Settings } from "lucide-react";
+import { format } from "date-fns";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -63,6 +64,16 @@ export default function Sidebar() {
 	const groupIds = groups.map((g) => g.id);
 	const latestMessages = useLatestGroupMessages(groupIds);
 
+	function formatMessageTime(date: Date | undefined): string {
+		if (!date) return "";
+		const now = new Date();
+		const isToday =
+			date.getDate() === now.getDate() &&
+			date.getMonth() === now.getMonth() &&
+			date.getFullYear() === now.getFullYear();
+		return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
+	}
+
 	return (
 		<>
 			<aside
@@ -99,6 +110,7 @@ export default function Sidebar() {
 									group={group}
 									selected={groupId === group.id}
 									messagePreview={preview}
+									lastMessageTime={formatMessageTime(msg?.created_at)}
 								/>
 							);
 						})
@@ -106,7 +118,7 @@ export default function Sidebar() {
 					{/* Add Group Button */}
 					<button
 						type="button"
-						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
+						className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
 						onClick={handleCreateGroup}
 						disabled={creating}
 					>

@@ -243,8 +243,3 @@ export default function HomeClient() {
 		</div>
 	);
 }
-
-// 为了保持向后兼容，导出一个默认的 Home 组件
-export function Home() {
-	return <HomeClient />;
-}

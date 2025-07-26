@@ -3,8 +3,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { notFound } from "next/navigation";
 import { Geist_Mono } from "next/font/google";
+import { motion, AnimatePresence } from "framer-motion";
 import MessageInputField from "./GroupInputArea";
 import MessageItem from "./MessageItem";
+import DMView from "./DMView";
 import SidebarRight from "../../SidebarRight";
 import {
 	useGroupMessages,
@@ -35,6 +37,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const [agentChatLoading, setAgentChatLoading] = useState(false);
 	const [previousMessageCount, setPreviousMessageCount] = useState(0);
 	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]);
+	const [dmView, setDmView] = useState<{
+		senderId: string;
+		senderName: string;
+		senderAvatar?: string;
+	} | null>(null);
 	const { user } = useCurrentUser();
 	const { group } = useGroup(groupId);
 	const { messages, sendMessage, addReaction } = useGroupMessages(groupId);
@@ -141,6 +148,18 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const handleReaction = async (messageId: string, emoji: string) => {
 		if (!user) return;
 		await addReaction(messageId, emoji, user.id);
+	};
+
+	const handleDmClick = (senderId: string, senderName: string, senderAvatar?: string) => {
+		setDmView({
+			senderId,
+			senderName,
+			senderAvatar,
+		});
+	};
+
+	const handleBackFromDM = () => {
+		setDmView(null);
 	};
 
 	const exampleSuggestions = [
@@ -255,7 +274,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				);
 			}
 
-			// Add the message
 			result.push(
 				<React.Fragment key={msg.id}>
 					<MessageItem
@@ -274,6 +292,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						currentUserId={user?.id}
 						senderUser={msg.senderUser}
 						senderAgent={msg.senderAgent}
+						onDmClick={handleDmClick}
 					/>
 				</React.Fragment>
 			);
@@ -318,38 +337,58 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	return (
 		<>
-			<main className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen">
-				<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24 relative">
-					<div className="flex flex-col min-h-[200px]">
-						{messages.length === 0 ? (
-							<div className="absolute inset-0 flex flex-col items-start justify-end py-24 pointer-events-none select-none z-10">
-								{randomExamples.map((example, idx) => (
-									<button
-										key={idx}
-										onClick={() =>
-											handleExampleClick(example)
-										}
-										className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-white transition-colors duration-300 focus:outline-none"
-									>
-										<ArrowRight />
-										{example}
-									</button>
-								))}
+			<AnimatePresence mode="wait">
+				{dmView ? (
+					<DMView
+						key="dm-view"
+						groupId={groupId}
+						senderId={dmView.senderId}
+						senderName={dmView.senderName}
+						senderAvatar={dmView.senderAvatar}
+						onBack={handleBackFromDM}
+					/>
+				) : (
+					<motion.main
+						key="group-chat"
+						initial={{ opacity: 0, x: -20 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: 20 }}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+						className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen"
+					>
+						<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24 relative">
+							<div className="flex flex-col min-h-[200px]">
+								{messages.length === 0 ? (
+									<div className="absolute inset-0 flex flex-col items-start justify-end py-24 pointer-events-none select-none z-10">
+										{randomExamples.map((example, idx) => (
+											<button
+												key={idx}
+												onClick={() =>
+													handleExampleClick(example)
+												}
+												className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-white transition-colors duration-300 focus:outline-none"
+											>
+												<ArrowRight />
+												{example}
+											</button>
+										))}
+									</div>
+								) : (
+									renderMessagesWithDividers()
+								)}
+								<div ref={messagesEndRef} />
 							</div>
-						) : (
-							renderMessagesWithDividers()
-						)}
-						<div ref={messagesEndRef} />
-					</div>
-				</section>
-				<MessageInputField
-					ref={messageInputRef}
-					onSendMessage={handleSendMessage}
-					agentChatLoading={agentChatLoading}
-					typingUsers={pendingSpeakers}
-					groupName={group?.name}
-				/>
-			</main>
+						</section>
+						<MessageInputField
+							ref={messageInputRef}
+							onSendMessage={handleSendMessage}
+							agentChatLoading={agentChatLoading}
+							typingUsers={pendingSpeakers}
+							groupName={group?.name}
+						/>
+					</motion.main>
+				)}
+			</AnimatePresence>
 			<SidebarRight groupId={groupId} />
 		</>
 	);

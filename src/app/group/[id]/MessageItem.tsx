@@ -67,6 +67,7 @@ interface MessageItemProps {
 	senderUser?: any;
 	senderAgent?: any;
 	currentUserId?: string;
+	onDmClick?: (senderId: string, senderName: string, senderAvatar?: string) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
@@ -85,6 +86,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	senderUser,
 	senderAgent,
 	currentUserId,
+	onDmClick,
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
@@ -106,7 +108,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	// DM to current user
 	if (isDmToCurrentUser) {
 		return (
-			<div className="flex items-center gap-2 mx-auto my-4 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full border border-neutral-300 dark:border-neutral-700 px-4 py-2">
+			<div 
+				className="flex items-center gap-2 mx-auto my-4 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full border border-neutral-300 dark:border-neutral-700 px-4 py-2 transition-colors"
+				onClick={() => {
+					const senderId = senderUser?.id || senderAgent?.id;
+					if (senderId && onDmClick) {
+						onDmClick(senderId, sender, avatar_url);
+					}
+				}}
+			>
 				<Avatar src={avatar_url} size={24} />
 				<span className="text-sm text-neutral-500 dark:text-neutral-400">
 					{sender}

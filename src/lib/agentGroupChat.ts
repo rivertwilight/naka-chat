@@ -119,8 +119,27 @@ class MemberService {
 }
 
 class ConversationService {
-	formatHistory(messages: MessageWithDetails[]): string {
-		return messages
+	formatHistory(
+		messages: MessageWithDetails[],
+		agentId?: string,
+		isSupervisor?: boolean
+	): string {
+		// Sort messages by created_at ascending (oldest first)
+		const sortedMessages = [...messages].sort((a, b) => {
+			const aTime = a.created_at instanceof Date ? a.created_at.getTime() : new Date(a.created_at).getTime();
+			const bTime = b.created_at instanceof Date ? b.created_at.getTime() : new Date(b.created_at).getTime();
+			return aTime - bTime;
+		});
+		return sortedMessages
+			.filter((msg) => {
+				if (isSupervisor) return true;
+				if (msg.type !== "dm") return true;
+				if (!agentId) return false;
+				const isSender =
+					msg.senderAgent && msg.senderAgent.id === agentId;
+				const isTarget = msg.dm_target_id === agentId;
+				return isSender || isTarget;
+			})
 			.map((msg) => {
 				const sender =
 					msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
@@ -130,7 +149,9 @@ class ConversationService {
 	}
 
 	async getLatestSessionMessages(
-		groupId: string
+		groupId: string,
+		agentId?: string,
+		isSupervisor?: boolean
 	): Promise<MessageWithDetails[]> {
 		const currentSession = await dbHelpers.getCurrentSession(groupId);
 		const sessionMessages = await dbHelpers.getMessagesWithReactions(
@@ -155,9 +176,14 @@ class ConversationService {
 			})
 		);
 
-		return enhancedMessages.sort(
-			(a, b) => a.created_at.getTime() - b.created_at.getTime()
-		);
+		return enhancedMessages.filter((msg) => {
+			if (isSupervisor) return true;
+			if (msg.type !== "dm") return true;
+			if (!agentId) return false;
+			const isSender = msg.senderAgent && msg.senderAgent.id === agentId;
+			const isTarget = msg.dm_target_id === agentId;
+			return isSender || isTarget;
+		});
 	}
 
 	createConversationContext(
@@ -165,14 +191,16 @@ class ConversationService {
 		groupName: string,
 		groupDescription: string,
 		members: GroupChatMember[],
-		messages: MessageWithDetails[]
+		messages: MessageWithDetails[],
+		agentId?: string,
+		isSupervisor?: boolean
 	): ConversationContext {
 		return {
 			groupId,
 			groupName,
 			groupDescription,
 			members,
-			history: this.formatHistory(messages),
+			history: this.formatHistory(messages, agentId, isSupervisor),
 		};
 	}
 }
@@ -308,6 +336,8 @@ class AgentResponseService {
 
 		const prompt = this.buildAgentPrompt(agent, context);
 
+		console.log("Agent prompt:", prompt);
+
 		try {
 			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
 			const response = await ai.models.generateContent({
@@ -327,7 +357,7 @@ class AgentResponseService {
 		context: ConversationContext
 	): string {
 		const membersList = context.members
-			.map((m) => `- ${m.name} (${m.title})`)
+			.map((m) => `- ${m.name} (${m.title} [id: ${m.id}])`)
 			.join("\n");
 
 		return `<YourBio>
@@ -346,12 +376,13 @@ Guidelines:
 - Each message should no more than ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_WORDS} words or ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_CHINESE_CHARS} chinese characters unless it's a code block or a long quote
 - Collaborate effectively with other team members
 - Follow user's language
+- You must always return a JSON object: { "content": "your message", "target": "target_member_id (optional)" }. If you want to send a public message, omit the target field. If you want to send a DM, set the target field to the member's id.
 
 <ConversationHistory>
 ${context.history}
 </ConversationHistory>
 
-Provide your response to continue this discussion. Focus on your area of expertise and add value to the conversation. Directly return the message content.`;
+Provide your response to continue this discussion. Always return a JSON object as described above. Do not return plain text.`;
 	}
 }
 
@@ -563,10 +594,14 @@ export class AgentGroupChat {
 				groupName,
 				groupDescription,
 				members,
-				[] // We pass empty array since we already have formatted history
+				await this.conversationService.getLatestSessionMessages(
+					this.groupId,
+					undefined,
+					true
+				),
+				undefined,
+				true
 			);
-			context.history = currentHistory;
-
 			const decision = await this.supervisorService.makeDecision(
 				context,
 				availableMembers
@@ -707,7 +742,8 @@ export class AgentGroupChat {
 	): Promise<void> {
 		const latestMessages =
 			await this.conversationService.getLatestSessionMessages(
-				this.groupId
+				this.groupId,
+				agent.id
 			);
 		const updatedContext =
 			this.conversationService.createConversationContext(
@@ -715,7 +751,8 @@ export class AgentGroupChat {
 				context.groupName,
 				context.groupDescription,
 				context.members,
-				latestMessages
+				latestMessages,
+				agent.id
 			);
 
 		const response = await this.responseService.generateResponse(
@@ -724,10 +761,34 @@ export class AgentGroupChat {
 		);
 		const currentSession = await dbHelpers.getCurrentSession(this.groupId);
 
+		// Robustly parse JSON, handling code block wrappers
+		let content = "";
+		let type = "public";
+		let dm_target_id = undefined;
+		try {
+			let cleaned = response.trim();
+			if (cleaned.startsWith("```")) {
+				cleaned = cleaned.replace(/^```[a-zA-Z0-9]*\s*/, "");
+				cleaned = cleaned.replace(/```\s*$/, "");
+			}
+			const parsed = JSON.parse(cleaned);
+			if (typeof parsed === "object" && parsed.content) {
+				content = parsed.content;
+				if (parsed.target) {
+					type = "dm";
+					dm_target_id = parsed.target;
+				}
+			}
+		} catch (e) {
+			content = "[Invalid agent response: not valid JSON]";
+		}
+
 		await dbHelpers.sendMessage({
 			session_id: currentSession.id,
 			sender_agent_id: agent.id,
-			content: response,
+			content,
+			type,
+			...(dm_target_id ? { dm_target_id } : {}),
 		});
 	}
 

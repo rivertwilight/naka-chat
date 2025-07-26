@@ -62,6 +62,8 @@ export interface Message {
 	created_at: Date;
 	edited_at?: Date; // nullable
 	reply_to_id?: string; // nullable, FK → Messages.id
+	type: "public" | "dm"; // public: group chat, dm: direct message尼古拉斯·凯奇
+	dm_target_id?: string; // nullable, FK → Users.id
 }
 
 export interface MessageReaction {
@@ -91,9 +93,11 @@ export class NakaChatDB extends Dexie {
 			users: "id, name, email, created_at",
 			agents: "id, name, model, created_at",
 			groups: "id, name, created_by, created_at",
-			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
+			groupMembers:
+				"id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
-			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
+			messages:
+				"id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 	}
@@ -250,7 +254,9 @@ export const dbHelpers = {
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
 		sessionId: string
-	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
+	): Promise<
+		(Message & { reactions: { emoji: string; count: number }[] })[]
+	> {
 		const messages = await db.messages
 			.where("session_id")
 			.equals(sessionId)
@@ -348,7 +354,18 @@ export const dbHelpers = {
 	// Update agent details (e.g., name)
 	async updateAgent(
 		agentId: string,
-		updates: Partial<Pick<Agent, "name" | "avatar_url" | "title" | "system_prompt" | "model" | "temperature" | "max_output_tokens">>
+		updates: Partial<
+			Pick<
+				Agent,
+				| "name"
+				| "avatar_url"
+				| "title"
+				| "system_prompt"
+				| "model"
+				| "temperature"
+				| "max_output_tokens"
+			>
+		>
 	): Promise<void> {
 		await db.agents.update(agentId, {
 			...updates,
@@ -368,8 +385,8 @@ export interface MessageWithDetails extends Message {
 // Singleton for database initialization
 let dbInitPromise: Promise<void> | null = null;
 export function initializeDatabaseOnce() {
-  if (!dbInitPromise) {
-    dbInitPromise = initializeDatabase();
-  }
-  return dbInitPromise;
+	if (!dbInitPromise) {
+		dbInitPromise = initializeDatabase();
+	}
+	return dbInitPromise;
 }

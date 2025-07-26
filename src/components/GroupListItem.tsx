@@ -2,6 +2,7 @@ import Link from "next/link";
 import React from "react";
 import { Check, Pin, X } from "lucide-react";
 import { Dropdown, DropdownProps, Tooltip } from "@lobehub/ui";
+import { useRouter } from "next/navigation";
 import type { Group } from "../lib/database";
 
 interface GroupListItemProps {
@@ -9,39 +10,58 @@ interface GroupListItemProps {
 	selected: boolean;
 	messagePreview?: string;
 	lastMessageTime?: string; // new prop
+	onRemoveGroup?: (groupId: string) => void;
 }
-
-const menu: DropdownProps["menu"] = {
-	items: [
-		{
-			label: "Pin",
-			key: "pin",
-			icon: <Pin size={16} />,
-		},
-		{
-			label: "Remove group",
-			key: "remove",
-			icon: <X size={16} />,
-		},
-	],
-};
 
 const GroupListItem: React.FC<GroupListItemProps> = ({
 	group,
 	selected,
 	messagePreview,
 	lastMessageTime,
+	onRemoveGroup,
 }) => {
 	const [showCheck, setShowCheck] = React.useState(false);
+	const router = useRouter();
+	
+	const menu: DropdownProps["menu"] = {
+		items: [
+			{
+				label: "Pin",
+				key: "pin",
+				icon: <Pin size={16} />,
+			},
+			{
+				label: "Remove group",
+				key: "remove",
+				icon: <X size={16} />,
+				onClick: () => {
+					console.log("Remove group clicked for:", group.id);
+					if (onRemoveGroup) {
+						onRemoveGroup(group.id);
+					}
+				},
+			},
+		],
+	};
+
+	const handleClick = (e: React.MouseEvent) => {
+		e.preventDefault();
+		router.push(`/group/${group.id}`);
+	};
+
 	return (
-		<Link
-			href={`/group/${group.id}`}
+		<div
 			className={
-				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-50 dark:hover:bg-neutral-900 flex items-center justify-between` +
+				`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-50 dark:hover:bg-neutral-900 flex items-center justify-between cursor-pointer` +
 				(selected ? " font-semibold bg-white dark:bg-neutral-900" : "")
 			}
+			onClick={handleClick}
 		>
-			<Dropdown menu={menu} trigger={["contextMenu"]}>
+			<Dropdown 
+				menu={menu} 
+				trigger={["contextMenu"]} 
+				onOpenChange={(open) => {}}
+			>
 				<div className="flex flex-col flex-1 min-w-0">
 					<div className="flex items-center justify-between w-full">
 						<span className="truncate">{group.name}</span>
@@ -57,37 +77,8 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 						</span>
 					)}
 				</div>
-				{/* <span
-				className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex items-center"
-				onClick={(e) => {
-					e.preventDefault();
-					setShowCheck((v) => !v);
-				}}
-			>
-				{showCheck ? (
-					<button
-						type="button"
-						tabIndex={-1}
-						className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
-						onBlur={() => setShowCheck(false)}
-					>
-						<Check size={16} />
-					</button>
-				) : (
-					<Tooltip title="Remove group" placement="top">
-						<button
-							type="button"
-							tabIndex={-1}
-							className="outline-none bg-transparent border-none p-0 m-0 cursor-pointer"
-							onBlur={() => setShowCheck(false)}
-						>
-							<X size={16} />
-						</button>
-					</Tooltip>
-				)}
-			</span> */}
 			</Dropdown>
-		</Link>
+		</div>
 	);
 };
 

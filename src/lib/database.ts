@@ -336,8 +336,6 @@ export const dbHelpers = {
 			.equals(sessionId)
 			.toArray();
 
-		console.log("getMessagesWithReactions: messages", messages, sessionId);
-
 		const messagesWithReactions = await Promise.all(
 			messages.map(async (message) => {
 				const reactions = await db.messageReactions
@@ -524,6 +522,63 @@ export const dbHelpers = {
 			...updates,
 			updated_at: new Date(),
 		});
+	},
+
+	// Delete an agent and all related data
+	async deleteAgent(agentId: string): Promise<void> {
+		// Delete all related data in the correct order to avoid foreign key constraints
+
+		// 1. Delete message reactions for messages sent by this agent
+		await db.messageReactions.where("agent_id").equals(agentId).delete();
+
+		// 2. Delete messages sent by this agent
+		await db.messages.where("sender_agent_id").equals(agentId).delete();
+
+		// 3. Delete group memberships for this agent
+		await db.groupMembers.where("agent_id").equals(agentId).delete();
+
+		// 4. Finally delete the agent
+		await db.agents.delete(agentId);
+	},
+
+	// Delete a group and all related data
+	async deleteGroup(groupId: string): Promise<void> {
+		// Delete all related data in the correct order to avoid foreign key constraints
+		// 1. Delete message reactions for messages in this group's sessions
+		const sessions = await db.sessions
+			.where("group_id")
+			.equals(groupId)
+			.toArray();
+		const sessionIds = sessions.map((s) => s.id);
+
+		for (const sessionId of sessionIds) {
+			const messages = await db.messages
+				.where("session_id")
+				.equals(sessionId)
+				.toArray();
+			const messageIds = messages.map((m) => m.id);
+
+			for (const messageId of messageIds) {
+				await db.messageReactions
+					.where("message_id")
+					.equals(messageId)
+					.delete();
+			}
+		}
+
+		// 2. Delete messages in this group's sessions
+		for (const sessionId of sessionIds) {
+			await db.messages.where("session_id").equals(sessionId).delete();
+		}
+
+		// 3. Delete sessions
+		await db.sessions.where("group_id").equals(groupId).delete();
+
+		// 4. Delete group members
+		await db.groupMembers.where("group_id").equals(groupId).delete();
+
+		// 5. Finally delete the group
+		await db.groups.delete(groupId);
 	},
 };
 

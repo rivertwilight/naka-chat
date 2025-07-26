@@ -45,7 +45,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const { user } = useCurrentUser();
 	const { group } = useGroup(groupId);
 	const { messages, sendMessage, addReaction } = useGroupMessages(groupId);
-	const { provider, apiKey, baseUrl } = usePersistance();
+	const { provider, apiKey, baseUrl, modelId } = usePersistance();
 	const { members: groupMembers } = useGroupMembers(groupId);
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -53,11 +53,12 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const messageInputRef = useRef<any>(null);
 
 	useEffect(() => {
-		if (groupId && provider === "Google") {
+		if (groupId) {
 			agentGroupChatRef.current = new AgentGroupChat(groupId, {
 				provider,
 				apiKey,
 				baseUrl,
+				modelId,
 			});
 		}
 	}, [groupId, provider, apiKey, baseUrl]);

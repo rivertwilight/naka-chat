@@ -1,6 +1,7 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
-
 // Re-export types for external use
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { generateText } from "ai";
 export type { MessageWithDetails } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
@@ -26,9 +27,10 @@ export const AGENT_CONFIG = {
 
 // Types and Interfaces
 export interface ProviderConfig {
-	provider: "Google" | "Anthropic";
+	provider: "Google" | "Anthropic" | "OpenAI" | "Custom";
 	apiKey: string;
 	baseUrl?: string;
+	modelId?: string;
 }
 
 export interface GroupChatMember {
@@ -207,8 +209,48 @@ class ConversationService {
 	}
 }
 
-class SupervisorService {
+class AICallService {
 	constructor(private providerConfig: ProviderConfig) {}
+
+	async callAI(prompt: string, modelId: string): Promise<string> {
+		switch (this.providerConfig.provider) {
+			case "Google":
+				const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
+				const googleResponse = await ai.models.generateContent({
+					model: modelId,
+					contents: [{ role: "user", parts: [{ text: prompt }] }],
+				});
+				return googleResponse.text || "";
+			case "OpenAI":
+				throw new Error("OpenAI provider not implemented yet");
+			case "Anthropic":
+				throw new Error("Anthropic provider not implemented yet");
+			case "Custom":
+				const provider = createOpenAICompatible({
+					name: "AI Hub Mix",
+					baseURL: this.providerConfig.baseUrl!,
+					apiKey: this.providerConfig.apiKey,
+				});
+				console.log("modelId", modelId, this.providerConfig);
+				const model = provider(modelId);
+				const response = await generateText({
+					model: model,
+					prompt,
+				});
+				return response.text || "";
+			default:
+				throw new Error(
+					`Unsupported provider: ${this.providerConfig.provider}`
+				);
+		}
+	}
+}
+
+class SupervisorService {
+	private aiCallService: AICallService;
+	constructor(private providerConfig: ProviderConfig) {
+		this.aiCallService = new AICallService(providerConfig);
+	}
 
 	async makeDecision(
 		context: ConversationContext,
@@ -217,7 +259,10 @@ class SupervisorService {
 		const prompt = this.buildSupervisorPrompt(context, availableMembers);
 
 		try {
-			const response = await this.callAI(prompt, "gemini-2.5-flash");
+			const response = await this.aiCallService.callAI(
+				prompt,
+				this.providerConfig.modelId!
+			);
 			const decision = this.parseDecision(response);
 			this.validateDecision(decision, context.members);
 			return decision;
@@ -271,20 +316,6 @@ Rules:
 - Consider the natural flow of collaboration (PM → Designer → Developer, etc.)`;
 	}
 
-	private async callAI(prompt: string, model: string): Promise<string> {
-		const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
-		const response = await ai.models.generateContent({
-			model,
-			contents: [{ role: "user", parts: [{ text: prompt }] }],
-		});
-
-		if (!response.text) {
-			throw new Error("Empty response from AI model");
-		}
-
-		return response.text;
-	}
-
 	private parseDecision(responseText: string): SupervisorDecision {
 		// Remove markdown code block wrappers if present
 		let cleaned = responseText.trim();
@@ -325,7 +356,10 @@ Rules:
 }
 
 class AgentResponseService {
-	constructor(private providerConfig: ProviderConfig) {}
+	private aiCallService: AICallService;
+	constructor(private providerConfig: ProviderConfig) {
+		this.aiCallService = new AICallService(providerConfig);
+	}
 
 	async generateResponse(
 		agent: GroupChatMember,
@@ -340,13 +374,11 @@ class AgentResponseService {
 		console.log("Agent prompt:", prompt);
 
 		try {
-			const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
-			const response = await ai.models.generateContent({
-				model: "gemini-2.5-pro",
-				contents: [{ role: "user", parts: [{ text: prompt }] }],
-			});
-
-			return response.text || "";
+			const response = await this.aiCallService.callAI(
+				prompt,
+				this.providerConfig.modelId!
+			);
+			return response;
 		} catch (error) {
 			console.error("Agent response generation error:", error);
 			return `*${agent.name} is having trouble responding right now. Please try again later.*`;

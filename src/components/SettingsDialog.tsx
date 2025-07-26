@@ -56,8 +56,16 @@ function GeneralSection() {
 }
 
 function ModelSection() {
-	const { provider, setProvider, apiKey, setApiKey, baseUrl, setBaseUrl } =
-		usePersistance();
+	const {
+		provider,
+		setProvider,
+		apiKey,
+		setApiKey,
+		baseUrl,
+		setBaseUrl,
+		modelId,
+		setModelId,
+	} = usePersistance();
 	return (
 		<>
 			<div className="mb-4">
@@ -122,6 +130,21 @@ function ModelSection() {
 					/>
 				</div>
 			)}
+			<div>
+				<label
+					htmlFor="model-id"
+					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+				>
+					Model ID
+				</label>
+				<input
+					id="model-id"
+					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+					placeholder="Your Model ID"
+					value={modelId}
+					onChange={(e) => setModelId(e.target.value)}
+				/>
+			</div>
 		</>
 	);
 }

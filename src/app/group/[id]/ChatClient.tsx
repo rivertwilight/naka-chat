@@ -10,6 +10,7 @@ import {
 	useGroupMessages,
 	useCurrentUser,
 	useGroup,
+	useGroupMembers,
 } from "@/hooks/useDatabase";
 import {
 	AgentGroupChat,
@@ -38,6 +39,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const { group } = useGroup(groupId);
 	const { messages, sendMessage, addReaction } = useGroupMessages(groupId);
 	const { provider, apiKey, baseUrl } = usePersistance();
+	const { members: groupMembers } = useGroupMembers(groupId);
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
 	const agentGroupChatRef = useRef<AgentGroupChat | null>(null);
@@ -215,6 +217,18 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return undefined;
 	};
 
+	// Get DM target user/agent for a message
+	const getDmTarget = (message: any) => {
+		if (!message.dm_target_id) return null;
+		// Try to find in groupMembers
+		const target = groupMembers.find(
+			(m: any) =>
+				(m.user_id && m.user_id === message.dm_target_id) ||
+				(m.agent_id && m.agent_id === message.dm_target_id)
+		);
+		return target?.details || null;
+	};
+
 	// Group messages by session and add dividers
 	const renderMessagesWithDividers = () => {
 		if (messages.length === 0) return null;
@@ -255,6 +269,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						onReact={(emoji) => handleReaction(msg.id, emoji)}
 						avatar_url={getSenderAvatar(msg)}
 						created_at={msg.created_at}
+						type={msg.type}
+						dm_target={getDmTarget(msg)}
+						currentUserId={user?.id}
+						senderUser={msg.senderUser}
+						senderAgent={msg.senderAgent}
 					/>
 				</React.Fragment>
 			);

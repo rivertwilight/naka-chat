@@ -170,7 +170,7 @@ interface SettingsDialogProps {
 const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 	const [selectedTab, setSelectedTab] = React.useState("general");
 	return (
-		<Dialog open={open} onClose={onClose} variant="fullscreen">
+		<Dialog open={open} onClose={onClose} variant="modal">
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
 				<h2
 					className={`${sawarabi.className} text-2xl text-neutral-800 dark:text-neutral-100 tracking-wide`}
@@ -179,9 +179,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 				</h2>
 			</div>
 
-			<div className="flex flex-1 min-h-0 h-[calc(100vh-80px)] relative">
+			<div className="flex h-96 w-[900px]">
 				{/* Sidebar Navigation */}
-				<nav className="absolute left-0 top-0 w-56 sm:w-72 py-8 px-4 flex flex-col gap-2 bg-white dark:bg-neutral-900 select-none">
+				<nav className="w-56 sm:w-64 py-8 px-4 flex flex-col gap-2 bg-white dark:bg-neutral-900 select-none">
 					{sidebarNav.map((item) => (
 						<button
 							key={item.key}
@@ -200,7 +200,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 					))}
 				</nav>
 				{/* Main Content */}
-				<div className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
+				<div className="flex-1 overflow-y-auto p-6">
 					<div className="w-full max-w-2xl mx-auto">
 						<form className="flex flex-col gap-4">
 							{selectedTab === "general" && <GeneralSection />}

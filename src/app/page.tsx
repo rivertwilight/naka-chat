@@ -8,6 +8,7 @@ import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 interface Agent {
 	id: string;
@@ -119,7 +120,12 @@ export default function HomePage() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col justify-center items-center">
+		<motion.div
+			initial={{ opacity: 0, y: 100 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.5 }}
+			className="min-h-screen flex flex-col justify-center items-center"
+		>
 			<div className="container mx-auto px-4 py-16 pl-24">
 				{/* Header */}
 				<div className="text-center mb-16">
@@ -235,7 +241,7 @@ export default function HomePage() {
 					)}
 				</div>
 			</div>
-		</div>
+		</motion.div>
 	);
 }
 

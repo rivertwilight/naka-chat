@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowRight, X, Loader, Plus, Globe, Cloud, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
+import Dialog from "../components/Dialog";
 
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";
@@ -57,6 +58,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [memberNameEdit, setMemberNameEdit] = React.useState<string>("");
 	const [memberNameEditing, setMemberNameEditing] = React.useState(false);
 	const [memberNameSaving, setMemberNameSaving] = React.useState(false);
+	const [inviteAgentOpen, setInviteAgentOpen] = React.useState(false);
+	const [inviteAgentLoading, setInviteAgentLoading] = React.useState(false);
+	const [selectedAgentIds, setSelectedAgentIds] = React.useState<string[]>([]);
 
 	React.useEffect(() => {
 		if (group && !nameEditing) setNameEdit(group.name || "");
@@ -68,7 +72,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 
 	// Load all agents and users not already in the group
 	React.useEffect(() => {
-		if (!isAddOpen) return;
+		if (!inviteAgentOpen) return;
 		(async () => {
 			const groupMemberIds = new Set(
 				dbMembers.map((m) => m.user_id || m.agent_id)
@@ -76,15 +80,10 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 			const agents = (await db.agents.toArray()).filter(
 				(a) => !groupMemberIds.has(a.id)
 			);
-			const users = (await db.users.toArray()).filter(
-				(u) => !groupMemberIds.has(u.id)
-			);
 			setAllAgents(agents);
-			setAllUsers(users);
-			setSelectedId("");
-			setSelectedType("");
+			setSelectedAgentIds([]);
 		})();
-	}, [isAddOpen, dbMembers]);
+	}, [inviteAgentOpen, dbMembers]);
 
 	const handleNameSave = async () => {
 		if (!groupId) return;
@@ -299,10 +298,10 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						<button
 							type="button"
 							className="mt-1 px-2 mb-4 flex items-center gap-2 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
-							onClick={() => setAddOpen(true)}
+							onClick={() => setInviteAgentOpen(true)}
 						>
 							<Plus size={16} />
-							<span>Invite member</span>
+							<span>Invite agent</span>
 						</button>
 						{members.map((member) => (
 							<button
@@ -599,6 +598,97 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 					</motion.div>
 				)}
 			</AnimatePresence>
+			{/* Invite Agent Dialog */}
+			<Dialog
+				open={inviteAgentOpen}
+				onClose={() => {
+					setInviteAgentOpen(false);
+					setSelectedAgentIds([]);
+					setInviteAgentLoading(false);
+				}}
+				variant="modal"
+			>
+				<div className="flex flex-col min-h-[300px] w-full max-w-md p-6">
+					<h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100 flex items-center gap-2">
+						<Plus size={20} /> Invite Agents
+					</h2>
+					<div className="flex-1 overflow-y-auto mb-4">
+						{allAgents.length === 0 ? (
+							<div className="text-neutral-400 text-center py-8">No available agents to invite.</div>
+						) : (
+							<ul className="flex flex-col gap-2">
+								{allAgents.map((agent) => (
+									<li key={agent.id} className="flex items-center gap-3 p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+										<input
+											type="checkbox"
+											checked={selectedAgentIds.includes(agent.id)}
+											onChange={() => {
+												setSelectedAgentIds((prev) =>
+													prev.includes(agent.id)
+														? prev.filter((id) => id !== agent.id)
+														: [...prev, agent.id]
+												);
+											}}
+											className="accent-neutral-600 w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-neutral-400"
+											id={`invite-agent-${agent.id}`}
+										/>
+										<Avatar src={agent.avatar_url} size={28} />
+										<label htmlFor={`invite-agent-${agent.id}`} className="flex-1 cursor-pointer text-neutral-800 dark:text-neutral-100">
+											<span className="font-medium">{agent.name}</span>
+											<span className="ml-2 text-xs text-neutral-400">{agent.title}</span>
+										</label>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+					<div className="flex justify-end gap-2 mt-4">
+						<button
+							type="button"
+							className="px-4 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors font-medium"
+							onClick={() => {
+								setInviteAgentOpen(false);
+								setSelectedAgentIds([]);
+								setInviteAgentLoading(false);
+							}}
+							disabled={inviteAgentLoading}
+						>
+							Cancel
+						</button>
+						<button
+							type="button"
+							className="px-4 py-2 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-neutral-100 dark:text-neutral-900 font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-2 disabled:opacity-60"
+							onClick={async () => {
+								if (!groupId || selectedAgentIds.length === 0) return;
+								setInviteAgentLoading(true);
+								try {
+									await Promise.all(
+										selectedAgentIds.map((agentId) =>
+											dbHelpers.addGroupMember({
+												group_id: groupId,
+												agent_id: agentId,
+												role: "agent",
+												status: "active",
+											})
+										)
+									);
+									setInviteAgentOpen(false);
+									setSelectedAgentIds([]);
+									setGroupVersion((v) => v + 1);
+								} catch (e) {
+									// Optionally handle error
+								} finally {
+									setInviteAgentLoading(false);
+								}
+							}}
+							disabled={inviteAgentLoading || selectedAgentIds.length === 0}
+						>
+							{inviteAgentLoading ? <Loader size={16} className="animate-spin" /> : <Plus size={16} />}
+							Invite
+						</button>
+					</div>
+				</div>
+			</Dialog>
 		</aside>
 	);
 };

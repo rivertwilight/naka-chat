@@ -99,7 +99,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 						<span className="flex items-center gap-2 cursor-pointer">
 							<Avatar src={avatar_url} size={24} />
 							<span
-								className={`text-sm text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
+								className={`text-sm dark:hover:text-white transition-colors duration-300 text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 							>
 								{sender}
 							</span>

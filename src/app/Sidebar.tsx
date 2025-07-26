@@ -177,7 +177,7 @@ export function DarkModeSwitch() {
 		<button
 			onClick={() => setTheme("light")}
 			aria-label="Toggle dark mode"
-			className="blur-xl ml-2 p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+			className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 			type="button"
 		>
 			<Sun size={16} />

@@ -7,6 +7,7 @@ import { Sawarabi_Mincho } from "next/font/google";
 import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
+import { usePersistance } from "../components/PersistanceContext";
 import Image from "next/image";
 
 interface Agent {
@@ -28,13 +29,13 @@ const sawarabi = Sawarabi_Mincho({
 });
 
 export default function HomeClient() {
-	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const { agents, loading, error } = useAgents();
 	const { user, loading: userLoading, error: userError } = useCurrentUser();
 	const [checked, setChecked] = useState<boolean[]>([]);
 	const router = useRouter();
 	const [errorMsg, setErrorMsg] = useState("");
+	const { apiKeys } = usePersistance();
 
 	// Sync checked state with agents length
 	useEffect(() => {
@@ -46,19 +47,12 @@ export default function HomeClient() {
 		});
 	}, [agents.length]);
 
-	const redirectTo = "/group/1";
+	// Calculate selected agents count
+	const selectedAgents = checked.filter(Boolean).length;
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!input.trim()) return;
-
-		setIsLoading(true);
-
-		// Default behavior: redirect after loading
-		setTimeout(() => {
-			router.push(redirectTo);
-		}, 800);
-	};
+	const hasApiKeyConfigured = !Object.values(apiKeys).some(
+		(key) => key.trim() !== ""
+	);
 
 	const handleStartGroupChat = async () => {
 		if (!user) {
@@ -195,10 +189,10 @@ export default function HomeClient() {
 					))}
 				</div>
 
-				<div className="flex justify-center mb-4">
+				<div className="flex flex-col items-center gap-3 mb-4">
 					<button
 						onClick={handleStartGroupChat}
-						disabled={isLoading}
+						disabled={isLoading || !hasApiKeyConfigured}
 						className="flex hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60"
 					>
 						<ArrowRight className="w-5 h-5" />
@@ -233,6 +227,20 @@ export default function HomeClient() {
 								)}
 						/>
 					</button>
+
+					{!hasApiKeyConfigured && selectedAgents > 0 && (
+						<div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 px-4 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+							Please
+							<span
+								onClick={() => {}}
+								className="text-orange-500 dark:text-orange-400 cursor-pointer"
+							>
+								Configure Your API key
+							</span>
+							in Settings first
+						</div>
+					)}
+
 					{errorMsg && (
 						<div className="text-red-500 text-sm mt-2">
 							{errorMsg}

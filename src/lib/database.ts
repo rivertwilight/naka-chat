@@ -327,8 +327,6 @@ export const dbHelpers = {
 			.equals(sessionId)
 			.toArray();
 
-		console.log("getMessagesWithReactions: messages", messages, sessionId);
-
 		const messagesWithReactions = await Promise.all(
 			messages.map(async (message) => {
 				const reactions = await db.messageReactions
@@ -509,6 +507,23 @@ export const dbHelpers = {
 			...updates,
 			updated_at: new Date(),
 		});
+	},
+
+	// Delete an agent and all related data
+	async deleteAgent(agentId: string): Promise<void> {
+		// Delete all related data in the correct order to avoid foreign key constraints
+		
+		// 1. Delete message reactions for messages sent by this agent
+		await db.messageReactions.where("agent_id").equals(agentId).delete();
+		
+		// 2. Delete messages sent by this agent
+		await db.messages.where("sender_agent_id").equals(agentId).delete();
+		
+		// 3. Delete group memberships for this agent
+		await db.groupMembers.where("agent_id").equals(agentId).delete();
+		
+		// 4. Finally delete the agent
+		await db.agents.delete(agentId);
 	},
 
 	// Delete a group and all related data

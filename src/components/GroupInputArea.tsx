@@ -7,7 +7,7 @@ import React, {
 	forwardRef,
 	useImperativeHandle,
 } from "react";
-import { Image as ImageIcon, ArrowUp, Command, Share } from "lucide-react";
+import { Image as ImageIcon, ArrowUp, Command, Share, Trash } from "lucide-react";
 import { Dropdown, DropdownProps, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
@@ -23,6 +23,11 @@ export const menu: DropdownProps["menu"] = {
 			icon: <Icon icon={Share} />,
 			key: "copy",
 			label: "Share Chat",
+		},
+		{
+			icon: <Icon icon={Trash} />,
+			key: "clear",
+			label: "Clear Chat...",
 		},
 	],
 };
@@ -98,7 +103,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 							<button
 								type="button"
 								className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-neutral-500 dark:text-neutral-400"
-								aria-label="Attach image"
+								aria-label="Commands"
 							>
 								<Command size={20} />
 							</button>

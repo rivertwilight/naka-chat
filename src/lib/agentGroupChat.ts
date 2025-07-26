@@ -231,7 +231,6 @@ class AICallService {
 					baseURL: this.providerConfig.baseUrl!,
 					apiKey: this.providerConfig.apiKey,
 				});
-				console.log("modelId", modelId, this.providerConfig);
 				const model = provider(modelId);
 				const response = await generateText({
 					model: model,

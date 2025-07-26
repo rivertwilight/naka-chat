@@ -215,28 +215,46 @@ class AICallService {
 	async callAI(prompt: string, modelId: string): Promise<string> {
 		switch (this.providerConfig.provider) {
 			case "Google":
-				const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
-				const googleResponse = await ai.models.generateContent({
-					model: modelId || "gemini-2.5-pro",
-					contents: [{ role: "user", parts: [{ text: prompt }] }],
-				});
-				return googleResponse.text || "";
+				try {
+					const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
+					const googleResponse = await ai.models.generateContent({
+						model: modelId || "gemini-2.5-pro",
+						contents: [{ role: "user", parts: [{ text: prompt }] }],
+					});
+					return googleResponse.text || "";
+				} catch (error) {
+					console.error("AI call error:", error);
+					console.error(
+						"Error message:",
+						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
+					);
+					return "";
+				}
 			case "OpenAI":
 				throw new Error("OpenAI provider not implemented yet");
 			case "Anthropic":
 				throw new Error("Anthropic provider not implemented yet");
 			case "Custom":
-				const provider = createOpenAICompatible({
-					name: "AI Hub Mix",
-					baseURL: this.providerConfig.baseUrl!,
-					apiKey: this.providerConfig.apiKey,
-				});
-				const model = provider(modelId || "gpt-4o");
-				const response = await generateText({
-					model: model,
-					prompt,
-				});
-				return response.text || "";
+				try {
+					const provider = createOpenAICompatible({
+						name: "AI Hub Mix",
+						baseURL: this.providerConfig.baseUrl!,
+						apiKey: this.providerConfig.apiKey,
+					});
+					const model = provider(modelId || "gpt-4o");
+					const response = await generateText({
+						model: model,
+						prompt,
+					});
+					return response.text || "";
+				} catch (error) {
+					console.error("AI call error:", error);
+					console.error(
+						"Error message:",
+						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
+					);
+					return "";
+				}
 			default:
 				throw new Error(
 					`Unsupported provider: ${this.providerConfig.provider}`

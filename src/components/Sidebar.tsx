@@ -16,7 +16,6 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
 
 const sawarabi = Sawarabi_Mincho({
   weight: "400",
@@ -140,27 +139,21 @@ export default function Sidebar() {
                 preview = `${sender}: ${msg.content}`;
               }
               return (
-                <motion.div
+                <GroupListItem
                   key={group.id}
-                  initial={{ opacity: 0, x: -50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <GroupListItem
-                    group={group}
-                    selected={groupId === group.id}
-                    messagePreview={preview}
-                    lastMessageTime={formatMessageTime(msg?.created_at)}
-                    onGroupDeleted={() => {
-                      // Refresh the groups list after deletion
-                      setGroupsVersion((prev) => prev + 1);
-                    }}
-                    onGroupRenamed={() => {
-                      // Refresh the groups list after renaming
-                      setGroupsVersion((prev) => prev + 1);
-                    }}
-                  />
-                </motion.div>
+                  group={group}
+                  selected={groupId === group.id}
+                  messagePreview={preview}
+                  lastMessageTime={formatMessageTime(msg?.created_at)}
+                  onGroupDeleted={() => {
+                    // Refresh the groups list after deletion
+                    setGroupsVersion((prev) => prev + 1);
+                  }}
+                  onGroupRenamed={() => {
+                    // Refresh the groups list after renaming
+                    setGroupsVersion((prev) => prev + 1);
+                  }}
+                />
               );
             })
           )}

@@ -7,7 +7,6 @@ import { Sawarabi_Mincho } from "next/font/google";
 import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
-import { motion } from "framer-motion";
 import Image from "next/image";
 
 interface Agent {
@@ -120,12 +119,7 @@ export default function HomeClient() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 80 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col justify-center items-center"
-    >
+    <div className="min-h-screen flex flex-col justify-center items-center">
       <div className="container mx-auto px-4 py-16 pl-24">
         {/* Header */}
         <div className="text-center mb-16">
@@ -241,11 +235,6 @@ export default function HomeClient() {
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
-
-// 为了保持向后兼容，导出一个默认的 Home 组件
-export function Home() {
-  return <HomeClient />;
 }

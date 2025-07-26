@@ -136,31 +136,29 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
-								<motion.div
+								<GroupListItem
 									key={group.id}
-									initial={{ opacity: 0, x: -50 }}
-									animate={{ opacity: 1, x: 0 }}
-									transition={{ duration: 0.3, delay: index * 0.05 }}
-								>
-									<GroupListItem
-										group={group}
-										selected={groupId === group.id}
-										messagePreview={preview}
-										lastMessageTime={formatMessageTime(msg?.created_at)}
-										onGroupDeleted={() => {
-											// Refresh the groups list after deletion
-											setGroupsVersion((prev) => prev + 1);
-										}}
-										onGroupRenamed={() => {
-											// Refresh the groups list after renaming
-											setGroupsVersion((prev) => prev + 1);
-										}}
-									/>
-								</motion.div>
+									group={group}
+									selected={groupId === group.id}
+									messagePreview={preview}
+									lastMessageTime={formatMessageTime(
+										msg?.created_at
+									)}
+									onGroupDeleted={() => {
+										// Refresh the groups list after deletion
+										setGroupsVersion((prev) => prev + 1);
+									}}
+									onGroupRenamed={() => {
+										// Refresh the groups list after renaming
+										setGroupsVersion((prev) => prev + 1);
+									}}
+								/>
 							);
 						})
 					)}
@@ -173,11 +171,16 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
 				</nav>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

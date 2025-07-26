@@ -4,8 +4,6 @@ import React from "react";
 import { Avatar } from "@lobehub/ui";
 import PublicMessageBlock from "@/components/PublicMessageBlock";
 
-
-
 interface MessageItemProps {
 	messageId: string;
 	sender: string;
@@ -22,7 +20,11 @@ interface MessageItemProps {
 	senderUser?: any;
 	senderAgent?: any;
 	currentUserId?: string;
-	onDmClick?: (senderId: string, senderName: string, senderAvatar?: string) => void;
+	onDmClick?: (
+		senderId: string,
+		senderName: string,
+		senderAvatar?: string
+	) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
@@ -52,7 +54,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	// DM to current user
 	if (isDmToCurrentUser) {
 		return (
-			<div 
+			<div
 				className="flex items-center gap-2 mx-auto my-4 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full border border-neutral-300 dark:border-neutral-700 px-4 py-2 transition-colors"
 				onClick={() => {
 					const senderId = senderUser?.id || senderAgent?.id;

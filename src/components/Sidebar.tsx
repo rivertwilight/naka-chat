@@ -17,6 +17,16 @@ import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
 import { format } from "date-fns";
 
+function formatMessageTime(date: Date | undefined): string {
+	if (!date) return "";
+	const now = new Date();
+	const isToday =
+		date.getDate() === now.getDate() &&
+		date.getMonth() === now.getMonth() &&
+		date.getFullYear() === now.getFullYear();
+	return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
+}
+
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
 	subsets: ["latin"],
@@ -78,16 +88,6 @@ export default function Sidebar() {
 
 	const groupIds = groups.map((g) => g.id);
 	const latestMessages = useLatestGroupMessages(groupIds);
-
-	function formatMessageTime(date: Date | undefined): string {
-		if (!date) return "";
-		const now = new Date();
-		const isToday =
-			date.getDate() === now.getDate() &&
-			date.getMonth() === now.getMonth() &&
-			date.getFullYear() === now.getFullYear();
-		return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
-	}
 
 	return (
 		<>

@@ -14,10 +14,17 @@
 	--font-mono: var(--font-geist-mono);
 }
 
+/* Dark mode styles using class-based approach for next-themes */
+.dark {
+	--background: #171717;
+	--foreground: #ededed;
+}
+
+/* Fallback for system preference when no theme is set */
 @media (prefers-color-scheme: dark) {
-	:root {
-		--background: var(--color-neutral-900);
-		--foreground: var(--color-neutral-100);
+	:root:not(.light):not(.dark) {
+		--background: #171717;
+		--foreground: #ededed;
 	}
 }
 
@@ -33,8 +40,15 @@ body {
 	color: #ededed; /* Ensure text is visible on dark background */
 }
 
+/* Selection color for dark mode */
+.dark ::selection {
+	background: #ededed; /* Light color for selection in dark mode */
+	color: #171717; /* Dark text for contrast */
+}
+
+/* Fallback for system preference when no theme is set */
 @media (prefers-color-scheme: dark) {
-	::selection {
+	:root:not(.light):not(.dark) ::selection {
 		background: #ededed; /* Light color for selection in dark mode */
 		color: #171717; /* Dark text for contrast */
 	}

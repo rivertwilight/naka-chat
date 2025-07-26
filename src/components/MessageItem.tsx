@@ -43,7 +43,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	senderUser,
 	senderAgent,
 	currentUserId,
-	onDmClick
+	onDmClick,
 }) => {
 	// DM-specific rendering
 	const isDM = type === "dm";

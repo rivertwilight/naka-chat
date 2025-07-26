@@ -12,20 +12,20 @@ import {
 	useGroupMessages,
 	useCurrentUser,
 	useGroup,
-	useGroupMembers
+	useGroupMembers,
 } from "@/hooks/useDatabase";
 import {
 	AgentGroupChat,
 	GroupChatMember,
 	SupervisorDecision,
-	MessageWithDetails
+	MessageWithDetails,
 } from "@/lib/agentGroupChat";
 import { usePersistance } from "@/components/PersistanceContext";
 import { ArrowRight } from "lucide-react";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
-	subsets: ["latin"]
+	subsets: ["latin"],
 });
 
 interface ChatClientProps {
@@ -58,7 +58,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				provider,
 				apiKey,
 				baseUrl,
-				modelId
+				modelId,
 			});
 		}
 	}, [groupId, provider, apiKey, baseUrl]);
@@ -95,9 +95,9 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 							senderUser: {
 								name:
 									members.find((m: GroupChatMember) => m.id === user.id)
-										?.name || "User"
-							}
-						} as MessageWithDetails
+										?.name || "User",
+							},
+						} as MessageWithDetails,
 					];
 
 					const currentHistory =
@@ -155,7 +155,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		setDmView({
 			senderId,
 			senderName,
-			senderAvatar
+			senderAvatar,
 		});
 	};
 
@@ -169,7 +169,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		"我们来玩 COC，我是 KP",
 		"我们来玩 DND, KP",
 		"你们开个辩论会，X 是主持人，不要让我干涉",
-		"我们来玩狼人杀，我是主持人"
+		"我们来玩狼人杀，我是主持人",
 	];
 
 	// Randomly select 3 examples each render
@@ -198,7 +198,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return date.toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false
+			hour12: false,
 		});
 	};
 
@@ -207,7 +207,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return date.toLocaleDateString("en-US", {
 			year: "numeric",
 			month: "long",
-			day: "numeric"
+			day: "numeric",
 		});
 	};
 

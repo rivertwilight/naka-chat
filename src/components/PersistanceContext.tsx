@@ -33,7 +33,7 @@ function getInitialSettings() {
 }
 
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
-	children
+	children,
 }) => {
 	const [provider, setProvider] = useState<ProviderType>("OpenAI");
 	const [apiKey, setApiKey] = useState("");
@@ -65,7 +65,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 				baseUrl,
 				firstName,
 				lastName,
-				modelId
+				modelId,
 			})
 		);
 	}, [provider, apiKey, baseUrl, firstName, lastName, modelId]);
@@ -84,7 +84,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 				setBaseUrl,
 				setFirstName,
 				setLastName,
-				setModelId
+				setModelId,
 			}}
 		>
 			{children}

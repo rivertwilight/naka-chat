@@ -10,7 +10,7 @@ interface UiContextType {
 const UiContext = createContext<UiContextType | undefined>(undefined);
 
 export const UiProvider: React.FC<{ children: React.ReactNode }> = ({
-	children
+	children,
 }) => {
 	const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
 
@@ -30,7 +30,7 @@ export const UiProvider: React.FC<{ children: React.ReactNode }> = ({
 				isSettingsPanelOpen,
 				openSettingsPanel,
 				closeSettingsPanel,
-				toggleSettingsPanel
+				toggleSettingsPanel,
 			}}
 		>
 			{children}

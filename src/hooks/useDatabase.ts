@@ -9,7 +9,7 @@ import {
 	User,
 	Agent,
 	Group,
-	Session
+	Session,
 } from "../lib/database";
 
 // Extended message type with sender details
@@ -83,7 +83,7 @@ export function useGroupMessages(groupId: string | null) {
 								...message,
 								senderUser,
 								senderAgent,
-								session
+								session,
 							};
 						})
 					);
@@ -140,7 +140,7 @@ export function useGroupMessages(groupId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
-				type: "public"
+				type: "public",
 			});
 
 			// Reload all messages
@@ -176,7 +176,7 @@ export function useGroupMessages(groupId: string | null) {
 							...message,
 							senderUser,
 							senderAgent,
-							session
+							session,
 						};
 					})
 				);
@@ -207,7 +207,7 @@ export function useGroupMessages(groupId: string | null) {
 				message_id: messageId,
 				emoji,
 				user_id: userId,
-				agent_id: agentId
+				agent_id: agentId,
 			});
 
 			// Reload all messages
@@ -244,7 +244,7 @@ export function useGroupMessages(groupId: string | null) {
 								...message,
 								senderUser,
 								senderAgent,
-								session
+								session,
 							};
 						})
 					);
@@ -294,7 +294,7 @@ export function useGroupMessages(groupId: string | null) {
 									...message,
 									senderUser,
 									senderAgent,
-									session
+									session,
 								};
 							})
 						);
@@ -319,7 +319,7 @@ export function useGroupMessages(groupId: string | null) {
 		loading,
 		error,
 		sendMessage,
-		addReaction
+		addReaction,
 	};
 }
 
@@ -358,7 +358,7 @@ export function useSessionMessages(sessionId: string | null) {
 						return {
 							...message,
 							senderUser,
-							senderAgent
+							senderAgent,
 						};
 					})
 				);
@@ -400,7 +400,7 @@ export function useSessionMessages(sessionId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
-				type: "public"
+				type: "public",
 			});
 			// Reload messages
 			const messagesWithReactions =
@@ -422,7 +422,7 @@ export function useSessionMessages(sessionId: string | null) {
 					return {
 						...message,
 						senderUser,
-						senderAgent
+						senderAgent,
 					};
 				})
 			);
@@ -444,7 +444,7 @@ export function useSessionMessages(sessionId: string | null) {
 				message_id: messageId,
 				emoji,
 				user_id: userId,
-				agent_id: agentId
+				agent_id: agentId,
 			});
 			// Reload messages to update reactions
 			if (sessionId) {
@@ -467,7 +467,7 @@ export function useSessionMessages(sessionId: string | null) {
 						return {
 							...message,
 							senderUser,
-							senderAgent
+							senderAgent,
 						};
 					})
 				);
@@ -497,7 +497,7 @@ export function useSessionMessages(sessionId: string | null) {
 							return {
 								...message,
 								senderUser,
-								senderAgent
+								senderAgent,
 							};
 						})
 					);
@@ -515,7 +515,7 @@ export function useSessionMessages(sessionId: string | null) {
 		loading,
 		error,
 		sendMessage,
-		addReaction
+		addReaction,
 	};
 }
 
@@ -550,7 +550,7 @@ export function useGroupSession(groupId: string | null) {
 	return {
 		session,
 		loading,
-		error
+		error,
 	};
 }
 
@@ -585,7 +585,7 @@ export function useGroup(groupId: string | null, version: number = 0) {
 	return {
 		group,
 		loading,
-		error
+		error,
 	};
 }
 
@@ -623,7 +623,7 @@ export function useGroupMembers(groupId: string | null, version: number = 0) {
 	return {
 		members,
 		loading,
-		error
+		error,
 	};
 }
 
@@ -660,7 +660,7 @@ export function useCurrentUser() {
 	return {
 		user,
 		loading,
-		error
+		error,
 	};
 }
 
@@ -719,7 +719,7 @@ export function useUserGroups(version: number = 0) {
 	return {
 		groups,
 		loading,
-		error
+		error,
 	};
 }
 
@@ -767,7 +767,7 @@ export function useLatestGroupMessages(groupIds: string[]) {
 								...message,
 								senderUser,
 								senderAgent,
-								session
+								session,
 							};
 						})
 					);
@@ -818,7 +818,7 @@ export function useAgents() {
 	return {
 		agents,
 		loading,
-		error
+		error,
 	};
 }
 

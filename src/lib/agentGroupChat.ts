@@ -9,20 +9,20 @@ import { GoogleGenAI } from "@google/genai";
 export const AGENT_CONFIG = {
 	RESPONSE_DELAY: {
 		MIN_MS: 1000,
-		MAX_MS: 120000
+		MAX_MS: 120000,
 	},
 	TYPING_POOL: {
-		MAX_CONCURRENT: 4
+		MAX_CONCURRENT: 4,
 	},
 	SUPERVISOR: {
 		IDLE_TIMEOUT_MS: 5000,
 		DECISION_RETRY_DELAY_MS: 1000,
-		POST_RESPONSE_DELAY_MS: 500
+		POST_RESPONSE_DELAY_MS: 500,
 	},
 	RESPONSE_LIMITS: {
 		MAX_WORDS: 150,
-		MAX_CHINESE_CHARS: 50
-	}
+		MAX_CHINESE_CHARS: 50,
+	},
 } as const;
 
 // Types and Interfaces
@@ -73,7 +73,7 @@ class MemberService {
 					id: member.user_id!,
 					name: member.details.name,
 					title: "Human User",
-					role: "human" as const
+					role: "human" as const,
 				};
 			}
 
@@ -87,7 +87,7 @@ class MemberService {
 					system_prompt: agentDetails.system_prompt,
 					model: agentDetails.model,
 					temperature: agentDetails.temperature,
-					max_output_tokens: agentDetails.max_output_tokens
+					max_output_tokens: agentDetails.max_output_tokens,
 				};
 			}
 
@@ -175,7 +175,7 @@ class ConversationService {
 					...message,
 					senderUser,
 					senderAgent,
-					session: currentSession
+					session: currentSession,
 				};
 			})
 		);
@@ -204,7 +204,7 @@ class ConversationService {
 			groupName,
 			groupDescription,
 			members,
-			history: this.formatHistory(messages, agentId, isSupervisor)
+			history: this.formatHistory(messages, agentId, isSupervisor),
 		};
 	}
 }
@@ -219,7 +219,7 @@ class AICallService {
 					const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
 					const googleResponse = await ai.models.generateContent({
 						model: modelId || "gemini-2.5-pro",
-						contents: [{ role: "user", parts: [{ text: prompt }] }]
+						contents: [{ role: "user", parts: [{ text: prompt }] }],
 					});
 					return googleResponse.text || "";
 				} catch (error) {
@@ -239,12 +239,12 @@ class AICallService {
 					const provider = createOpenAICompatible({
 						name: "AI Hub Mix",
 						baseURL: this.providerConfig.baseUrl!,
-						apiKey: this.providerConfig.apiKey
+						apiKey: this.providerConfig.apiKey,
 					});
 					const model = provider(modelId || "gpt-4o");
 					const response = await generateText({
 						model: model,
-						prompt
+						prompt,
 					});
 					return response.text || "";
 				} catch (error) {
@@ -367,7 +367,7 @@ Rules:
 		return {
 			nextSpeaker: ["human"],
 			reasoning: "Error in supervisor decision, defaulting to human input",
-			shouldStop: true
+			shouldStop: true,
 		};
 	}
 }
@@ -520,7 +520,7 @@ export class AgentGroupChat {
 		);
 		const availableMembers = [
 			...members.filter((m) => m.role === "human"),
-			...availableAgents
+			...availableAgents,
 		];
 
 		const context = this.conversationService.createConversationContext(
@@ -588,9 +588,9 @@ export class AgentGroupChat {
 			{
 				content: userMessage,
 				senderUser: {
-					name: userMember?.name || "User"
-				}
-			} as MessageWithDetails
+					name: userMember?.name || "User",
+				},
+			} as MessageWithDetails,
 		];
 	}
 
@@ -636,7 +636,7 @@ export class AgentGroupChat {
 			);
 			const availableMembers = [
 				...members.filter((m) => m.role === "human"),
-				...availableAgents
+				...availableAgents,
 			];
 
 			const context = this.conversationService.createConversationContext(
@@ -701,7 +701,7 @@ export class AgentGroupChat {
 			);
 			const availableMembers = [
 				...members.filter((m) => m.role === "human"),
-				...availableAgents
+				...availableAgents,
 			];
 
 			const context = this.conversationService.createConversationContext(
@@ -831,7 +831,7 @@ export class AgentGroupChat {
 			sender_agent_id: agent.id,
 			content,
 			type,
-			...(dm_target_id ? { dm_target_id } : {})
+			...(dm_target_id ? { dm_target_id } : {}),
 		});
 	}
 

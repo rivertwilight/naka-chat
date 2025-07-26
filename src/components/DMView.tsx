@@ -12,7 +12,7 @@ import { dbHelpers, db } from "@/lib/database";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
-	subsets: ["latin"]
+	subsets: ["latin"],
 });
 
 interface DMViewProps {
@@ -28,7 +28,7 @@ export default function DMView({
 	senderId,
 	senderName,
 	senderAvatar,
-	onBack
+	onBack,
 }: DMViewProps) {
 	const [dmMessages, setDmMessages] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ export default function DMView({
 						...message,
 						senderUser,
 						senderAgent,
-						session
+						session,
 					};
 				})
 			);
@@ -125,7 +125,7 @@ export default function DMView({
 			await dbHelpers.addReaction({
 				message_id: messageId,
 				emoji,
-				user_id: user.id
+				user_id: user.id,
 			});
 
 			// Reload messages to update reactions
@@ -140,7 +140,7 @@ export default function DMView({
 		return date.toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false
+			hour12: false,
 		});
 	};
 

@@ -19,7 +19,7 @@ const Dialog: React.FC<DialogProps> = ({
 	children,
 	className = "",
 	showCloseButton = true,
-	variant = "fullscreen"
+	variant = "fullscreen",
 }) => {
 	React.useEffect(() => {
 		if (!open) return;
@@ -42,7 +42,7 @@ const Dialog: React.FC<DialogProps> = ({
 						transition={{
 							type: "tween",
 							ease: [0.25, 0.1, 0.25, 1],
-							duration: 0.3
+							duration: 0.3,
 						}}
 					>
 						{showCloseButton && (

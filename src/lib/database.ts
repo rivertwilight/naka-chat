@@ -96,7 +96,7 @@ export class NakaChatDB extends Dexie {
 			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
 			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
-			messageReactions: "id, message_id, user_id, agent_id, created_at"
+			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 
 		this.version(2)
@@ -109,7 +109,7 @@ export class NakaChatDB extends Dexie {
 				sessions: "id, group_id, created_at",
 				messages:
 					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-				messageReactions: "id, message_id, user_id, agent_id, created_at"
+				messageReactions: "id, message_id, user_id, agent_id, created_at",
 			})
 			.upgrade((tx) => {
 				// Migrate existing messages to have type field
@@ -158,7 +158,7 @@ export const dbHelpers = {
 			id: uuidv4(),
 			...userData,
 			created_at: now,
-			updated_at: now
+			updated_at: now,
 		};
 		await db.users.add(user);
 		return user;
@@ -173,7 +173,7 @@ export const dbHelpers = {
 			id: uuidv4(),
 			...agentData,
 			created_at: now,
-			updated_at: now
+			updated_at: now,
 		};
 		await db.agents.add(agent);
 		return agent;
@@ -188,7 +188,7 @@ export const dbHelpers = {
 			id: uuidv4(),
 			...groupData,
 			created_at: now,
-			updated_at: now
+			updated_at: now,
 		};
 		await db.groups.add(group);
 		return group;
@@ -201,7 +201,7 @@ export const dbHelpers = {
 	): Promise<void> {
 		await db.groups.update(groupId, {
 			...updates,
-			updated_at: new Date()
+			updated_at: new Date(),
 		});
 	},
 
@@ -249,7 +249,7 @@ export const dbHelpers = {
 		const member: GroupMember = {
 			id: uuidv4(),
 			...memberData,
-			joined_at: new Date()
+			joined_at: new Date(),
 		};
 		await db.groupMembers.add(member);
 		return member;
@@ -262,7 +262,7 @@ export const dbHelpers = {
 		const session: Session = {
 			id: uuidv4(),
 			...sessionData,
-			created_at: new Date()
+			created_at: new Date(),
 		};
 		await db.sessions.add(session);
 		return session;
@@ -276,7 +276,7 @@ export const dbHelpers = {
 			id: uuidv4(),
 			...messageData,
 			type: messageData.type || "public", // Default to public if not specified
-			created_at: new Date()
+			created_at: new Date(),
 		};
 		await db.messages.add(message);
 		return message;
@@ -294,7 +294,7 @@ export const dbHelpers = {
 			sender_user_id: senderUserId,
 			content,
 			type: "dm",
-			dm_target_id: dmTargetId
+			dm_target_id: dmTargetId,
 		});
 	},
 
@@ -308,7 +308,7 @@ export const dbHelpers = {
 			.equals([
 				reactionData.message_id,
 				reactionData.emoji,
-				reactionData.user_id || ""
+				reactionData.user_id || "",
 			])
 			.first();
 
@@ -321,7 +321,7 @@ export const dbHelpers = {
 		const reaction: MessageReaction = {
 			id: uuidv4(),
 			...reactionData,
-			created_at: new Date()
+			created_at: new Date(),
 		};
 		await db.messageReactions.add(reaction);
 		return reaction;
@@ -357,13 +357,13 @@ export const dbHelpers = {
 				const reactionArray = Object.entries(reactionCounts).map(
 					([emoji, count]) => ({
 						emoji,
-						count
+						count,
 					})
 				);
 
 				return {
 					...message,
-					reactions: reactionArray
+					reactions: reactionArray,
 				};
 			})
 		);
@@ -426,13 +426,13 @@ export const dbHelpers = {
 					const reactionArray = Object.entries(reactionCounts).map(
 						([emoji, count]) => ({
 							emoji,
-							count
+							count,
 						})
 					);
 
 					return {
 						...message,
-						reactions: reactionArray
+						reactions: reactionArray,
 					};
 				})
 			);
@@ -465,7 +465,7 @@ export const dbHelpers = {
 				}
 				return {
 					...member,
-					details
+					details,
 				};
 			})
 		);
@@ -486,7 +486,7 @@ export const dbHelpers = {
 			// Create a new session
 			session = await this.createSession({
 				group_id: groupId,
-				name: "Default Session"
+				name: "Default Session",
 			});
 		}
 
@@ -500,7 +500,7 @@ export const dbHelpers = {
 	): Promise<void> {
 		await db.users.update(userId, {
 			...updates,
-			updated_at: new Date()
+			updated_at: new Date(),
 		});
 	},
 
@@ -522,9 +522,9 @@ export const dbHelpers = {
 	): Promise<void> {
 		await db.agents.update(agentId, {
 			...updates,
-			updated_at: new Date()
+			updated_at: new Date(),
 		});
-	}
+	},
 };
 
 // Extended message type with sender details (re-export from useDatabase.ts)

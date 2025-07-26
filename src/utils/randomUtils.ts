@@ -8,7 +8,7 @@ const FIRST_NAMES = [
 	"Riley",
 	"Avery",
 	"Skyler",
-	"Quinn"
+	"Quinn",
 ];
 
 const LAST_NAMES = [
@@ -21,7 +21,7 @@ const LAST_NAMES = [
 	"Singh",
 	"Khan",
 	"Nguyen",
-	"Yamamoto"
+	"Yamamoto",
 ];
 
 export function getRandomName() {

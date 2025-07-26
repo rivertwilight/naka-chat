@@ -3,7 +3,7 @@ import ChatClient from "./ChatClient";
 
 export const metadata = {
 	title: "NakaChat - Group Chat with AI friends",
-	description: "NakaChat"
+	description: "NakaChat",
 };
 
 interface GroupPageProps {

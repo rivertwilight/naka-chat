@@ -6,13 +6,13 @@ import { ProviderType } from "./PersistanceContext";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
-	subsets: ["latin"]
+	subsets: ["latin"],
 });
 
 const sidebarNav = [
 	{ key: "general", label: "General" },
 	{ key: "model", label: "Model" },
-	{ key: "about", label: "About" }
+	{ key: "about", label: "About" },
 ];
 
 function GeneralSection() {
@@ -64,7 +64,7 @@ function ModelSection() {
 		baseUrl,
 		setBaseUrl,
 		modelId,
-		setModelId
+		setModelId,
 	} = usePersistance();
 	return (
 		<>

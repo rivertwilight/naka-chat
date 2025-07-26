@@ -12,7 +12,7 @@ import {
 	Trash,
 	MoreHorizontal,
 	Flag,
-	MessageCircle
+	MessageCircle,
 } from "lucide-react";
 
 export const menu: DropdownProps["menu"] = {
@@ -20,19 +20,19 @@ export const menu: DropdownProps["menu"] = {
 		{
 			icon: <Icon icon={AtSign} />,
 			key: "copy",
-			label: "Mention"
+			label: "Mention",
 		},
 		{
 			icon: <Icon icon={MessageCircle} />,
 			key: "dm",
-			label: "Direct Message"
+			label: "Direct Message",
 		},
 		{
 			icon: <Icon icon={Settings} />,
 			key: "selectAll",
-			label: "Customize"
-		}
-	]
+			label: "Customize",
+		},
+	],
 };
 
 export const messageMenu: DropdownProps["menu"] = {
@@ -40,14 +40,14 @@ export const messageMenu: DropdownProps["menu"] = {
 		{
 			icon: <Icon icon={Trash} />,
 			key: "delete",
-			label: "Delete"
+			label: "Delete",
 		},
 		{
 			icon: <Icon icon={Flag} />,
 			key: "report",
-			label: "Report"
-		}
-	]
+			label: "Report",
+		},
+	],
 };
 
 interface PublicMessageBlockProps {
@@ -86,7 +86,7 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 	senderAgent,
 	currentUserId,
 	showActions = true,
-	className = ""
+	className = "",
 }) => {
 	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);

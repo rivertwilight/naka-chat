@@ -62,8 +62,9 @@ export function useGroupMessages(groupId: string | null) {
 				const allMessages: MessageWithDetails[] = [];
 
 				for (const session of groupSessions) {
-					const sessionMessages =
-						await dbHelpers.getMessagesWithReactions(session.id);
+					const sessionMessages = await dbHelpers.getMessagesWithReactions(
+						session.id
+					);
 
 					// Enhance messages with sender details and session info
 					const enhancedMessages = await Promise.all(
@@ -72,14 +73,10 @@ export function useGroupMessages(groupId: string | null) {
 							let senderAgent: Agent | undefined;
 
 							if (message.sender_user_id) {
-								senderUser = await db.users.get(
-									message.sender_user_id
-								);
+								senderUser = await db.users.get(message.sender_user_id);
 							}
 							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(
-									message.sender_agent_id
-								);
+								senderAgent = await db.agents.get(message.sender_agent_id);
 							}
 
 							return {
@@ -102,9 +99,7 @@ export function useGroupMessages(groupId: string | null) {
 				setMessages(allMessages);
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load group messages"
+					err instanceof Error ? err.message : "Failed to load group messages"
 				);
 			} finally {
 				setLoading(false);
@@ -145,6 +140,7 @@ export function useGroupMessages(groupId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
+				type: "public",
 			});
 
 			// Reload all messages
@@ -160,8 +156,9 @@ export function useGroupMessages(groupId: string | null) {
 			const allMessages: MessageWithDetails[] = [];
 
 			for (const session of groupSessions) {
-				const sessionMessages =
-					await dbHelpers.getMessagesWithReactions(session.id);
+				const sessionMessages = await dbHelpers.getMessagesWithReactions(
+					session.id
+				);
 
 				const enhancedMessages = await Promise.all(
 					sessionMessages.map(async (message) => {
@@ -169,14 +166,10 @@ export function useGroupMessages(groupId: string | null) {
 						let senderAgent: Agent | undefined;
 
 						if (message.sender_user_id) {
-							senderUser = await db.users.get(
-								message.sender_user_id
-							);
+							senderUser = await db.users.get(message.sender_user_id);
 						}
 						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(
-								message.sender_agent_id
-							);
+							senderAgent = await db.agents.get(message.sender_agent_id);
 						}
 
 						return {
@@ -199,9 +192,7 @@ export function useGroupMessages(groupId: string | null) {
 			// Update lastLoadTime to prevent immediate polling reload
 			lastLoadTimeRef.current = Date.now();
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : "Failed to send message"
-			);
+			setError(err instanceof Error ? err.message : "Failed to send message");
 		}
 	};
 
@@ -233,8 +224,9 @@ export function useGroupMessages(groupId: string | null) {
 				const allMessages: MessageWithDetails[] = [];
 
 				for (const session of groupSessions) {
-					const sessionMessages =
-						await dbHelpers.getMessagesWithReactions(session.id);
+					const sessionMessages = await dbHelpers.getMessagesWithReactions(
+						session.id
+					);
 
 					const enhancedMessages = await Promise.all(
 						sessionMessages.map(async (message) => {
@@ -242,14 +234,10 @@ export function useGroupMessages(groupId: string | null) {
 							let senderAgent: Agent | undefined;
 
 							if (message.sender_user_id) {
-								senderUser = await db.users.get(
-									message.sender_user_id
-								);
+								senderUser = await db.users.get(message.sender_user_id);
 							}
 							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(
-									message.sender_agent_id
-								);
+								senderAgent = await db.agents.get(message.sender_agent_id);
 							}
 
 							return {
@@ -280,17 +268,15 @@ export function useGroupMessages(groupId: string | null) {
 						.toArray();
 
 					const groupSessions = allSessions.sort(
-						(a, b) =>
-							a.created_at.getTime() - b.created_at.getTime()
+						(a, b) => a.created_at.getTime() - b.created_at.getTime()
 					);
 
 					const allMessages: MessageWithDetails[] = [];
 
 					for (const session of groupSessions) {
-						const sessionMessages =
-							await dbHelpers.getMessagesWithReactions(
-								session.id
-							);
+						const sessionMessages = await dbHelpers.getMessagesWithReactions(
+							session.id
+						);
 
 						const enhancedMessages = await Promise.all(
 							sessionMessages.map(async (message) => {
@@ -298,14 +284,10 @@ export function useGroupMessages(groupId: string | null) {
 								let senderAgent: Agent | undefined;
 
 								if (message.sender_user_id) {
-									senderUser = await db.users.get(
-										message.sender_user_id
-									);
+									senderUser = await db.users.get(message.sender_user_id);
 								}
 								if (message.sender_agent_id) {
-									senderAgent = await db.agents.get(
-										message.sender_agent_id
-									);
+									senderAgent = await db.agents.get(message.sender_agent_id);
 								}
 
 								return {
@@ -321,17 +303,12 @@ export function useGroupMessages(groupId: string | null) {
 					}
 
 					allMessages.sort(
-						(a, b) =>
-							a.created_at.getTime() - b.created_at.getTime()
+						(a, b) => a.created_at.getTime() - b.created_at.getTime()
 					);
 					setMessages(allMessages);
 				}
 			} else {
-				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to add reaction"
-				);
+				setError(err instanceof Error ? err.message : "Failed to add reaction");
 			}
 		}
 	};
@@ -362,8 +339,9 @@ export function useSessionMessages(sessionId: string | null) {
 		const loadMessages = async () => {
 			try {
 				setLoading(true);
-				const messagesWithReactions =
-					await dbHelpers.getMessagesWithReactions(sessionId);
+				const messagesWithReactions = await dbHelpers.getMessagesWithReactions(
+					sessionId
+				);
 
 				// Enhance messages with sender details
 				const enhancedMessages = await Promise.all(
@@ -372,14 +350,10 @@ export function useSessionMessages(sessionId: string | null) {
 						let senderAgent: Agent | undefined;
 
 						if (message.sender_user_id) {
-							senderUser = await db.users.get(
-								message.sender_user_id
-							);
+							senderUser = await db.users.get(message.sender_user_id);
 						}
 						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(
-								message.sender_agent_id
-							);
+							senderAgent = await db.agents.get(message.sender_agent_id);
 						}
 
 						return {
@@ -393,9 +367,7 @@ export function useSessionMessages(sessionId: string | null) {
 				setMessages(enhancedMessages);
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load messages"
+					err instanceof Error ? err.message : "Failed to load messages"
 				);
 			} finally {
 				setLoading(false);
@@ -429,10 +401,12 @@ export function useSessionMessages(sessionId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
+				type: "public",
 			});
 			// Reload messages
-			const messagesWithReactions =
-				await dbHelpers.getMessagesWithReactions(sessionId);
+			const messagesWithReactions = await dbHelpers.getMessagesWithReactions(
+				sessionId
+			);
 
 			// Enhance messages with sender details
 			const enhancedMessages = await Promise.all(
@@ -444,9 +418,7 @@ export function useSessionMessages(sessionId: string | null) {
 						senderUser = await db.users.get(message.sender_user_id);
 					}
 					if (message.sender_agent_id) {
-						senderAgent = await db.agents.get(
-							message.sender_agent_id
-						);
+						senderAgent = await db.agents.get(message.sender_agent_id);
 					}
 
 					return {
@@ -459,9 +431,7 @@ export function useSessionMessages(sessionId: string | null) {
 
 			setMessages(enhancedMessages);
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : "Failed to send message"
-			);
+			setError(err instanceof Error ? err.message : "Failed to send message");
 		}
 	};
 
@@ -480,8 +450,9 @@ export function useSessionMessages(sessionId: string | null) {
 			});
 			// Reload messages to update reactions
 			if (sessionId) {
-				const messagesWithReactions =
-					await dbHelpers.getMessagesWithReactions(sessionId);
+				const messagesWithReactions = await dbHelpers.getMessagesWithReactions(
+					sessionId
+				);
 
 				// Enhance messages with sender details
 				const enhancedMessages = await Promise.all(
@@ -490,14 +461,10 @@ export function useSessionMessages(sessionId: string | null) {
 						let senderAgent: Agent | undefined;
 
 						if (message.sender_user_id) {
-							senderUser = await db.users.get(
-								message.sender_user_id
-							);
+							senderUser = await db.users.get(message.sender_user_id);
 						}
 						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(
-								message.sender_agent_id
-							);
+							senderAgent = await db.agents.get(message.sender_agent_id);
 						}
 
 						return {
@@ -524,14 +491,10 @@ export function useSessionMessages(sessionId: string | null) {
 							let senderAgent: Agent | undefined;
 
 							if (message.sender_user_id) {
-								senderUser = await db.users.get(
-									message.sender_user_id
-								);
+								senderUser = await db.users.get(message.sender_user_id);
 							}
 							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(
-									message.sender_agent_id
-								);
+								senderAgent = await db.agents.get(message.sender_agent_id);
 							}
 
 							return {
@@ -545,11 +508,7 @@ export function useSessionMessages(sessionId: string | null) {
 					setMessages(enhancedMessages);
 				}
 			} else {
-				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to add reaction"
-				);
+				setError(err instanceof Error ? err.message : "Failed to add reaction");
 			}
 		}
 	};
@@ -579,16 +538,10 @@ export function useGroupSession(groupId: string | null) {
 		const loadSession = async () => {
 			try {
 				setLoading(true);
-				const currentSession = await dbHelpers.getCurrentSession(
-					groupId
-				);
+				const currentSession = await dbHelpers.getCurrentSession(groupId);
 				setSession(currentSession);
 			} catch (err) {
-				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load session"
-				);
+				setError(err instanceof Error ? err.message : "Failed to load session");
 			} finally {
 				setLoading(false);
 			}
@@ -623,9 +576,7 @@ export function useGroup(groupId: string | null, version: number = 0) {
 				const groupData = await db.groups.get(groupId);
 				setGroup(groupData || null);
 			} catch (err) {
-				setError(
-					err instanceof Error ? err.message : "Failed to load group"
-				);
+				setError(err instanceof Error ? err.message : "Failed to load group");
 			} finally {
 				setLoading(false);
 			}
@@ -663,9 +614,7 @@ export function useGroupMembers(groupId: string | null, version: number = 0) {
 				setMembers(groupMembers);
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load group members"
+					err instanceof Error ? err.message : "Failed to load group members"
 				);
 			} finally {
 				setLoading(false);
@@ -745,9 +694,7 @@ export function useUserGroups(version: number = 0) {
 					.toArray();
 
 				// Get the group details for each membership
-				const groupIds = memberships.map(
-					(membership) => membership.group_id
-				);
+				const groupIds = memberships.map((membership) => membership.group_id);
 				const userGroups = await Promise.all(
 					groupIds.map(async (groupId) => {
 						const group = await db.groups.get(groupId);
@@ -758,17 +705,12 @@ export function useUserGroups(version: number = 0) {
 				// Filter out any null groups and sort by creation date
 				const validGroups = userGroups
 					.filter((group): group is Group => group !== undefined)
-					.sort(
-						(a, b) =>
-							a.created_at.getTime() - b.created_at.getTime()
-					);
+					.sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
 
 				setGroups(validGroups);
 			} catch (err) {
 				setError(
-					err instanceof Error
-						? err.message
-						: "Failed to load user groups"
+					err instanceof Error ? err.message : "Failed to load user groups"
 				);
 			} finally {
 				setLoading(false);
@@ -811,22 +753,19 @@ export function useLatestGroupMessages(groupIds: string[]) {
 				// Get all messages for all sessions
 				let allMessages: MessageWithDetails[] = [];
 				for (const session of sessions) {
-					const sessionMessages =
-						await dbHelpers.getMessagesWithReactions(session.id);
+					const sessionMessages = await dbHelpers.getMessagesWithReactions(
+						session.id
+					);
 					// Enhance messages with sender details
 					const enhancedMessages = await Promise.all(
 						sessionMessages.map(async (message) => {
 							let senderUser: User | undefined;
 							let senderAgent: Agent | undefined;
 							if (message.sender_user_id) {
-								senderUser = await db.users.get(
-									message.sender_user_id
-								);
+								senderUser = await db.users.get(message.sender_user_id);
 							}
 							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(
-									message.sender_agent_id
-								);
+								senderAgent = await db.agents.get(message.sender_agent_id);
 							}
 							return {
 								...message,
@@ -885,4 +824,25 @@ export function useAgents() {
 		loading,
 		error,
 	};
+}
+
+// Hook for group operations
+export function useGroupOperations() {
+	const deleteGroup = async (groupId: string): Promise<void> => {
+		try {
+			await dbHelpers.deleteGroup(groupId);
+		} catch (error) {
+			console.error("Error deleting group:", error);
+			throw error;
+		}
+	};
+
+	const pinGroup = async (groupId: string): Promise<void> => {
+		// TODO: Implement pin functionality
+		// This could involve adding a 'pinned' field to the Group interface
+		// or creating a separate pinned groups table
+		console.log("Pin group:", groupId);
+	};
+
+	return { deleteGroup, pinGroup };
 }

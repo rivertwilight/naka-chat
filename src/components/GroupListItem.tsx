@@ -3,36 +3,72 @@ import React from "react";
 import { Check, Pin, X } from "lucide-react";
 import { Dropdown, DropdownProps, Tooltip } from "@lobehub/ui";
 import type { Group } from "../lib/database";
+import { useGroupOperations } from "../hooks/useDatabase";
+import { useRouter } from "next/navigation";
 
 interface GroupListItemProps {
 	group: Group;
 	selected: boolean;
 	messagePreview?: string;
 	lastMessageTime?: string; // new prop
+	onGroupDeleted?: () => void; // callback for when group is deleted
 }
-
-const menu: DropdownProps["menu"] = {
-	items: [
-		{
-			label: "Pin",
-			key: "pin",
-			icon: <Pin size={16} />,
-		},
-		{
-			label: "Remove group",
-			key: "remove",
-			icon: <X size={16} />,
-		},
-	],
-};
 
 const GroupListItem: React.FC<GroupListItemProps> = ({
 	group,
 	selected,
 	messagePreview,
 	lastMessageTime,
+	onGroupDeleted,
 }) => {
 	const [showCheck, setShowCheck] = React.useState(false);
+	const { deleteGroup, pinGroup } = useGroupOperations();
+	const router = useRouter();
+
+	const handleMenuClick = async (key: string) => {
+		try {
+			switch (key) {
+				case "pin":
+					await pinGroup(group.id);
+					break;
+				case "remove":
+					if (
+						confirm(
+							"Are you sure you want to delete this group? This action cannot be undone."
+						)
+					) {
+						await deleteGroup(group.id);
+						onGroupDeleted?.();
+						// Redirect to home if this was the selected group
+						if (selected) {
+							router.push("/");
+						}
+					}
+					break;
+			}
+		} catch (error) {
+			console.error("Error performing group operation:", error);
+			alert("An error occurred while performing the operation.");
+		}
+	};
+
+	const menu: DropdownProps["menu"] = {
+		items: [
+			{
+				label: "Pin",
+				key: "pin",
+				icon: <Pin size={16} />,
+				onClick: () => handleMenuClick("pin"),
+			},
+			{
+				label: "Remove group",
+				key: "remove",
+				icon: <X size={16} />,
+				onClick: () => handleMenuClick("remove"),
+			},
+		],
+	};
+
 	return (
 		<Link
 			href={`/group/${group.id}`}

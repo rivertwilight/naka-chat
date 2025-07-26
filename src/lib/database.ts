@@ -93,32 +93,35 @@ export class NakaChatDB extends Dexie {
 			users: "id, name, email, created_at",
 			agents: "id, name, model, created_at",
 			groups: "id, name, created_by, created_at",
-			groupMembers:
-				"id, group_id, user_id, agent_id, role, status, joined_at",
+			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
-			messages:
-				"id, session_id, sender_user_id, sender_agent_id, created_at",
+			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 
-		this.version(2).stores({
-			users: "id, name, email, created_at",
-			agents: "id, name, model, created_at",
-			groups: "id, name, created_by, created_at",
-			groupMembers:
-				"id, group_id, user_id, agent_id, role, status, joined_at",
-			sessions: "id, group_id, created_at",
-			messages:
-				"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-			messageReactions: "id, message_id, user_id, agent_id, created_at",
-		}).upgrade((tx) => {
-			// Migrate existing messages to have type field
-			return tx.table("messages").toCollection().modify((message) => {
-				if (!message.type) {
-					message.type = "public";
-				}
+		this.version(2)
+			.stores({
+				users: "id, name, email, created_at",
+				agents: "id, name, model, created_at",
+				groups: "id, name, created_by, created_at",
+				groupMembers:
+					"id, group_id, user_id, agent_id, role, status, joined_at",
+				sessions: "id, group_id, created_at",
+				messages:
+					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
+				messageReactions: "id, message_id, user_id, agent_id, created_at",
+			})
+			.upgrade((tx) => {
+				// Migrate existing messages to have type field
+				return tx
+					.table("messages")
+					.toCollection()
+					.modify((message) => {
+						if (!message.type) {
+							message.type = "public";
+						}
+					});
 			});
-		});
 	}
 }
 
@@ -290,9 +293,7 @@ export const dbHelpers = {
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
 		sessionId: string
-	): Promise<
-		(Message & { reactions: { emoji: string; count: number }[] })[]
-	> {
+	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		const messages = await db.messages
 			.where("session_id")
 			.equals(sessionId)
@@ -342,7 +343,9 @@ export const dbHelpers = {
 			.equals(groupId)
 			.toArray();
 
-		const allDMMessages: (Message & { reactions: { emoji: string; count: number }[] })[] = [];
+		const allDMMessages: (Message & {
+			reactions: { emoji: string; count: number }[];
+		})[] = [];
 
 		// Get DM messages from all sessions
 		for (const session of sessions) {
@@ -354,11 +357,11 @@ export const dbHelpers = {
 
 			// Filter messages between the two users
 			const relevantDMs = sessionMessages.filter((msg) => {
-				const isFromUser1 = 
-					(msg.sender_user_id === userId1 || msg.sender_agent_id === userId1);
+				const isFromUser1 =
+					msg.sender_user_id === userId1 || msg.sender_agent_id === userId1;
 				const isToUser1 = msg.dm_target_id === userId1;
-				const isFromUser2 = 
-					(msg.sender_user_id === userId2 || msg.sender_agent_id === userId2);
+				const isFromUser2 =
+					msg.sender_user_id === userId2 || msg.sender_agent_id === userId2;
 				const isToUser2 = msg.dm_target_id === userId2;
 
 				return (isFromUser1 && isToUser2) || (isFromUser2 && isToUser1);
@@ -395,7 +398,9 @@ export const dbHelpers = {
 		}
 
 		// Sort by creation time
-		allDMMessages.sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+		allDMMessages.sort(
+			(a, b) => a.created_at.getTime() - b.created_at.getTime()
+		);
 		return allDMMessages;
 	},
 
@@ -476,6 +481,46 @@ export const dbHelpers = {
 			...updates,
 			updated_at: new Date(),
 		});
+	},
+
+	// Delete a group and all related data
+	async deleteGroup(groupId: string): Promise<void> {
+		// Delete all related data in the correct order to avoid foreign key constraints
+		// 1. Delete message reactions for messages in this group's sessions
+		const sessions = await db.sessions
+			.where("group_id")
+			.equals(groupId)
+			.toArray();
+		const sessionIds = sessions.map((s) => s.id);
+
+		for (const sessionId of sessionIds) {
+			const messages = await db.messages
+				.where("session_id")
+				.equals(sessionId)
+				.toArray();
+			const messageIds = messages.map((m) => m.id);
+
+			for (const messageId of messageIds) {
+				await db.messageReactions
+					.where("message_id")
+					.equals(messageId)
+					.delete();
+			}
+		}
+
+		// 2. Delete messages in this group's sessions
+		for (const sessionId of sessionIds) {
+			await db.messages.where("session_id").equals(sessionId).delete();
+		}
+
+		// 3. Delete sessions
+		await db.sessions.where("group_id").equals(groupId).delete();
+
+		// 4. Delete group members
+		await db.groupMembers.where("group_id").equals(groupId).delete();
+
+		// 5. Finally delete the group
+		await db.groups.delete(groupId);
 	},
 };
 

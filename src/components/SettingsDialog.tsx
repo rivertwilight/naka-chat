@@ -599,6 +599,7 @@ function AgentsSection() {
 										<Avatar
 											src={agent.avatar_url}
 											size={40}
+											className="flex-shrink-0"
 										/>
 										<div>
 											<div className="font-medium text-neutral-900 dark:text-neutral-100">

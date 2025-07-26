@@ -1,97 +1,97 @@
 @import "tailwindcss";
 
 :root {
-	--background: #ffffff;
-	--foreground: #171717;
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-	--color-background: var(--background);
-	--color-foreground: var(--foreground);
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 /* Dark mode styles using class-based approach for next-themes */
 .dark {
-	--background: #171717;
-	--foreground: #ededed;
+  --background: #171717;
+  --foreground: #ededed;
 }
 
 /* Fallback for system preference when no theme is set */
 @media (prefers-color-scheme: dark) {
-	:root:not(.light):not(.dark) {
-		--background: #171717;
-		--foreground: #ededed;
-	}
+  :root:not(.light):not(.dark) {
+    --background: #171717;
+    --foreground: #ededed;
+  }
 }
 
 body {
-	background: var(--background);
-	color: var(--foreground);
-	font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 /* Selection color for light mode (default) */
 ::selection {
-	background: #171717; /* Tailwind's neutral-900 */
-	color: #ededed; /* Ensure text is visible on dark background */
+  background: #171717; /* Tailwind's neutral-900 */
+  color: #ededed; /* Ensure text is visible on dark background */
 }
 
 /* Selection color for dark mode */
 .dark ::selection {
-	background: #ededed; /* Light color for selection in dark mode */
-	color: #171717; /* Dark text for contrast */
+  background: #ededed; /* Light color for selection in dark mode */
+  color: #171717; /* Dark text for contrast */
 }
 
 /* Fallback for system preference when no theme is set */
 @media (prefers-color-scheme: dark) {
-	:root:not(.light):not(.dark) ::selection {
-		background: #ededed; /* Light color for selection in dark mode */
-		color: #171717; /* Dark text for contrast */
-	}
+  :root:not(.light):not(.dark) ::selection {
+    background: #ededed; /* Light color for selection in dark mode */
+    color: #171717; /* Dark text for contrast */
+  }
 }
 
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
-	background: transparent;
+  width: 6px;
+  height: 6px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #bdbdbd;
-	border-radius: 4px;
+  background: #bdbdbd;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #a0a0a0;
+  background: #a0a0a0;
 }
 
 /* For Firefox */
 * {
-	scrollbar-width: thin;
-	scrollbar-color: #bdbdbd transparent;
+  scrollbar-width: thin;
+  scrollbar-color: #bdbdbd transparent;
 }
 
 :root {
-	scrollbar-gutter: stable;
+  scrollbar-gutter: stable;
 }
 
 .mask {
-	-webkit-mask-size: contain;
-	mask-size: contain;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
-	-webkit-mask-position: center;
-	mask-position: center;
-	-webkit-mask-repeat-x: no-repeat;
-	-webkit-mask-repeat-y: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat-x: no-repeat;
+  -webkit-mask-repeat-y: no-repeat;
 }
 
 .mask-squircle {
-	-webkit-mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAwJyBoZWlnaHQ9JzIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cGF0aCBkPSdNMTAwIDBDMjAgMCAwIDIwIDAgMTAwczIwIDEwMCAxMDAgMTAwIDEwMC0yMCAxMDAtMTAwUzE4MCAwIDEwMCAwWicvPjwvc3ZnPg==);
-	mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAwJyBoZWlnaHQ9JzIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cGF0aCBkPSdNMTAwIDBDMjAgMCAwIDIwIDAgMTAwczIwIDEwMCAxMDAgMTAwIDEwMC0yMCAxMDAtMTAwUzE4MCAwIDEwMCAwWicvPjwvc3ZnPg==);
+  -webkit-mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAwJyBoZWlnaHQ9JzIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cGF0aCBkPSdNMTAwIDBDMjAgMCAwIDIwIDAgMTAwczIwIDEwMCAxMDAgMTAwIDEwMC0yMCAxMDAtMTAwUzE4MCAwIDEwMCAwWicvPjwvc3ZnPg==);
+  mask-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMjAwJyBoZWlnaHQ9JzIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cGF0aCBkPSdNMTAwIDBDMjAgMCAwIDIwIDAgMTAwczIwIDEwMCAxMDAgMTAwIDEwMC0yMCAxMDAtMTAwUzE4MCAwIDEwMCAwWicvPjwvc3ZnPg==);
 }

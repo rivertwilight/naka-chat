@@ -77,11 +77,11 @@ export default function Sidebar() {
 	return (
 		<>
 			<aside
-				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
+				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				{/* Logo Section - stick to top */}
-				<div className="mb-4 px-3 text-center select-none flex items-center justify-between gap-2">
+				<div className="mb-4 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
 						onClick={() => router.push("/")}
 						className={`${sawarabi.className} text-xl text-neutral-700 dark:text-neutral-200 tracking-wide cursor-pointer transition-opacity hover:opacity-70`}
@@ -102,7 +102,7 @@ export default function Sidebar() {
 				</div>
 
 				{/* Group List - scrollable */}
-				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
+				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto px-4">
 					{loading ? (
 						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
 							Loading groups...

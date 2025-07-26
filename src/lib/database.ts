@@ -100,6 +100,25 @@ export class NakaChatDB extends Dexie {
 				"id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
+
+		this.version(2).stores({
+			users: "id, name, email, created_at",
+			agents: "id, name, model, created_at",
+			groups: "id, name, created_by, created_at",
+			groupMembers:
+				"id, group_id, user_id, agent_id, role, status, joined_at",
+			sessions: "id, group_id, created_at",
+			messages:
+				"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
+			messageReactions: "id, message_id, user_id, agent_id, created_at",
+		}).upgrade((tx) => {
+			// Migrate existing messages to have type field
+			return tx.table("messages").toCollection().modify((message) => {
+				if (!message.type) {
+					message.type = "public";
+				}
+			});
+		});
 	}
 }
 
@@ -216,10 +235,27 @@ export const dbHelpers = {
 		const message: Message = {
 			id: uuidv4(),
 			...messageData,
+			type: messageData.type || "public", // Default to public if not specified
 			created_at: new Date(),
 		};
 		await db.messages.add(message);
 		return message;
+	},
+
+	// Send a DM message
+	async sendDMMessage(
+		sessionId: string,
+		senderUserId: string,
+		content: string,
+		dmTargetId: string
+	): Promise<Message> {
+		return this.sendMessage({
+			session_id: sessionId,
+			sender_user_id: senderUserId,
+			content,
+			type: "dm",
+			dm_target_id: dmTargetId,
+		});
 	},
 
 	// Add a reaction to a message
@@ -292,6 +328,75 @@ export const dbHelpers = {
 		);
 
 		return messagesWithReactions;
+	},
+
+	// Get DM messages between two users in a group
+	async getDMMessages(
+		groupId: string,
+		userId1: string,
+		userId2: string
+	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
+		// Get all sessions for the group
+		const sessions = await db.sessions
+			.where("group_id")
+			.equals(groupId)
+			.toArray();
+
+		const allDMMessages: (Message & { reactions: { emoji: string; count: number }[] })[] = [];
+
+		// Get DM messages from all sessions
+		for (const session of sessions) {
+			const sessionMessages = await db.messages
+				.where("session_id")
+				.equals(session.id)
+				.and((msg) => msg.type === "dm")
+				.toArray();
+
+			// Filter messages between the two users
+			const relevantDMs = sessionMessages.filter((msg) => {
+				const isFromUser1 = 
+					(msg.sender_user_id === userId1 || msg.sender_agent_id === userId1);
+				const isToUser1 = msg.dm_target_id === userId1;
+				const isFromUser2 = 
+					(msg.sender_user_id === userId2 || msg.sender_agent_id === userId2);
+				const isToUser2 = msg.dm_target_id === userId2;
+
+				return (isFromUser1 && isToUser2) || (isFromUser2 && isToUser1);
+			});
+
+			// Add reactions to messages
+			const messagesWithReactions = await Promise.all(
+				relevantDMs.map(async (message) => {
+					const reactions = await db.messageReactions
+						.where("message_id")
+						.equals(message.id)
+						.toArray();
+
+					const reactionCounts = reactions.reduce((acc, reaction) => {
+						acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+						return acc;
+					}, {} as Record<string, number>);
+
+					const reactionArray = Object.entries(reactionCounts).map(
+						([emoji, count]) => ({
+							emoji,
+							count,
+						})
+					);
+
+					return {
+						...message,
+						reactions: reactionArray,
+					};
+				})
+			);
+
+			allDMMessages.push(...messagesWithReactions);
+		}
+
+		// Sort by creation time
+		allDMMessages.sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+		return allDMMessages;
 	},
 
 	// Get group members with user/agent details

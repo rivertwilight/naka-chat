@@ -7,9 +7,9 @@ import { Moon, Sun, Plus, Settings } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import {
-  useUserGroups,
-  useLatestGroupMessages,
-  useCurrentUser,
+	useUserGroups,
+	useLatestGroupMessages,
+	useCurrentUser,
 } from "@/hooks/useDatabase";
 import GroupListItem from "@/components/GroupListItem";
 import SettingsDialog from "@/components/SettingsDialog";
@@ -28,8 +28,8 @@ function formatMessageTime(date: Date | undefined): string {
 }
 
 const sawarabi = Sawarabi_Mincho({
-  weight: "400",
-  subsets: ["latin"],
+	weight: "400",
+	subsets: ["latin"],
 });
 
 export default function Sidebar() {
@@ -135,9 +135,7 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name ||
-									msg.senderAgent?.name ||
-									"Unknown";
+									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -146,9 +144,7 @@ export default function Sidebar() {
 									group={group}
 									selected={groupId === group.id}
 									messagePreview={preview}
-									lastMessageTime={formatMessageTime(
-										msg?.created_at
-									)}
+									lastMessageTime={formatMessageTime(msg?.created_at)}
 									onGroupDeleted={() => {
 										// Refresh the groups list after deletion
 										setGroupsVersion((prev) => prev + 1);
@@ -170,49 +166,44 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>
-							{creating ? "Creating..." : "Create new group"}
-						</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
 				</nav>
 			</aside>
-			<SettingsDialog
-				open={isSettingsPanelOpen}
-				onClose={closeSettingsPanel}
-			/>
+			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
 		</>
 	);
 }
 
 export function DarkModeSwitch() {
-  const { setTheme, theme, resolvedTheme } = useTheme();
-  const [isClient, setIsClient] = useState(false);
+	const { setTheme, theme, resolvedTheme } = useTheme();
+	const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
-  // Use resolvedTheme to get the actual theme (system preference resolved)
-  const currentTheme = resolvedTheme || theme;
+	// Use resolvedTheme to get the actual theme (system preference resolved)
+	const currentTheme = resolvedTheme || theme;
 
-  return isClient ? (
-    <button
-      id="dark-mode-switch"
-      onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
-      aria-label="Toggle dark mode"
-      className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-      type="button"
-    >
-      {currentTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-    </button>
-  ) : (
-    <button
-      onClick={() => setTheme("light")}
-      aria-label="Toggle dark mode"
-      className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-      type="button"
-    >
-      <Sun size={16} />
-    </button>
-  );
+	return isClient ? (
+		<button
+			id="dark-mode-switch"
+			onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+			aria-label="Toggle dark mode"
+			className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+			type="button"
+		>
+			{currentTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+		</button>
+	) : (
+		<button
+			onClick={() => setTheme("light")}
+			aria-label="Toggle dark mode"
+			className="p-2 text-neutral-700 dark:text-neutral-200 rounded-full z-50 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+			type="button"
+		>
+			<Sun size={16} />
+		</button>
+	);
 }

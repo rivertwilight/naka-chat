@@ -7,6 +7,7 @@ import { Sawarabi_Mincho } from "next/font/google";
 import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
+import { motion } from "framer-motion";
 import Image from "next/image";
 
 interface Agent {
@@ -119,7 +120,12 @@ export default function HomeClient() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col justify-center items-center">
+		<motion.div
+			initial={{ opacity: 0, y: 80 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.5 }}
+			className="min-h-screen flex flex-col justify-center items-center"
+		>
 			<div className="container mx-auto px-4 py-16 pl-24">
 				{/* Header */}
 				<div className="text-center mb-16">
@@ -138,8 +144,7 @@ export default function HomeClient() {
 						NakaChat
 					</h1>
 					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Group chat with AI agents. Brianstorm, werewolf, COC,
-						and more.
+						Group chat with AI agents. Brianstorm, werewolf, COC, and more.
 					</p>
 				</div>
 
@@ -186,9 +191,7 @@ export default function HomeClient() {
 											: "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-600"
 									}`}
 								>
-									{checked[index] && (
-										<Check className="w-4 h-4 text-white" />
-									)}
+									{checked[index] && <Check className="w-4 h-4 text-white" />}
 								</div>
 							</div>
 						</div>
@@ -234,13 +237,11 @@ export default function HomeClient() {
 						/>
 					</button>
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">
-							{errorMsg}
-						</div>
+						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
 					)}
 				</div>
 			</div>
-		</div>
+		</motion.div>
 	);
 }
 

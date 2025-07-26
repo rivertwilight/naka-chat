@@ -6,8 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
 import Dialog from "./Dialog";
 
-import { useGroupMembers } from "../hooks/useDatabase";
-import { useGroup } from "../hooks/useDatabase";
+import {
+	useGroup,
+	useGroupMembers,
+	useGroupOperations,
+} from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
 import { db } from "../lib/database";
 import { getRandomName, getRandomAvatar } from "../utils/randomUtils";
@@ -61,6 +64,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [inviteAgentOpen, setInviteAgentOpen] = React.useState(false);
 	const [inviteAgentLoading, setInviteAgentLoading] = React.useState(false);
 	const [selectedAgentIds, setSelectedAgentIds] = React.useState<string[]>([]);
+	const { renameGroup } = useGroupOperations();
 
 	React.useEffect(() => {
 		if (group && !nameEditing) setNameEdit(group.name || "");
@@ -88,7 +92,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const handleNameSave = async () => {
 		if (!groupId) return;
 		setNameSaving(true);
-		await dbHelpers.updateGroup(groupId, { name: nameEdit });
+		await renameGroup(groupId, nameEdit);
 		setNameEditing(false);
 		setNameSaving(false);
 		setGroupVersion((v) => v + 1);
@@ -301,7 +305,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								}}
 								disabled={member.status === "muted"}
 							>
-								<Avatar src={member.avatar_url} size={30} name={member.name} />
+								<Avatar
+									avatar={member.avatar_url}
+									size={30}
+									title={member.name}
+								/>
 								<div className="flex flex-col gap-0.5">
 									<span
 										className={`${

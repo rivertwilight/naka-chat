@@ -16,6 +16,7 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -65,10 +66,10 @@ export default function Sidebar() {
 			if (groupIdToRemove === groupId) {
 				router.push("/");
 			}
-			
+
 			// Delete the group from database
 			await dbHelpers.deleteGroup(groupIdToRemove);
-			
+
 			// Trigger refetch of groups
 			setGroupsVersion((v) => v + 1);
 		} catch (e) {
@@ -130,27 +131,36 @@ export default function Sidebar() {
 							No groups found
 						</div>
 					) : (
-						groups.map((group) => {
+						groups.map((group, index) => {
 							const msg = latestMessages[group.id];
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name ||
-									msg.senderAgent?.name ||
-									"Unknown";
+									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
-								<GroupListItem
+								<motion.div
 									key={group.id}
-									group={group}
-									selected={groupId === group.id}
-									messagePreview={preview}
-									lastMessageTime={formatMessageTime(
-										msg?.created_at
-									)}
-									onRemoveGroup={handleRemoveGroup}
-								/>
+									initial={{ opacity: 0, x: -50 }}
+									animate={{ opacity: 1, x: 0 }}
+									transition={{ duration: 0.3, delay: index * 0.05 }}
+								>
+									<GroupListItem
+										group={group}
+										selected={groupId === group.id}
+										messagePreview={preview}
+										lastMessageTime={formatMessageTime(msg?.created_at)}
+										onGroupDeleted={() => {
+											// Refresh the groups list after deletion
+											setGroupsVersion((prev) => prev + 1);
+										}}
+										onGroupRenamed={() => {
+											// Refresh the groups list after renaming
+											setGroupsVersion((prev) => prev + 1);
+										}}
+									/>
+								</motion.div>
 							);
 						})
 					)}
@@ -163,16 +173,11 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>
-							{creating ? "Creating..." : "Create new group"}
-						</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
 				</nav>
 			</aside>
-			<SettingsDialog
-				open={isSettingsPanelOpen}
-				onClose={closeSettingsPanel}
-			/>
+			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
 		</>
 	);
 }

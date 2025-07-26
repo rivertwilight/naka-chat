@@ -301,7 +301,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								}}
 								disabled={member.status === "muted"}
 							>
-								<Avatar src={member.avatar_url} size={30} name={member.name} />
+								<Avatar
+									avatar={member.avatar_url}
+									size={30}
+									title={member.name}
+								/>
 								<div className="flex flex-col gap-0.5">
 									<span
 										className={`${

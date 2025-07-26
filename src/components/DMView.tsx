@@ -1,18 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Geist_Mono } from "next/font/google";
 import PublicMessageBlock from "@/components/PublicMessageBlock";
-import MessageInputField from "./GroupInputArea";
+import MessageInputField from "@/components/GroupInputArea";
 import { Avatar } from "@lobehub/ui";
-import {
-	useGroupMessages,
-	useCurrentUser,
-	useGroup,
-	useGroupMembers,
-} from "@/hooks/useDatabase";
+import { useCurrentUser, useGroup, useGroupMembers } from "@/hooks/useDatabase";
 import { dbHelpers, db } from "@/lib/database";
 
 const geistMono = Geist_Mono({

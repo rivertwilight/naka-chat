@@ -205,6 +205,34 @@ export const dbHelpers = {
 		});
 	},
 
+	// Delete a group and all its related data
+	async deleteGroup(groupId: string): Promise<void> {
+		// Delete all related data in the correct order to maintain referential integrity
+		
+		// 1. Delete message reactions for all messages in all sessions of this group
+		const sessions = await db.sessions.where("group_id").equals(groupId).toArray();
+		for (const session of sessions) {
+			const messages = await db.messages.where("session_id").equals(session.id).toArray();
+			for (const message of messages) {
+				await db.messageReactions.where("message_id").equals(message.id).delete();
+			}
+		}
+
+		// 2. Delete all messages in all sessions of this group
+		for (const session of sessions) {
+			await db.messages.where("session_id").equals(session.id).delete();
+		}
+
+		// 3. Delete all sessions for this group
+		await db.sessions.where("group_id").equals(groupId).delete();
+
+		// 4. Delete all group members
+		await db.groupMembers.where("group_id").equals(groupId).delete();
+
+		// 5. Finally, delete the group itself
+		await db.groups.delete(groupId);
+	},
+
 	// Add member to group
 	async addGroupMember(
 		memberData: Omit<GroupMember, "id" | "joined_at">

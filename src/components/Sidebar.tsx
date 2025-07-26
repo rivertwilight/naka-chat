@@ -59,6 +59,24 @@ export default function Sidebar() {
 		}
 	};
 
+	const handleRemoveGroup = async (groupIdToRemove: string) => {
+		console.log("handleRemoveGroup called with:", groupIdToRemove);
+		try {
+			// If we're currently viewing the group being deleted, navigate to home
+			if (groupIdToRemove === groupId) {
+				router.push("/");
+			}
+
+			// Delete the group from database
+			await dbHelpers.deleteGroup(groupIdToRemove);
+
+			// Trigger refetch of groups
+			setGroupsVersion((v) => v + 1);
+		} catch (e) {
+			console.error("Failed to remove group:", e);
+		}
+	};
+
 	const groupIds = groups.map((g) => g.id);
 	const latestMessages = useLatestGroupMessages(groupIds);
 

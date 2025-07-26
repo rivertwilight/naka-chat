@@ -1,10 +1,10 @@
-import Link from "next/link";
 import React from "react";
 import { Check, Pin, Pencil, X, Loader } from "lucide-react";
 import { Dropdown, DropdownProps, Tooltip } from "@lobehub/ui";
 import type { Group } from "../lib/database";
 import { useGroupOperations } from "../hooks/useDatabase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface GroupListItemProps {
 	group: Group;

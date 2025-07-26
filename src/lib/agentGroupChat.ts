@@ -5,17 +5,16 @@ import { generateText } from "ai";
 export type { MessageWithDetails } from "./database";
 import { GoogleGenAI } from "@google/genai";
 
-// Configuration
 export const AGENT_CONFIG = {
 	RESPONSE_DELAY: {
 		MIN_MS: 1000,
-		MAX_MS: 120000,
+		MAX_MS: 10000,
 	},
 	TYPING_POOL: {
 		MAX_CONCURRENT: 4,
 	},
 	SUPERVISOR: {
-		IDLE_TIMEOUT_MS: 5000,
+		DEBOUNCE_DELAY_MS: 3000, // 3 seconds idle time before triggering supervision
 		DECISION_RETRY_DELAY_MS: 1000,
 		POST_RESPONSE_DELAY_MS: 500,
 	},
@@ -47,7 +46,6 @@ export interface GroupChatMember {
 export interface SupervisorDecision {
 	nextSpeaker: string[];
 	reasoning: string;
-	shouldStop: boolean;
 }
 
 export interface ConversationContext {
@@ -339,25 +337,20 @@ ${membersList}
 ${context.history}
 </conversationHistory>
 
-Analyze the conversation and decide:
-
-1. Who should speak next? (Return an array of agent IDs/names and/or 'human', e.g., ['agent_id_1'], ['human'], or ['human', 'agent_id'])
-2. Should the conversation stop here? (true if waiting for human input or conversation has reached a natural conclusion)
+Analyze the conversation and decide who should speak next based on the conversation context.
 
 Respond in this exact JSON format, no other text, no markdown wrapper:
 
 {
-  "nextSpeaker": ["agent_id_1", "agent_id_2"],
-  "shouldStop": false
+  "nextSpeaker": ["agent_id_1", "agent_id_2"]
 }
 
 Rules:
 - Always return nextSpeaker as an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
 - If the last message was a question directed at humans or requires human input, include 'human' in the array
 - If an agent's expertise is needed based on the conversation topic, include that agent
-- If the conversation seems complete, set shouldStop to true
-- Your goal is to make the conversation as natural as possible
-- Consider the natural flow of collaboration (PM → Designer → Developer, etc.)`;
+- If the conversation seems complete, return empty array [] or ['human']. DM needed should not be considered as a conversation complete, and the DM sender need to be included in the nextSpeaker array.
+- Your goal is to make the conversation as natural as possible`;
 	}
 
 	private parseDecision(responseText: string): SupervisorDecision {
@@ -395,7 +388,6 @@ Rules:
 			nextSpeaker: ["human"],
 			reasoning:
 				"Error in supervisor decision, defaulting to human input",
-			shouldStop: true,
 		};
 	}
 }
@@ -511,7 +503,11 @@ export class AgentGroupChat {
 	private responseService: AgentResponseService;
 	private typingPool = new AgentTypingPool();
 	private isSupervisorActive = false;
-	private idleTimeout: NodeJS.Timeout | null = null;
+	private debounceTimeout: NodeJS.Timeout | null = null;
+	private isMonitoring = false;
+	private lastMessageCount = 0;
+	private monitoringInterval: NodeJS.Timeout | null = null;
+	private onTypingChangeCallback?: (typingAgents: string[]) => void;
 
 	public members: GroupChatMember[] = [];
 	public groupName: string = "";
@@ -536,114 +532,129 @@ export class AgentGroupChat {
 		return this.conversationService.formatHistory(messages);
 	}
 
-	async makeSupervisionDecision(
-		members: GroupChatMember[],
-		conversationHistory: string,
-		groupName: string,
-		groupDescription: string
-	): Promise<SupervisorDecision> {
-		const availableAgents = this.memberService.getAvailableAgents(
-			members,
-			this.typingPool.typingAgents
-		);
-		const availableMembers = [
-			...members.filter((m) => m.role === "human"),
-			...availableAgents,
-		];
-
-		const context = this.conversationService.createConversationContext(
-			this.groupId,
-			groupName,
-			groupDescription,
-			members,
-			[]
-		);
-		context.history = conversationHistory;
-
-		return this.supervisorService.makeDecision(context, availableMembers);
+	/**
+	 * Set callback to be notified when typing agents change
+	 */
+	setOnTypingChange(callback: (typingAgents: string[]) => void): void {
+		this.onTypingChangeCallback = callback;
 	}
 
-	async processHumanMessage(
-		userMessage: string,
-		userId: string,
-		conversationHistory: MessageWithDetails[],
-		groupName: string,
-		groupDescription: string
-	): Promise<void> {
-		const members = await this.memberService.getGroupMembers();
-		const updatedHistory = this.createUpdatedHistory(
-			conversationHistory,
-			userMessage,
-			userId,
-			members
-		);
-
-		this.clearIdleTimeout();
-		await this.triggerSupervisorCycle(
-			members,
-			updatedHistory,
-			groupName,
-			groupDescription
-		);
-		this.setIdleTimeout(members, groupName, groupDescription);
+	/**
+	 * Get currently typing agent names
+	 */
+	getTypingAgents(): string[] {
+		const typingAgentIds = Array.from(this.typingPool.typingAgents);
+		return typingAgentIds.map((agentId) => {
+			const member = this.members.find((m) => m.id === agentId);
+			return member?.name || agentId;
+		});
 	}
 
-	async startConversation(
-		topic: string,
-		conversationHistory: MessageWithDetails[] = []
-	): Promise<void> {
-		const members = await this.memberService.getGroupMembers();
-		let currentHistory =
-			this.conversationService.formatHistory(conversationHistory);
+	/**
+	 * Start monitoring the group for new messages and automatically trigger supervision
+	 */
+	async startMonitoring(): Promise<void> {
+		if (this.isMonitoring) return;
 
-		if (conversationHistory.length > 0) {
-			currentHistory += "\n";
+		this.isMonitoring = true;
+
+		// Initialize group data
+		const group = await db.groups.get(this.groupId);
+		this.groupName = group?.name || "";
+		this.groupDescription = group?.description || "";
+		this.members = await this.memberService.getGroupMembers();
+
+		// Get initial message count
+		const messages =
+			await this.conversationService.getLatestSessionMessages(
+				this.groupId
+			);
+		this.lastMessageCount = messages.length;
+
+		// Start monitoring for new messages
+		this.monitoringInterval = setInterval(async () => {
+			await this.checkForNewMessages();
+		}, 1000); // Check every second
+
+		console.log(`Started monitoring group ${this.groupId}`);
+	}
+
+	/**
+	 * Stop monitoring the group
+	 */
+	stopMonitoring(): void {
+		this.isMonitoring = false;
+
+		if (this.monitoringInterval) {
+			clearInterval(this.monitoringInterval);
+			this.monitoringInterval = null;
 		}
-		currentHistory += `Human: ${topic}`;
 
-		await this.runConversationLoop(members, currentHistory);
+		if (this.debounceTimeout) {
+			clearTimeout(this.debounceTimeout);
+			this.debounceTimeout = null;
+		}
+
+		console.log(`Stopped monitoring group ${this.groupId}`);
 	}
 
-	private createUpdatedHistory(
-		conversationHistory: MessageWithDetails[],
-		userMessage: string,
-		userId: string,
-		members: GroupChatMember[]
-	): MessageWithDetails[] {
-		const userMember = members.find((m) => m.id === userId);
-		return [
-			...conversationHistory,
-			{
-				content: userMessage,
-				senderUser: {
-					name: userMember?.name || "User",
-				},
-			} as MessageWithDetails,
-		];
+	/**
+	 * Manually send a message (for external use, will trigger debounce)
+	 */
+	async sendUserMessage(content: string, userId: string): Promise<void> {
+		// The message will be detected by the monitoring system and trigger debounce
+		// This method is mainly for external integrations
 	}
 
-	private async triggerSupervisorCycle(
-		members: GroupChatMember[],
-		initialHistory: MessageWithDetails[],
-		groupName: string,
-		groupDescription: string
-	): Promise<void> {
-		if (this.isSupervisorActive) {
-			console.log("Supervisor request discarded: already active");
+	private async checkForNewMessages(): Promise<void> {
+		try {
+			const messages =
+				await this.conversationService.getLatestSessionMessages(
+					this.groupId
+				);
+			const currentMessageCount = messages.length;
+
+			// If there are new messages, reset the debounce timer
+			if (currentMessageCount > this.lastMessageCount) {
+				this.lastMessageCount = currentMessageCount;
+				this.resetDebounceTimer();
+			}
+		} catch (error) {
+			console.error("Error checking for new messages:", error);
+		}
+	}
+
+	private resetDebounceTimer(): void {
+		// Clear existing timer
+		if (this.debounceTimeout) {
+			clearTimeout(this.debounceTimeout);
+		}
+
+		// Set new timer
+		this.debounceTimeout = setTimeout(async () => {
+			await this.triggerSupervision();
+		}, AGENT_CONFIG.SUPERVISOR.DEBOUNCE_DELAY_MS);
+	}
+
+	private async triggerSupervision(): Promise<void> {
+		if (this.isSupervisorActive || !this.isMonitoring) {
 			return;
 		}
 
 		this.isSupervisorActive = true;
-		const currentHistory =
-			this.conversationService.formatHistory(initialHistory);
 
 		try {
-			await this.runSupervisorLoop(
-				members,
-				currentHistory,
-				groupName,
-				groupDescription
-			);
+			// Get latest data
+			const messages =
+				await this.conversationService.getLatestSessionMessages(
+					this.groupId
+				);
+			const members = await this.memberService.getGroupMembers();
+
+			// Run supervision loop
+			await this.runSupervisorLoop(members, messages);
+		} catch (error) {
+			console.error("Error in supervision:", error);
 		} finally {
 			this.isSupervisorActive = false;
 		}
@@ -651,12 +662,8 @@ export class AgentGroupChat {
 
 	private async runSupervisorLoop(
 		members: GroupChatMember[],
-		initialHistory: string,
-		groupName: string,
-		groupDescription: string
+		messages: MessageWithDetails[]
 	): Promise<void> {
-		let currentHistory = initialHistory;
-
 		while (true) {
 			const availableAgents = this.memberService.getAvailableAgents(
 				members,
@@ -669,30 +676,34 @@ export class AgentGroupChat {
 
 			const context = this.conversationService.createConversationContext(
 				this.groupId,
-				groupName,
-				groupDescription,
+				this.groupName,
+				this.groupDescription,
 				members,
-				await this.conversationService.getLatestSessionMessages(
-					this.groupId,
-					undefined,
-					true
-				),
+				messages,
 				undefined,
 				true
 			);
+
 			const decision = await this.supervisorService.makeDecision(
 				context,
 				availableMembers
 			);
 			console.log("Supervisor decision:", decision);
 
-			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
+			// Stop if no agents to speak or only human should speak
+			const agentsToSpeak = decision.nextSpeaker.filter(
+				(speaker) => speaker !== "human"
+			);
+			if (
+				decision.nextSpeaker.length === 0 ||
+				agentsToSpeak.length === 0
+			) {
 				break;
 			}
 
 			const nextAgents = this.memberService.findMembersByIdentifiers(
 				availableAgents,
-				decision.nextSpeaker
+				agentsToSpeak
 			);
 
 			if (nextAgents.length === 0) {
@@ -714,71 +725,12 @@ export class AgentGroupChat {
 			);
 			await this.processAgentResponses(agentsToStart, context);
 
-			currentHistory = await this.updateHistoryFromDatabase();
-			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
-		}
-	}
-
-	private async runConversationLoop(
-		members: GroupChatMember[],
-		initialHistory: string
-	): Promise<void> {
-		let currentHistory = initialHistory;
-
-		while (true) {
-			const availableAgents = this.memberService.getAvailableAgents(
-				members,
-				this.typingPool.typingAgents
-			);
-			const availableMembers = [
-				...members.filter((m) => m.role === "human"),
-				...availableAgents,
-			];
-
-			const context = this.conversationService.createConversationContext(
+			// Get updated messages from database for next iteration
+			messages = await this.conversationService.getLatestSessionMessages(
 				this.groupId,
-				"",
-				"",
-				members,
-				[]
+				undefined,
+				true
 			);
-			context.history = currentHistory;
-
-			const decision = await this.supervisorService.makeDecision(
-				context,
-				availableMembers
-			);
-			console.log("Supervisor decision:", decision);
-
-			if (decision.shouldStop || decision.nextSpeaker.includes("human")) {
-				break;
-			}
-
-			const nextAgents = this.memberService.findMembersByIdentifiers(
-				availableAgents,
-				decision.nextSpeaker
-			);
-
-			if (nextAgents.length === 0) {
-				console.error(
-					"No available agents found:",
-					decision.nextSpeaker
-				);
-				break;
-			}
-
-			if (!this.typingPool.canAddMore()) {
-				await this.waitForAgentsToFinish();
-				continue;
-			}
-
-			const agentsToStart = nextAgents.slice(
-				0,
-				this.typingPool.getAvailableSlots()
-			);
-			await this.processAgentResponses(agentsToStart, context);
-
-			currentHistory = await this.updateHistoryFromDatabase();
 			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
 		}
 	}
@@ -805,13 +757,22 @@ export class AgentGroupChat {
 			setTimeout(async () => {
 				try {
 					this.typingPool.add(agent.id); // Mark as typing only when making the request
+					this.notifyTypingChange();
 					await this.executeAgentResponse(agent, context);
 				} finally {
 					this.typingPool.remove(agent.id);
+					this.notifyTypingChange();
 					resolve();
 				}
 			}, delay);
 		});
+	}
+
+	private notifyTypingChange(): void {
+		if (this.onTypingChangeCallback) {
+			const typingAgentNames = this.getTypingAgents();
+			this.onTypingChangeCallback(typingAgentNames);
+		}
 	}
 
 	private async executeAgentResponse(
@@ -875,41 +836,11 @@ export class AgentGroupChat {
 		return Math.floor(Math.random() * (MAX_MS - MIN_MS + 1)) + MIN_MS;
 	}
 
-	private async updateHistoryFromDatabase(): Promise<string> {
-		const latestMessages =
-			await this.conversationService.getLatestSessionMessages(
-				this.groupId
-			);
-		return this.conversationService.formatHistory(latestMessages);
-	}
-
 	private async waitForAgentsToFinish(): Promise<void> {
 		await this.delay(AGENT_CONFIG.SUPERVISOR.DECISION_RETRY_DELAY_MS);
 	}
 
 	private delay(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
-	private clearIdleTimeout(): void {
-		if (this.idleTimeout) {
-			clearTimeout(this.idleTimeout);
-			this.idleTimeout = null;
-		}
-	}
-
-	private setIdleTimeout(
-		members: GroupChatMember[],
-		groupName: string,
-		groupDescription: string
-	): void {
-		this.idleTimeout = setTimeout(() => {
-			this.triggerSupervisorCycle(
-				members,
-				[],
-				groupName,
-				groupDescription
-			);
-		}, AGENT_CONFIG.SUPERVISOR.IDLE_TIMEOUT_MS);
 	}
 }

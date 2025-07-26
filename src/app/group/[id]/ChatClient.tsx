@@ -17,7 +17,6 @@ import {
 import {
 	AgentGroupChat,
 	GroupChatMember,
-	SupervisorDecision,
 	MessageWithDetails,
 } from "@/lib/agentGroupChat";
 import { usePersistance } from "@/components/PersistanceContext";
@@ -34,9 +33,8 @@ interface ChatClientProps {
 
 export default function ChatClient({ groupId }: ChatClientProps) {
 	const [loading, setLoading] = useState(false);
-	const [agentChatLoading, setAgentChatLoading] = useState(false);
 	const [previousMessageCount, setPreviousMessageCount] = useState(0);
-	const [pendingSpeakers, setPendingSpeakers] = useState<string[]>([]);
+	const [typingAgents, setTypingAgents] = useState<string[]>([]);
 	const [dmView, setDmView] = useState<{
 		senderId: string;
 		senderName: string;
@@ -60,7 +58,22 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				baseUrl,
 				modelId,
 			});
+			
+			// Set up typing change callback
+			agentGroupChatRef.current.setOnTypingChange((typingAgentNames) => {
+				setTypingAgents(typingAgentNames);
+			});
+			
+			// Start monitoring when AgentGroupChat is created
+			agentGroupChatRef.current.startMonitoring();
 		}
+		
+		// Cleanup function to stop monitoring
+		return () => {
+			if (agentGroupChatRef.current) {
+				agentGroupChatRef.current.stopMonitoring();
+			}
+		};
 	}, [groupId, provider, getApiKey, baseUrl]);
 
 	// Only auto-scroll when there are new messages
@@ -75,74 +88,14 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	}, [messages, previousMessageCount]);
 
 	const handleSendMessage = async (content: string) => {
-		if (!user || !agentGroupChatRef.current) return;
+		if (!user) return;
 
 		try {
 			await sendMessage(content, user.id);
-			setAgentChatLoading(true);
-
-			// Wait a moment for the message to be saved, then trigger agent responses
-			setTimeout(async () => {
-				try {
-					const agentGroupChat = agentGroupChatRef.current!;
-					const members: GroupChatMember[] =
-						await agentGroupChat.getGroupMembers();
-
-					const updatedHistory: MessageWithDetails[] = [
-						...messages,
-						{
-							content,
-							senderUser: {
-								name:
-									members.find(
-										(m: GroupChatMember) => m.id === user.id
-									)?.name || "User",
-							},
-						} as MessageWithDetails,
-					];
-
-					const currentHistory =
-						agentGroupChat.formatConversationHistory(
-							updatedHistory
-						);
-					const decision: SupervisorDecision =
-						await agentGroupChat.makeSupervisionDecision(
-							members,
-							currentHistory,
-							group?.name || "Group",
-							group?.description || ""
-						);
-
-					// Only show agent names (not 'human')
-					const agentNames = decision.nextSpeaker
-						.filter((speaker: string) => speaker !== "human")
-						.map((speaker: string) => {
-							const found = members.find(
-								(m: GroupChatMember) =>
-									m.id === speaker || m.name === speaker
-							);
-							return found?.name || speaker;
-						});
-
-					setPendingSpeakers(agentNames);
-
-					// Now trigger the normal process
-					await agentGroupChat.processHumanMessage(
-						content,
-						user.id,
-						messages,
-						group?.name || "Group",
-						group?.description || ""
-					);
-				} catch (error) {
-					console.error("Error in agent conversation:", error);
-				} finally {
-					setAgentChatLoading(false);
-				}
-			}, 500);
+			// That's it! AgentGroupChat will automatically detect the new message
+			// and trigger supervision after 3 seconds of idle time
 		} catch (error) {
 			console.error("Error sending message:", error);
-			setAgentChatLoading(false);
 		}
 	};
 
@@ -306,22 +259,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return result;
 	};
 
-	// Remove agent from pendingSpeakers when their message arrives
-	useEffect(() => {
-		if (pendingSpeakers.length === 0) return;
-		const agentNames = pendingSpeakers;
-		const agentMessages = messages.filter(
-			(msg) =>
-				msg.senderAgent && agentNames.includes(msg.senderAgent.name)
-		);
-		if (agentMessages.length > 0) {
-			const stillPending = agentNames.filter(
-				(name) =>
-					!agentMessages.some((msg) => msg.senderAgent?.name === name)
-			);
-			setPendingSpeakers(stillPending);
-		}
-	}, [messages, pendingSpeakers]);
+
 
 	if (loading) {
 		return (
@@ -387,8 +325,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						<MessageInputField
 							ref={messageInputRef}
 							onSendMessage={handleSendMessage}
-							agentChatLoading={agentChatLoading}
-							typingUsers={pendingSpeakers}
+							typingUsers={typingAgents}
 							groupName={group?.name}
 						/>
 					</motion.main>

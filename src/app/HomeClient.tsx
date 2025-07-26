@@ -50,7 +50,7 @@ export default function HomeClient() {
 	// Calculate selected agents count
 	const selectedAgents = checked.filter(Boolean).length;
 
-	const hasApiKeyConfigured = !Object.values(apiKeys).some(
+	const hasApiKeyConfigured = Object.values(apiKeys).some(
 		(key) => key.trim() !== ""
 	);
 

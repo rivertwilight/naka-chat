@@ -93,17 +93,14 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 							content,
 							senderUser: {
 								name:
-									members.find(
-										(m: GroupChatMember) => m.id === user.id
-									)?.name || "User",
+									members.find((m: GroupChatMember) => m.id === user.id)
+										?.name || "User",
 							},
 						} as MessageWithDetails,
 					];
 
 					const currentHistory =
-						agentGroupChat.formatConversationHistory(
-							updatedHistory
-						);
+						agentGroupChat.formatConversationHistory(updatedHistory);
 					const decision: SupervisorDecision =
 						await agentGroupChat.makeSupervisionDecision(
 							members,
@@ -117,8 +114,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						.filter((speaker: string) => speaker !== "human")
 						.map((speaker: string) => {
 							const found = members.find(
-								(m: GroupChatMember) =>
-									m.id === speaker || m.name === speaker
+								(m: GroupChatMember) => m.id === speaker || m.name === speaker
 							);
 							return found?.name || speaker;
 						});
@@ -150,7 +146,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		await addReaction(messageId, emoji, user.id);
 	};
 
-	const handleDmClick = (senderId: string, senderName: string, senderAvatar?: string) => {
+	const handleDmClick = (
+		senderId: string,
+		senderName: string,
+		senderAvatar?: string
+	) => {
 		setDmView({
 			senderId,
 			senderName,
@@ -306,13 +306,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		if (pendingSpeakers.length === 0) return;
 		const agentNames = pendingSpeakers;
 		const agentMessages = messages.filter(
-			(msg) =>
-				msg.senderAgent && agentNames.includes(msg.senderAgent.name)
+			(msg) => msg.senderAgent && agentNames.includes(msg.senderAgent.name)
 		);
 		if (agentMessages.length > 0) {
 			const stillPending = agentNames.filter(
-				(name) =>
-					!agentMessages.some((msg) => msg.senderAgent?.name === name)
+				(name) => !agentMessages.some((msg) => msg.senderAgent?.name === name)
 			);
 			setPendingSpeakers(stillPending);
 		}
@@ -363,10 +361,8 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 										{randomExamples.map((example, idx) => (
 											<button
 												key={idx}
-												onClick={() =>
-													handleExampleClick(example)
-												}
-												className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-white transition-colors duration-300 focus:outline-none"
+												onClick={() => handleExampleClick(example)}
+												className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
 											>
 												<ArrowRight />
 												{example}

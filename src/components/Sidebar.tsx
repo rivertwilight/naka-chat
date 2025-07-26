@@ -16,7 +16,6 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",

@@ -8,7 +8,7 @@ import React, {
 	useImperativeHandle,
 } from "react";
 import { Image as ImageIcon, ArrowUp, Command, Share } from "lucide-react";
-import { Dropdown, DropdownProps, Tooltip, Icon } from "@lobehub/ui";
+import { Dropdown, DropdownProps, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
 	onSendMessage?: (content: string) => void;

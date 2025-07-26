@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
-import { Moon, Sun, Plus } from "lucide-react";
+import { Moon, Sun, Plus, Settings } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import {
@@ -15,7 +15,6 @@ import GroupListItem from "@/components/GroupListItem";
 import SettingsDialog from "@/components/SettingsDialog";
 import { useUiContext } from "@/components/UiContext";
 import { dbHelpers } from "@/lib/database";
-import { Settings } from "lucide-react";
 import { format } from "date-fns";
 
 const sawarabi = Sawarabi_Mincho({
@@ -34,12 +33,10 @@ export default function Sidebar() {
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
-	const [errorMsg, setErrorMsg] = useState("");
 
 	const handleCreateGroup = async () => {
 		if (!user) return;
 		setCreating(true);
-		setErrorMsg("");
 		try {
 			const group = await dbHelpers.createGroup({
 				name: "Untitled",
@@ -55,7 +52,7 @@ export default function Sidebar() {
 			setGroupsVersion((v) => v + 1); // Trigger refetch
 			setTimeout(() => router.push(`/group/${group.id}`), 100);
 		} catch (e) {
-			setErrorMsg("Failed to create group");
+			console.error(e);
 		} finally {
 			setCreating(false);
 		}
@@ -77,11 +74,10 @@ export default function Sidebar() {
 	return (
 		<>
 			<aside
-				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 px-4 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
+				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
-				{/* Logo Section - stick to top */}
-				<div className="mb-4 px-3 text-center select-none flex items-center justify-between gap-2">
+				<div className="mb-4 px-6 text-center select-none flex items-center justify-between gap-2">
 					<div
 						onClick={() => router.push("/")}
 						className={`${sawarabi.className} text-xl text-neutral-700 dark:text-neutral-200 tracking-wide cursor-pointer transition-opacity hover:opacity-70`}
@@ -102,7 +98,7 @@ export default function Sidebar() {
 				</div>
 
 				{/* Group List - scrollable */}
-				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
+				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto px-4">
 					{loading ? (
 						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
 							Loading groups...
@@ -121,7 +117,9 @@ export default function Sidebar() {
 							let preview = "";
 							if (msg) {
 								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+									msg.senderUser?.name ||
+									msg.senderAgent?.name ||
+									"Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -130,11 +128,14 @@ export default function Sidebar() {
 									group={group}
 									selected={groupId === group.id}
 									messagePreview={preview}
-									lastMessageTime={formatMessageTime(msg?.created_at)}
+									lastMessageTime={formatMessageTime(
+										msg?.created_at
+									)}
 								/>
 							);
 						})
 					)}
+
 					{/* Add Group Button */}
 					<button
 						type="button"
@@ -143,14 +144,16 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>{creating ? "Creating..." : "Create new group"}</span>
+						<span>
+							{creating ? "Creating..." : "Create new group"}
+						</span>
 					</button>
-					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
-					)}
 				</nav>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+			/>
 		</>
 	);
 }

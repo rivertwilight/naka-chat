@@ -23,7 +23,7 @@ interface MessageItemProps {
 	onDmClick?: (
 		senderId: string,
 		senderName: string,
-		senderAvatar?: string,
+		senderAvatar?: string
 	) => void;
 }
 
@@ -43,7 +43,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 	senderUser,
 	senderAgent,
 	currentUserId,
-	onDmClick,
+	onDmClick
 }) => {
 	// DM-specific rendering
 	const isDM = type === "dm";

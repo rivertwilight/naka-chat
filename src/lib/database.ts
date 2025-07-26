@@ -96,7 +96,7 @@ export class NakaChatDB extends Dexie {
 			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
 			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
-			messageReactions: "id, message_id, user_id, agent_id, created_at",
+			messageReactions: "id, message_id, user_id, agent_id, created_at"
 		});
 
 		this.version(2)
@@ -109,7 +109,7 @@ export class NakaChatDB extends Dexie {
 				sessions: "id, group_id, created_at",
 				messages:
 					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-				messageReactions: "id, message_id, user_id, agent_id, created_at",
+				messageReactions: "id, message_id, user_id, agent_id, created_at"
 			})
 			.upgrade((tx) => {
 				// Migrate existing messages to have type field
@@ -151,14 +151,14 @@ export async function initializeDatabase() {
 export const dbHelpers = {
 	// Create a new user
 	async createUser(
-		userData: Omit<User, "id" | "created_at" | "updated_at">,
+		userData: Omit<User, "id" | "created_at" | "updated_at">
 	): Promise<User> {
 		const now = new Date();
 		const user: User = {
 			id: uuidv4(),
 			...userData,
 			created_at: now,
-			updated_at: now,
+			updated_at: now
 		};
 		await db.users.add(user);
 		return user;
@@ -166,14 +166,14 @@ export const dbHelpers = {
 
 	// Create a new agent
 	async createAgent(
-		agentData: Omit<Agent, "id" | "created_at" | "updated_at">,
+		agentData: Omit<Agent, "id" | "created_at" | "updated_at">
 	): Promise<Agent> {
 		const now = new Date();
 		const agent: Agent = {
 			id: uuidv4(),
 			...agentData,
 			created_at: now,
-			updated_at: now,
+			updated_at: now
 		};
 		await db.agents.add(agent);
 		return agent;
@@ -181,14 +181,14 @@ export const dbHelpers = {
 
 	// Create a new group
 	async createGroup(
-		groupData: Omit<Group, "id" | "created_at" | "updated_at">,
+		groupData: Omit<Group, "id" | "created_at" | "updated_at">
 	): Promise<Group> {
 		const now = new Date();
 		const group: Group = {
 			id: uuidv4(),
 			...groupData,
 			created_at: now,
-			updated_at: now,
+			updated_at: now
 		};
 		await db.groups.add(group);
 		return group;
@@ -197,11 +197,11 @@ export const dbHelpers = {
 	// Update group details (name, description, etc.)
 	async updateGroup(
 		groupId: string,
-		updates: Partial<Pick<Group, "name" | "description">>,
+		updates: Partial<Pick<Group, "name" | "description">>
 	): Promise<void> {
 		await db.groups.update(groupId, {
 			...updates,
-			updated_at: new Date(),
+			updated_at: new Date()
 		});
 	},
 
@@ -244,12 +244,12 @@ export const dbHelpers = {
 
 	// Add member to group
 	async addGroupMember(
-		memberData: Omit<GroupMember, "id" | "joined_at">,
+		memberData: Omit<GroupMember, "id" | "joined_at">
 	): Promise<GroupMember> {
 		const member: GroupMember = {
 			id: uuidv4(),
 			...memberData,
-			joined_at: new Date(),
+			joined_at: new Date()
 		};
 		await db.groupMembers.add(member);
 		return member;
@@ -257,12 +257,12 @@ export const dbHelpers = {
 
 	// Create a new session
 	async createSession(
-		sessionData: Omit<Session, "id" | "created_at">,
+		sessionData: Omit<Session, "id" | "created_at">
 	): Promise<Session> {
 		const session: Session = {
 			id: uuidv4(),
 			...sessionData,
-			created_at: new Date(),
+			created_at: new Date()
 		};
 		await db.sessions.add(session);
 		return session;
@@ -270,13 +270,13 @@ export const dbHelpers = {
 
 	// Send a message
 	async sendMessage(
-		messageData: Omit<Message, "id" | "created_at">,
+		messageData: Omit<Message, "id" | "created_at">
 	): Promise<Message> {
 		const message: Message = {
 			id: uuidv4(),
 			...messageData,
 			type: messageData.type || "public", // Default to public if not specified
-			created_at: new Date(),
+			created_at: new Date()
 		};
 		await db.messages.add(message);
 		return message;
@@ -287,20 +287,20 @@ export const dbHelpers = {
 		sessionId: string,
 		senderUserId: string,
 		content: string,
-		dmTargetId: string,
+		dmTargetId: string
 	): Promise<Message> {
 		return this.sendMessage({
 			session_id: sessionId,
 			sender_user_id: senderUserId,
 			content,
 			type: "dm",
-			dm_target_id: dmTargetId,
+			dm_target_id: dmTargetId
 		});
 	},
 
 	// Add a reaction to a message
 	async addReaction(
-		reactionData: Omit<MessageReaction, "id" | "created_at">,
+		reactionData: Omit<MessageReaction, "id" | "created_at">
 	): Promise<MessageReaction> {
 		// Check if reaction already exists， be careful that the user_id or agent_id can be null
 		const existing = await db.messageReactions
@@ -308,7 +308,7 @@ export const dbHelpers = {
 			.equals([
 				reactionData.message_id,
 				reactionData.emoji,
-				reactionData.user_id || "",
+				reactionData.user_id || ""
 			])
 			.first();
 
@@ -321,7 +321,7 @@ export const dbHelpers = {
 		const reaction: MessageReaction = {
 			id: uuidv4(),
 			...reactionData,
-			created_at: new Date(),
+			created_at: new Date()
 		};
 		await db.messageReactions.add(reaction);
 		return reaction;
@@ -329,7 +329,7 @@ export const dbHelpers = {
 
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
-		sessionId: string,
+		sessionId: string
 	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		const messages = await db.messages
 			.where("session_id")
@@ -351,21 +351,21 @@ export const dbHelpers = {
 						acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
 						return acc;
 					},
-					{} as Record<string, number>,
+					{} as Record<string, number>
 				);
 
 				const reactionArray = Object.entries(reactionCounts).map(
 					([emoji, count]) => ({
 						emoji,
-						count,
-					}),
+						count
+					})
 				);
 
 				return {
 					...message,
-					reactions: reactionArray,
+					reactions: reactionArray
 				};
-			}),
+			})
 		);
 
 		return messagesWithReactions;
@@ -375,7 +375,7 @@ export const dbHelpers = {
 	async getDMMessages(
 		groupId: string,
 		userId1: string,
-		userId2: string,
+		userId2: string
 	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		// Get all sessions for the group
 		const sessions = await db.sessions
@@ -420,21 +420,21 @@ export const dbHelpers = {
 							acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
 							return acc;
 						},
-						{} as Record<string, number>,
+						{} as Record<string, number>
 					);
 
 					const reactionArray = Object.entries(reactionCounts).map(
 						([emoji, count]) => ({
 							emoji,
-							count,
-						}),
+							count
+						})
 					);
 
 					return {
 						...message,
-						reactions: reactionArray,
+						reactions: reactionArray
 					};
-				}),
+				})
 			);
 
 			allDMMessages.push(...messagesWithReactions);
@@ -442,7 +442,7 @@ export const dbHelpers = {
 
 		// Sort by creation time
 		allDMMessages.sort(
-			(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+			(a, b) => a.created_at.getTime() - b.created_at.getTime()
 		);
 		return allDMMessages;
 	},
@@ -465,9 +465,9 @@ export const dbHelpers = {
 				}
 				return {
 					...member,
-					details,
+					details
 				};
-			}),
+			})
 		);
 
 		return membersWithDetails;
@@ -486,7 +486,7 @@ export const dbHelpers = {
 			// Create a new session
 			session = await this.createSession({
 				group_id: groupId,
-				name: "Default Session",
+				name: "Default Session"
 			});
 		}
 
@@ -496,11 +496,11 @@ export const dbHelpers = {
 	// Update user details (e.g., name)
 	async updateUser(
 		userId: string,
-		updates: Partial<Pick<User, "name" | "avatar_url" | "email">>,
+		updates: Partial<Pick<User, "name" | "avatar_url" | "email">>
 	): Promise<void> {
 		await db.users.update(userId, {
 			...updates,
-			updated_at: new Date(),
+			updated_at: new Date()
 		});
 	},
 
@@ -518,13 +518,13 @@ export const dbHelpers = {
 				| "temperature"
 				| "max_output_tokens"
 			>
-		>,
+		>
 	): Promise<void> {
 		await db.agents.update(agentId, {
 			...updates,
-			updated_at: new Date(),
+			updated_at: new Date()
 		});
-	},
+	}
 };
 
 // Extended message type with sender details (re-export from useDatabase.ts)

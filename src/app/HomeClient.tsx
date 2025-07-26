@@ -24,7 +24,7 @@ interface Agent {
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
-	subsets: ["latin"],
+	subsets: ["latin"]
 });
 
 export default function HomeClient() {
@@ -72,14 +72,14 @@ export default function HomeClient() {
 			const group = await dbHelpers.createGroup({
 				name: "Untitled",
 				description: "",
-				created_by: user.id,
+				created_by: user.id
 			});
 			// Add current user as member
 			await dbHelpers.addGroupMember({
 				group_id: group.id,
 				user_id: user.id,
 				role: "human",
-				status: "active",
+				status: "active"
 			});
 			// Add selected agents as members
 			const selectedAgentIds = agents
@@ -90,7 +90,7 @@ export default function HomeClient() {
 					group_id: group.id,
 					agent_id: agentId,
 					role: "agent",
-					status: "active",
+					status: "active"
 				});
 			}
 			// Redirect to new group
@@ -209,9 +209,9 @@ export default function HomeClient() {
 										? {
 												src: agent.avatar_url,
 												key: agent.id,
-												name: agent.name,
+												name: agent.name
 											}
-										: undefined,
+										: undefined
 								)
 								.filter(
 									(
@@ -221,12 +221,12 @@ export default function HomeClient() {
 													key: string;
 													name: string;
 											  }
-											| undefined,
+											| undefined
 									): item is {
 										src: string;
 										key: string;
 										name: string;
-									} => Boolean(item),
+									} => Boolean(item)
 								)}
 						/>
 					</button>

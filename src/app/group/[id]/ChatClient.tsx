@@ -12,20 +12,20 @@ import {
 	useGroupMessages,
 	useCurrentUser,
 	useGroup,
-	useGroupMembers,
+	useGroupMembers
 } from "@/hooks/useDatabase";
 import {
 	AgentGroupChat,
 	GroupChatMember,
 	SupervisorDecision,
-	MessageWithDetails,
+	MessageWithDetails
 } from "@/lib/agentGroupChat";
 import { usePersistance } from "@/components/PersistanceContext";
 import { ArrowRight } from "lucide-react";
 
 const geistMono = Geist_Mono({
 	weight: ["400"],
-	subsets: ["latin"],
+	subsets: ["latin"]
 });
 
 interface ChatClientProps {
@@ -58,7 +58,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				provider,
 				apiKey,
 				baseUrl,
-				modelId,
+				modelId
 			});
 		}
 	}, [groupId, provider, apiKey, baseUrl]);
@@ -95,9 +95,9 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 							senderUser: {
 								name:
 									members.find((m: GroupChatMember) => m.id === user.id)
-										?.name || "User",
-							},
-						} as MessageWithDetails,
+										?.name || "User"
+							}
+						} as MessageWithDetails
 					];
 
 					const currentHistory =
@@ -107,7 +107,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 							members,
 							currentHistory,
 							group?.name || "Group",
-							group?.description || "",
+							group?.description || ""
 						);
 
 					// Only show agent names (not 'human')
@@ -115,7 +115,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						.filter((speaker: string) => speaker !== "human")
 						.map((speaker: string) => {
 							const found = members.find(
-								(m: GroupChatMember) => m.id === speaker || m.name === speaker,
+								(m: GroupChatMember) => m.id === speaker || m.name === speaker
 							);
 							return found?.name || speaker;
 						});
@@ -128,7 +128,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						user.id,
 						messages,
 						group?.name || "Group",
-						group?.description || "",
+						group?.description || ""
 					);
 				} catch (error) {
 					console.error("Error in agent conversation:", error);
@@ -150,12 +150,12 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const handleDmClick = (
 		senderId: string,
 		senderName: string,
-		senderAvatar?: string,
+		senderAvatar?: string
 	) => {
 		setDmView({
 			senderId,
 			senderName,
-			senderAvatar,
+			senderAvatar
 		});
 	};
 
@@ -169,7 +169,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		"我们来玩 COC，我是 KP",
 		"我们来玩 DND, KP",
 		"你们开个辩论会，X 是主持人，不要让我干涉",
-		"我们来玩狼人杀，我是主持人",
+		"我们来玩狼人杀，我是主持人"
 	];
 
 	// Randomly select 3 examples each render
@@ -198,7 +198,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return date.toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
-			hour12: false,
+			hour12: false
 		});
 	};
 
@@ -207,7 +207,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		return date.toLocaleDateString("en-US", {
 			year: "numeric",
 			month: "long",
-			day: "numeric",
+			day: "numeric"
 		});
 	};
 
@@ -244,7 +244,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		const target = groupMembers.find(
 			(m: any) =>
 				(m.user_id && m.user_id === message.dm_target_id) ||
-				(m.agent_id && m.agent_id === message.dm_target_id),
+				(m.agent_id && m.agent_id === message.dm_target_id)
 		);
 		return target?.details || null;
 	};
@@ -271,7 +271,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 								{formatDate(msg.session.created_at)}
 							</span>
 						</div>
-					</div>,
+					</div>
 				);
 			}
 
@@ -295,7 +295,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						senderAgent={msg.senderAgent}
 						onDmClick={handleDmClick}
 					/>
-				</React.Fragment>,
+				</React.Fragment>
 			);
 		});
 
@@ -307,11 +307,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		if (pendingSpeakers.length === 0) return;
 		const agentNames = pendingSpeakers;
 		const agentMessages = messages.filter(
-			(msg) => msg.senderAgent && agentNames.includes(msg.senderAgent.name),
+			(msg) => msg.senderAgent && agentNames.includes(msg.senderAgent.name)
 		);
 		if (agentMessages.length > 0) {
 			const stillPending = agentNames.filter(
-				(name) => !agentMessages.some((msg) => msg.senderAgent?.name === name),
+				(name) => !agentMessages.some((msg) => msg.senderAgent?.name === name)
 			);
 			setPendingSpeakers(stillPending);
 		}

@@ -5,7 +5,7 @@ import React, {
 	useRef,
 	useEffect,
 	forwardRef,
-	useImperativeHandle,
+	useImperativeHandle
 } from "react";
 import { Image as ImageIcon, ArrowUp, Command, Share } from "lucide-react";
 import { Dropdown, DropdownProps, Icon } from "@lobehub/ui";
@@ -22,9 +22,9 @@ export const menu: DropdownProps["menu"] = {
 		{
 			icon: <Icon icon={Share} />,
 			key: "copy",
-			label: "Share Chat",
-		},
-	],
+			label: "Share Chat"
+		}
+	]
 };
 
 const MessageInputField = forwardRef<any, MessageInputFieldProps>(
@@ -35,7 +35,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 		const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 		useImperativeHandle(ref, () => ({
-			fillMessage: (text: string) => setMessage(text),
+			fillMessage: (text: string) => setMessage(text)
 		}));
 
 		// Auto-grow textarea height
@@ -89,7 +89,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 						style={{
 							minHeight: "40px",
 							alignItems:
-								message.split("\n").length === 1 ? "center" : "flex-center",
+								message.split("\n").length === 1 ? "center" : "flex-center"
 						}}
 					>
 						<Dropdown menu={menu} trigger={["click"]}>
@@ -145,7 +145,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 				</div>
 			</div>
 		);
-	},
+	}
 );
 
 MessageInputField.displayName = "MessageInputField";

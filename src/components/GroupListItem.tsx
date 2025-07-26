@@ -21,7 +21,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 	messagePreview,
 	lastMessageTime,
 	onGroupDeleted,
-	onGroupRenamed,
+	onGroupRenamed
 }) => {
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [isRenamingLoading, setIsRenamingLoading] = useState(false);
@@ -74,7 +74,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 				icon: <Pin size={16} />,
 				onClick: async () => {
 					await pinGroup(group.id);
-				},
+				}
 			},
 			{
 				label: "Rename",
@@ -83,7 +83,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 				onClick: () => {
 					setIsRenaming(true);
 					setNewName(group.name);
-				},
+				}
 			},
 			{
 				label: "Remove group",
@@ -96,9 +96,9 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 					if (selected) {
 						router.push("/");
 					}
-				},
-			},
-		],
+				}
+			}
+		]
 	};
 
 	return (

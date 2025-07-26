@@ -49,7 +49,7 @@ export async function seedDatabase() {
 		const group = await dbHelpers.createGroup({
 			name: "Product Development Team",
 			description: "A collaborative space for product development discussions",
-			created_by: user1.id,
+			created_by: user1.id
 		});
 		console.log("Created group:", group);
 
@@ -58,14 +58,14 @@ export async function seedDatabase() {
 			group_id: group.id,
 			user_id: user1.id,
 			role: "human",
-			status: "active",
+			status: "active"
 		});
 		for (const agent of createdAgents) {
 			await dbHelpers.addGroupMember({
 				group_id: group.id,
 				agent_id: agent.id,
 				role: "agent",
-				status: "active",
+				status: "active"
 			});
 		}
 		console.log("Added group members");
@@ -76,8 +76,8 @@ export async function seedDatabase() {
 			name: "Welcome Session",
 			context: {
 				topic: "Getting started with the team",
-				summary: "Initial team introduction and setup",
-			},
+				summary: "Initial team introduction and setup"
+			}
 		});
 		console.log("Created session:", session);
 
@@ -86,14 +86,14 @@ export async function seedDatabase() {
 			session_id: session.id,
 			sender_user_id: user1.id,
 			content:
-				"Welcome to our Product Development Team! Let's collaborate on building amazing products together. 🚀",
+				"Welcome to our Product Development Team! Let's collaborate on building amazing products together. 🚀"
 		});
 		console.log("Database seeded successfully!");
 		return {
 			users: createdUsers,
 			agents: createdAgents,
 			group,
-			session,
+			session
 		};
 	} catch (error) {
 		console.error("Error seeding database:", error);

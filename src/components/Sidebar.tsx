@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import {
 	useUserGroups,
 	useLatestGroupMessages,
-	useCurrentUser,
+	useCurrentUser
 } from "@/hooks/useDatabase";
 import GroupListItem from "@/components/GroupListItem";
 import SettingsDialog from "@/components/SettingsDialog";
@@ -29,7 +29,7 @@ function formatMessageTime(date: Date | undefined): string {
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
-	subsets: ["latin"],
+	subsets: ["latin"]
 });
 
 export default function Sidebar() {
@@ -51,13 +51,13 @@ export default function Sidebar() {
 			const group = await dbHelpers.createGroup({
 				name: "Untitled",
 				description: "",
-				created_by: user.id,
+				created_by: user.id
 			});
 			await dbHelpers.addGroupMember({
 				group_id: group.id,
 				user_id: user.id,
 				role: "human",
-				status: "active",
+				status: "active"
 			});
 			setGroupsVersion((v) => v + 1); // Trigger refetch
 			setTimeout(() => router.push(`/group/${group.id}`), 100);

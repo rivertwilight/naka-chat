@@ -9,7 +9,7 @@ import Dialog from "@/components/Dialog";
 import {
 	useGroup,
 	useGroupMembers,
-	useGroupOperations,
+	useGroupOperations
 } from "@/hooks/useDatabase";
 import { dbHelpers, db } from "@/lib/database";
 import { getRandomName, getRandomAvatar } from "@/utils/randomUtils";
@@ -33,11 +33,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [groupVersion, setGroupVersion] = React.useState(0);
 	const { members: dbMembers, loading } = useGroupMembers(
 		groupId,
-		groupVersion,
+		groupVersion
 	);
 	const { group, loading: groupLoading } = useGroup(groupId, groupVersion);
 	const [selectedMember, setSelectedMember] = React.useState<null | Member>(
-		null,
+		null
 	);
 
 	const [descEdit, setDescEdit] = React.useState<string>("");
@@ -70,10 +70,10 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 		if (!inviteAgentOpen) return;
 		(async () => {
 			const groupMemberIds = new Set(
-				dbMembers.map((m) => m.user_id || m.agent_id),
+				dbMembers.map((m) => m.user_id || m.agent_id)
 			);
 			const agents = (await db.agents.toArray()).filter(
-				(a) => !groupMemberIds.has(a.id),
+				(a) => !groupMemberIds.has(a.id)
 			);
 			setAllAgents(agents);
 			setSelectedAgentIds([]);
@@ -111,7 +111,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 				status: dbMember.status,
 				type: dbMember.role,
 				avatar_url: details?.avatar_url,
-				system_prompt: isAgent ? details?.system_prompt : undefined,
+				system_prompt: isAgent ? details?.system_prompt : undefined
 			};
 		});
 	}, [dbMembers]);
@@ -150,7 +150,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						transition={{
 							type: "spring",
 							stiffness: 400,
-							damping: 40,
+							damping: 40
 						}}
 						className="flex flex-col gap-2"
 					>
@@ -197,7 +197,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												if (!groupId) return;
 												setDescSaving(true);
 												await dbHelpers.updateGroup(groupId, {
-													description: descEdit,
+													description: descEdit
 												});
 												setDescEditing(false);
 												setDescSaving(false);
@@ -245,13 +245,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										model: "gemini-2.0-flash-exp",
 										temperature: 1,
 										max_output_tokens: 1000,
-										avatar_url,
+										avatar_url
 									});
 									await dbHelpers.addGroupMember({
 										group_id: groupId,
 										agent_id: agent.id,
 										role: "agent",
-										status: "active",
+										status: "active"
 									});
 								} catch (e) {
 									// Optionally handle error
@@ -291,7 +291,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								style={{
 									outline: "none",
 									border: "none",
-									background: "none",
+									background: "none"
 								}}
 								disabled={member.status === "muted"}
 							>
@@ -347,7 +347,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 						transition={{
 							type: "spring",
 							stiffness: 400,
-							damping: 40,
+							damping: 40
 						}}
 						className="relative h-full flex flex-col"
 					>
@@ -382,7 +382,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											setMemberNameSaving(true);
 											// Find the dbMember for the selectedMember
 											const dbMember = dbMembers.find(
-												(m) => m.id === selectedMember.id,
+												(m) => m.id === selectedMember.id
 											);
 											if (!dbMember) {
 												setMemberNameEditing(false);
@@ -391,11 +391,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											}
 											if (selectedMember.type === "agent") {
 												await dbHelpers.updateAgent(dbMember.agent_id, {
-													name: memberNameEdit,
+													name: memberNameEdit
 												});
 											} else {
 												await dbHelpers.updateUser(dbMember.user_id, {
-													name: memberNameEdit,
+													name: memberNameEdit
 												});
 											}
 											setMemberNameEditing(false);
@@ -406,9 +406,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												prev
 													? {
 															...prev,
-															name: memberNameEdit,
+															name: memberNameEdit
 														}
-													: prev,
+													: prev
 											);
 										}}
 										onKeyDown={async (e) => {
@@ -417,7 +417,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												if (!selectedMember) return;
 												setMemberNameSaving(true);
 												const dbMember = dbMembers.find(
-													(m) => m.id === selectedMember.id,
+													(m) => m.id === selectedMember.id
 												);
 												if (!dbMember) {
 													setMemberNameEditing(false);
@@ -426,11 +426,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												}
 												if (selectedMember.type === "agent") {
 													await dbHelpers.updateAgent(dbMember.agent_id, {
-														name: memberNameEdit,
+														name: memberNameEdit
 													});
 												} else {
 													await dbHelpers.updateUser(dbMember.user_id, {
-														name: memberNameEdit,
+														name: memberNameEdit
 													});
 												}
 												setMemberNameEditing(false);
@@ -485,7 +485,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										<span
 											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
 											style={{
-												pointerEvents: "none",
+												pointerEvents: "none"
 											}}
 										/>
 									</label>
@@ -503,7 +503,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 										<span
 											className="absolute left-0.5 top-0.5 w-4 h-4 bg-white dark:bg-neutral-900 rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4 border border-neutral-300 dark:border-neutral-800"
 											style={{
-												pointerEvents: "none",
+												pointerEvents: "none"
 											}}
 										/>
 									</label>
@@ -517,12 +517,12 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 									if (!selectedMember) return;
 									// Find the dbMember by id
 									const dbMember = dbMembers.find(
-										(m) => m.id === selectedMember.id,
+										(m) => m.id === selectedMember.id
 									);
 									if (!dbMember) return;
 									await db.groupMembers.update(dbMember.id, {
 										status: "muted",
-										left_at: new Date(),
+										left_at: new Date()
 									});
 									setSelectedMember(null);
 									setGroupVersion((v) => v + 1);
@@ -568,7 +568,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												setSelectedAgentIds((prev) =>
 													prev.includes(agent.id)
 														? prev.filter((id) => id !== agent.id)
-														: [...prev, agent.id],
+														: [...prev, agent.id]
 												);
 											}}
 											className="accent-neutral-600 w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-neutral-400"
@@ -615,9 +615,9 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 												group_id: groupId,
 												agent_id: agentId,
 												role: "agent",
-												status: "active",
-											}),
-										),
+												status: "active"
+											})
+										)
 									);
 									setInviteAgentOpen(false);
 									setSelectedAgentIds([]);

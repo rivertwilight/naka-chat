@@ -9,7 +9,7 @@ import {
 	User,
 	Agent,
 	Group,
-	Session,
+	Session
 } from "../lib/database";
 
 // Extended message type with sender details
@@ -48,7 +48,7 @@ export function useGroupMessages(groupId: string | null) {
 
 				// Sort sessions by creation time
 				const groupSessions = allSessions.sort(
-					(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+					(a, b) => a.created_at.getTime() - b.created_at.getTime()
 				);
 
 				setSessions(groupSessions);
@@ -63,7 +63,7 @@ export function useGroupMessages(groupId: string | null) {
 
 				for (const session of groupSessions) {
 					const sessionMessages = await dbHelpers.getMessagesWithReactions(
-						session.id,
+						session.id
 					);
 
 					// Enhance messages with sender details and session info
@@ -83,9 +83,9 @@ export function useGroupMessages(groupId: string | null) {
 								...message,
 								senderUser,
 								senderAgent,
-								session,
+								session
 							};
-						}),
+						})
 					);
 
 					allMessages.push(...enhancedMessages);
@@ -93,13 +93,13 @@ export function useGroupMessages(groupId: string | null) {
 
 				// Sort all messages by creation time
 				allMessages.sort(
-					(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+					(a, b) => a.created_at.getTime() - b.created_at.getTime()
 				);
 
 				setMessages(allMessages);
 			} catch (err) {
 				setError(
-					err instanceof Error ? err.message : "Failed to load group messages",
+					err instanceof Error ? err.message : "Failed to load group messages"
 				);
 			} finally {
 				setLoading(false);
@@ -127,7 +127,7 @@ export function useGroupMessages(groupId: string | null) {
 	const sendMessage = async (
 		content: string,
 		senderUserId?: string,
-		senderAgentId?: string,
+		senderAgentId?: string
 	) => {
 		if (!groupId) return;
 
@@ -140,7 +140,7 @@ export function useGroupMessages(groupId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
-				type: "public",
+				type: "public"
 			});
 
 			// Reload all messages
@@ -150,14 +150,14 @@ export function useGroupMessages(groupId: string | null) {
 				.toArray();
 
 			const groupSessions = allSessions.sort(
-				(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+				(a, b) => a.created_at.getTime() - b.created_at.getTime()
 			);
 
 			const allMessages: MessageWithDetails[] = [];
 
 			for (const session of groupSessions) {
 				const sessionMessages = await dbHelpers.getMessagesWithReactions(
-					session.id,
+					session.id
 				);
 
 				const enhancedMessages = await Promise.all(
@@ -176,16 +176,16 @@ export function useGroupMessages(groupId: string | null) {
 							...message,
 							senderUser,
 							senderAgent,
-							session,
+							session
 						};
-					}),
+					})
 				);
 
 				allMessages.push(...enhancedMessages);
 			}
 
 			allMessages.sort(
-				(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+				(a, b) => a.created_at.getTime() - b.created_at.getTime()
 			);
 			setMessages(allMessages);
 
@@ -200,14 +200,14 @@ export function useGroupMessages(groupId: string | null) {
 		messageId: string,
 		emoji: string,
 		userId?: string,
-		agentId?: string,
+		agentId?: string
 	) => {
 		try {
 			await dbHelpers.addReaction({
 				message_id: messageId,
 				emoji,
 				user_id: userId,
-				agent_id: agentId,
+				agent_id: agentId
 			});
 
 			// Reload all messages
@@ -218,14 +218,14 @@ export function useGroupMessages(groupId: string | null) {
 					.toArray();
 
 				const groupSessions = allSessions.sort(
-					(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+					(a, b) => a.created_at.getTime() - b.created_at.getTime()
 				);
 
 				const allMessages: MessageWithDetails[] = [];
 
 				for (const session of groupSessions) {
 					const sessionMessages = await dbHelpers.getMessagesWithReactions(
-						session.id,
+						session.id
 					);
 
 					const enhancedMessages = await Promise.all(
@@ -244,16 +244,16 @@ export function useGroupMessages(groupId: string | null) {
 								...message,
 								senderUser,
 								senderAgent,
-								session,
+								session
 							};
-						}),
+						})
 					);
 
 					allMessages.push(...enhancedMessages);
 				}
 
 				allMessages.sort(
-					(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+					(a, b) => a.created_at.getTime() - b.created_at.getTime()
 				);
 				setMessages(allMessages);
 			}
@@ -268,14 +268,14 @@ export function useGroupMessages(groupId: string | null) {
 						.toArray();
 
 					const groupSessions = allSessions.sort(
-						(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+						(a, b) => a.created_at.getTime() - b.created_at.getTime()
 					);
 
 					const allMessages: MessageWithDetails[] = [];
 
 					for (const session of groupSessions) {
 						const sessionMessages = await dbHelpers.getMessagesWithReactions(
-							session.id,
+							session.id
 						);
 
 						const enhancedMessages = await Promise.all(
@@ -294,16 +294,16 @@ export function useGroupMessages(groupId: string | null) {
 									...message,
 									senderUser,
 									senderAgent,
-									session,
+									session
 								};
-							}),
+							})
 						);
 
 						allMessages.push(...enhancedMessages);
 					}
 
 					allMessages.sort(
-						(a, b) => a.created_at.getTime() - b.created_at.getTime(),
+						(a, b) => a.created_at.getTime() - b.created_at.getTime()
 					);
 					setMessages(allMessages);
 				}
@@ -319,7 +319,7 @@ export function useGroupMessages(groupId: string | null) {
 		loading,
 		error,
 		sendMessage,
-		addReaction,
+		addReaction
 	};
 }
 
@@ -358,15 +358,15 @@ export function useSessionMessages(sessionId: string | null) {
 						return {
 							...message,
 							senderUser,
-							senderAgent,
+							senderAgent
 						};
-					}),
+					})
 				);
 
 				setMessages(enhancedMessages);
 			} catch (err) {
 				setError(
-					err instanceof Error ? err.message : "Failed to load messages",
+					err instanceof Error ? err.message : "Failed to load messages"
 				);
 			} finally {
 				setLoading(false);
@@ -390,7 +390,7 @@ export function useSessionMessages(sessionId: string | null) {
 	const sendMessage = async (
 		content: string,
 		senderUserId?: string,
-		senderAgentId?: string,
+		senderAgentId?: string
 	) => {
 		if (!sessionId) return;
 
@@ -400,7 +400,7 @@ export function useSessionMessages(sessionId: string | null) {
 				sender_user_id: senderUserId,
 				sender_agent_id: senderAgentId,
 				content,
-				type: "public",
+				type: "public"
 			});
 			// Reload messages
 			const messagesWithReactions =
@@ -422,9 +422,9 @@ export function useSessionMessages(sessionId: string | null) {
 					return {
 						...message,
 						senderUser,
-						senderAgent,
+						senderAgent
 					};
-				}),
+				})
 			);
 
 			setMessages(enhancedMessages);
@@ -437,14 +437,14 @@ export function useSessionMessages(sessionId: string | null) {
 		messageId: string,
 		emoji: string,
 		userId?: string,
-		agentId?: string,
+		agentId?: string
 	) => {
 		try {
 			await dbHelpers.addReaction({
 				message_id: messageId,
 				emoji,
 				user_id: userId,
-				agent_id: agentId,
+				agent_id: agentId
 			});
 			// Reload messages to update reactions
 			if (sessionId) {
@@ -467,9 +467,9 @@ export function useSessionMessages(sessionId: string | null) {
 						return {
 							...message,
 							senderUser,
-							senderAgent,
+							senderAgent
 						};
-					}),
+					})
 				);
 
 				setMessages(enhancedMessages);
@@ -497,9 +497,9 @@ export function useSessionMessages(sessionId: string | null) {
 							return {
 								...message,
 								senderUser,
-								senderAgent,
+								senderAgent
 							};
-						}),
+						})
 					);
 
 					setMessages(enhancedMessages);
@@ -515,7 +515,7 @@ export function useSessionMessages(sessionId: string | null) {
 		loading,
 		error,
 		sendMessage,
-		addReaction,
+		addReaction
 	};
 }
 
@@ -550,7 +550,7 @@ export function useGroupSession(groupId: string | null) {
 	return {
 		session,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -585,7 +585,7 @@ export function useGroup(groupId: string | null, version: number = 0) {
 	return {
 		group,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -610,7 +610,7 @@ export function useGroupMembers(groupId: string | null, version: number = 0) {
 				setMembers(groupMembers);
 			} catch (err) {
 				setError(
-					err instanceof Error ? err.message : "Failed to load group members",
+					err instanceof Error ? err.message : "Failed to load group members"
 				);
 			} finally {
 				setLoading(false);
@@ -623,7 +623,7 @@ export function useGroupMembers(groupId: string | null, version: number = 0) {
 	return {
 		members,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -647,7 +647,7 @@ export function useCurrentUser() {
 				setError(
 					err instanceof Error
 						? err.message
-						: "Failed to load user or initialize database",
+						: "Failed to load user or initialize database"
 				);
 			} finally {
 				setLoading(false);
@@ -660,7 +660,7 @@ export function useCurrentUser() {
 	return {
 		user,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -695,7 +695,7 @@ export function useUserGroups(version: number = 0) {
 					groupIds.map(async (groupId) => {
 						const group = await db.groups.get(groupId);
 						return group;
-					}),
+					})
 				);
 
 				// Filter out any null groups and sort by creation date
@@ -706,7 +706,7 @@ export function useUserGroups(version: number = 0) {
 				setGroups(validGroups);
 			} catch (err) {
 				setError(
-					err instanceof Error ? err.message : "Failed to load user groups",
+					err instanceof Error ? err.message : "Failed to load user groups"
 				);
 			} finally {
 				setLoading(false);
@@ -719,7 +719,7 @@ export function useUserGroups(version: number = 0) {
 	return {
 		groups,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -750,7 +750,7 @@ export function useLatestGroupMessages(groupIds: string[]) {
 				let allMessages: MessageWithDetails[] = [];
 				for (const session of sessions) {
 					const sessionMessages = await dbHelpers.getMessagesWithReactions(
-						session.id,
+						session.id
 					);
 					// Enhance messages with sender details
 					const enhancedMessages = await Promise.all(
@@ -767,15 +767,15 @@ export function useLatestGroupMessages(groupIds: string[]) {
 								...message,
 								senderUser,
 								senderAgent,
-								session,
+								session
 							};
-						}),
+						})
 					);
 					allMessages.push(...enhancedMessages);
 				}
 				// Sort and get the latest
 				allMessages.sort(
-					(a, b) => b.created_at.getTime() - a.created_at.getTime(),
+					(a, b) => b.created_at.getTime() - a.created_at.getTime()
 				);
 				result[groupId] = allMessages[0] || null;
 			}
@@ -806,7 +806,7 @@ export function useAgents() {
 				setError(
 					err instanceof Error
 						? err.message
-						: "Failed to load agents or initialize database",
+						: "Failed to load agents or initialize database"
 				);
 			} finally {
 				setLoading(false);
@@ -818,7 +818,7 @@ export function useAgents() {
 	return {
 		agents,
 		loading,
-		error,
+		error
 	};
 }
 
@@ -842,7 +842,7 @@ export function useGroupOperations() {
 
 	const renameGroup = async (
 		groupId: string,
-		newName: string,
+		newName: string
 	): Promise<void> => {
 		try {
 			await dbHelpers.updateGroup(groupId, { name: newName });

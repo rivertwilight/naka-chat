@@ -612,60 +612,154 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 				}}
 				variant="modal"
 			>
-				<div className="flex flex-col min-h-[300px] w-full p-6">
+				<div className="flex flex-col w-full max-w-4xl p-6">
 					<h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100 flex items-center gap-2">
-						<Plus size={20} /> Invite Agents
+						Invite Agents
 					</h2>
-					<div className="flex-1 overflow-y-auto mb-4">
-						{allAgents.length === 0 ? (
-							<div className="text-neutral-400 text-center py-8">
-								No available agents to invite.
-							</div>
-						) : (
-							<ul className="flex flex-col gap-2">
-								{allAgents.map((agent) => (
-									<li
-										key={agent.id}
-										className="flex items-center gap-3 p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-									>
-										<input
-											type="checkbox"
-											checked={selectedAgentIds.includes(
-												agent.id
-											)}
-											onChange={() => {
-												setSelectedAgentIds((prev) =>
-													prev.includes(agent.id)
-														? prev.filter(
-																(id) =>
-																	id !==
+					<div className="flex-1 flex gap-4 mb-4 max-h-[400px]">
+						{/* Left column - Available agents */}
+						<div className="flex-1 flex flex-col">
+							<div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
+								{allAgents.length === 0 ? (
+									<div className="text-neutral-400 text-center py-8">
+										No available agents to invite.
+									</div>
+								) : (
+									<ul className="flex flex-col">
+										{allAgents.map((agent) => (
+											<li
+												key={agent.id}
+												className={`flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 transition-colors cursor-pointer ${
+													selectedAgentIds.includes(
+														agent.id
+													)
+														? "bg-neutral-100 dark:bg-neutral-800"
+														: "hover:bg-neutral-50 dark:hover:bg-neutral-900"
+												}`}
+												onClick={() => {
+													setSelectedAgentIds(
+														(prev) =>
+															prev.includes(
+																agent.id
+															)
+																? prev.filter(
+																		(id) =>
+																			id !==
+																			agent.id
+																  )
+																: [
+																		...prev,
+																		agent.id,
+																  ]
+													);
+												}}
+											>
+												<input
+													type="checkbox"
+													checked={selectedAgentIds.includes(
+														agent.id
+													)}
+													onChange={() => {
+														setSelectedAgentIds(
+															(prev) =>
+																prev.includes(
 																	agent.id
-														  )
-														: [...prev, agent.id]
-												);
-											}}
-											className="accent-neutral-600 w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-neutral-400"
-											id={`invite-agent-${agent.id}`}
-										/>
-										<Avatar
-											src={agent.avatar_url}
-											size={28}
-										/>
-										<label
-											htmlFor={`invite-agent-${agent.id}`}
-											className="flex-1 cursor-pointer text-neutral-800 dark:text-neutral-100"
-										>
-											<span className="font-medium">
-												{agent.name}
-											</span>
-											<span className="ml-2 text-xs text-neutral-400">
-												{agent.title}
-											</span>
-										</label>
-									</li>
-								))}
-							</ul>
-						)}
+																)
+																	? prev.filter(
+																			(
+																				id
+																			) =>
+																				id !==
+																				agent.id
+																	  )
+																	: [
+																			...prev,
+																			agent.id,
+																	  ]
+														);
+													}}
+													className="accent-neutral-600 w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-neutral-400"
+													id={`invite-agent-${agent.id}`}
+												/>
+												<Avatar
+													src={agent.avatar_url}
+													size={28}
+												/>
+												<label
+													htmlFor={`invite-agent-${agent.id}`}
+													className="flex-1 cursor-pointer text-neutral-800 dark:text-neutral-100"
+												>
+													<span className="font-medium">
+														{agent.name}
+													</span>
+													<span className="ml-2 text-xs text-neutral-400">
+														{agent.title}
+													</span>
+												</label>
+											</li>
+										))}
+									</ul>
+								)}
+							</div>
+						</div>
+
+						{/* Right column - Selected agents */}
+						<div className="flex-1 flex flex-col">
+							<div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
+								{selectedAgentIds.length === 0 ? (
+									<div className="text-neutral-400 text-center py-8">
+										No agents selected.
+									</div>
+								) : (
+									<ul className="flex flex-col">
+										{selectedAgentIds.map((agentId) => {
+											const agent = allAgents.find(
+												(a) => a.id === agentId
+											);
+											if (!agent) return null;
+
+											return (
+												<li
+													key={agent.id}
+													className="flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
+												>
+													<Avatar
+														src={agent.avatar_url}
+														size={28}
+													/>
+													<div className="flex-1">
+														<span className="font-medium text-neutral-800 dark:text-neutral-100">
+															{agent.name}
+														</span>
+														<span className="ml-2 text-xs text-neutral-400">
+															{agent.title}
+														</span>
+													</div>
+													<button
+														onClick={() => {
+															setSelectedAgentIds(
+																(prev) =>
+																	prev.filter(
+																		(id) =>
+																			id !==
+																			agent.id
+																	)
+															);
+														}}
+														className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+													>
+														<X
+															size={16}
+															className="text-neutral-400"
+														/>
+													</button>
+												</li>
+											);
+										})}
+									</ul>
+								)}
+							</div>
+						</div>
 					</div>
 					<div className="flex justify-end gap-2 mt-4">
 						<button

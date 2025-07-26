@@ -217,7 +217,7 @@ class AICallService {
 			case "Google":
 				const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
 				const googleResponse = await ai.models.generateContent({
-					model: modelId,
+					model: modelId || "gemini-2.5-pro",
 					contents: [{ role: "user", parts: [{ text: prompt }] }],
 				});
 				return googleResponse.text || "";
@@ -231,7 +231,7 @@ class AICallService {
 					baseURL: this.providerConfig.baseUrl!,
 					apiKey: this.providerConfig.apiKey,
 				});
-				const model = provider(modelId);
+				const model = provider(modelId || "gpt-4o");
 				const response = await generateText({
 					model: model,
 					prompt,

@@ -4,16 +4,15 @@ import React from "react";
 import { ArrowRight, X, Loader, Plus, Globe, Cloud, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
-import Dialog from "./Dialog";
 
+import Dialog from "@/components/Dialog";
 import {
   useGroup,
   useGroupMembers,
   useGroupOperations,
-} from "../hooks/useDatabase";
-import { dbHelpers } from "../lib/database";
-import { db } from "../lib/database";
-import { getRandomName, getRandomAvatar } from "../utils/randomUtils";
+} from "@/hooks/useDatabase";
+import { dbHelpers, db } from "@/lib/database";
+import { getRandomName, getRandomAvatar } from "@/utils/randomUtils";
 
 interface Member {
   id: string;
@@ -40,23 +39,15 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
   const [selectedMember, setSelectedMember] = React.useState<null | Member>(
     null,
   );
-  const [thinkingStates, setThinkingStates] = React.useState<
-    Record<string, boolean>
-  >({});
+
   const [descEdit, setDescEdit] = React.useState<string>("");
   const [descEditing, setDescEditing] = React.useState(false);
   const [descSaving, setDescSaving] = React.useState(false);
   const [nameEdit, setNameEdit] = React.useState<string>("");
   const [nameEditing, setNameEditing] = React.useState(false);
   const [nameSaving, setNameSaving] = React.useState(false);
-  const [isAddOpen, setAddOpen] = React.useState(false);
   const [addLoading, setAddLoading] = React.useState(false);
   const [allAgents, setAllAgents] = React.useState<any[]>([]);
-  const [allUsers, setAllUsers] = React.useState<any[]>([]);
-  const [selectedId, setSelectedId] = React.useState<string>("");
-  const [selectedType, setSelectedType] = React.useState<
-    "agent" | "human" | ""
-  >("");
   const [promptEdit, setPromptEdit] = React.useState<string>("");
   const [memberNameEdit, setMemberNameEdit] = React.useState<string>("");
   const [memberNameEditing, setMemberNameEditing] = React.useState(false);
@@ -120,11 +111,10 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
         status: dbMember.status,
         type: dbMember.role,
         avatar_url: details?.avatar_url,
-        thinking: thinkingStates[dbMember.id] || false,
         system_prompt: isAgent ? details?.system_prompt : undefined,
       };
     });
-  }, [dbMembers, thinkingStates]);
+  }, [dbMembers]);
 
   // When selectedMember changes, set promptEdit to the agent's system_prompt
   React.useEffect(() => {

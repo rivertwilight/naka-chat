@@ -4,13 +4,14 @@ export type ProviderType = "Google" | "Anthropic" | "OpenAI" | "Custom";
 
 interface PersistanceSettings {
 	provider: ProviderType;
-	apiKey: string;
+	apiKeys: Record<ProviderType, string>;
 	baseUrl: string;
 	firstName: string;
 	lastName: string;
 	modelId: string;
 	setProvider: (provider: ProviderType) => void;
-	setApiKey: (apiKey: string) => void;
+	setApiKey: (provider: ProviderType, apiKey: string) => void;
+	getApiKey: (provider: ProviderType) => string;
 	setBaseUrl: (baseUrl: string) => void;
 	setFirstName: (firstName: string) => void;
 	setLastName: (lastName: string) => void;
@@ -36,7 +37,12 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
 	const [provider, setProvider] = useState<ProviderType>("OpenAI");
-	const [apiKey, setApiKey] = useState("");
+	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
+		Google: "",
+		Anthropic: "",
+		OpenAI: "",
+		Custom: "",
+	});
 	const [baseUrl, setBaseUrl] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
@@ -47,7 +53,22 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 		const initial = getInitialSettings();
 		if (initial) {
 			setProvider(initial.provider || "OpenAI");
-			setApiKey(initial.apiKey || "");
+			// Handle migration from old single apiKey format
+			if (initial.apiKey && !initial.apiKeys) {
+				setApiKeys({
+					Google: "",
+					Anthropic: "",
+					OpenAI: initial.apiKey,
+					Custom: "",
+				});
+			} else {
+				setApiKeys(initial.apiKeys || {
+					Google: "",
+					Anthropic: "",
+					OpenAI: "",
+					Custom: "",
+				});
+			}
 			setBaseUrl(initial.baseUrl || "");
 			setFirstName(initial.firstName || "");
 			setLastName(initial.lastName || "");
@@ -61,26 +82,38 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 			STORAGE_KEY,
 			JSON.stringify({
 				provider,
-				apiKey,
+				apiKeys,
 				baseUrl,
 				firstName,
 				lastName,
 				modelId,
 			})
 		);
-	}, [provider, apiKey, baseUrl, firstName, lastName, modelId]);
+	}, [provider, apiKeys, baseUrl, firstName, lastName, modelId]);
+
+	const setApiKey = (providerType: ProviderType, apiKey: string) => {
+		setApiKeys(prev => ({
+			...prev,
+			[providerType]: apiKey,
+		}));
+	};
+
+	const getApiKey = (providerType: ProviderType) => {
+		return apiKeys[providerType] || "";
+	};
 
 	return (
 		<PersistanceContext.Provider
 			value={{
 				provider,
-				apiKey,
+				apiKeys,
 				baseUrl,
 				firstName,
 				lastName,
 				modelId,
 				setProvider,
 				setApiKey,
+				getApiKey,
 				setBaseUrl,
 				setFirstName,
 				setLastName,

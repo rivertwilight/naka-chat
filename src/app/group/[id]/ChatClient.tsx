@@ -45,7 +45,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const { user } = useCurrentUser();
 	const { group } = useGroup(groupId);
 	const { messages, sendMessage, addReaction } = useGroupMessages(groupId);
-	const { provider, apiKey, baseUrl, modelId } = usePersistance();
+	const { provider, getApiKey, baseUrl, modelId } = usePersistance();
 	const { members: groupMembers } = useGroupMembers(groupId);
 
 	const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -56,12 +56,12 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		if (groupId) {
 			agentGroupChatRef.current = new AgentGroupChat(groupId, {
 				provider,
-				apiKey,
+				apiKey: getApiKey(provider),
 				baseUrl,
 				modelId,
 			});
 		}
-	}, [groupId, provider, apiKey, baseUrl]);
+	}, [groupId, provider, getApiKey, baseUrl]);
 
 	// Only auto-scroll when there are new messages
 	useEffect(() => {

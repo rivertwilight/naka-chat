@@ -99,7 +99,9 @@ class MemberService {
 		members: GroupChatMember[],
 		typingPool: Set<string>
 	): GroupChatMember[] {
-		return members.filter((m) => m.role === "agent" && !typingPool.has(m.id));
+		return members.filter(
+			(m) => m.role === "agent" && !typingPool.has(m.id)
+		);
 	}
 
 	findMembersByIdentifiers(
@@ -110,7 +112,8 @@ class MemberService {
 			.map((identifier) =>
 				members.find(
 					(m) =>
-						(m.name === identifier || m.id === identifier) && m.role === "agent"
+						(m.name === identifier || m.id === identifier) &&
+						m.role === "agent"
 				)
 			)
 			.filter(Boolean) as GroupChatMember[];
@@ -140,7 +143,8 @@ class ConversationService {
 				if (isSupervisor) return true;
 				if (msg.type !== "dm") return true;
 				if (!agentId) return false;
-				const isSender = msg.senderAgent && msg.senderAgent.id === agentId;
+				const isSender =
+					msg.senderAgent && msg.senderAgent.id === agentId;
 				const isTarget = msg.dm_target_id === agentId;
 				return isSender || isTarget;
 			})
@@ -216,7 +220,9 @@ class AICallService {
 		switch (this.providerConfig.provider) {
 			case "Google":
 				try {
-					const ai = new GoogleGenAI({ apiKey: this.providerConfig.apiKey });
+					const ai = new GoogleGenAI({
+						apiKey: this.providerConfig.apiKey,
+					});
 					const googleResponse = await ai.models.generateContent({
 						model: modelId || "gemini-2.5-pro",
 						contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -366,7 +372,8 @@ Rules:
 	private createFallbackDecision(): SupervisorDecision {
 		return {
 			nextSpeaker: ["human"],
-			reasoning: "Error in supervisor decision, defaulting to human input",
+			reasoning:
+				"Error in supervisor decision, defaulting to human input",
 			shouldStop: true,
 		};
 	}
@@ -489,7 +496,10 @@ export class AgentGroupChat {
 	public groupName: string = "";
 	public groupDescription: string = "";
 
-	constructor(private groupId: string, private providerConfig: ProviderConfig) {
+	constructor(
+		private groupId: string,
+		private providerConfig: ProviderConfig
+	) {
 		this.memberService = new MemberService(groupId);
 		this.conversationService = new ConversationService();
 		this.supervisorService = new SupervisorService(providerConfig);
@@ -665,7 +675,10 @@ export class AgentGroupChat {
 			);
 
 			if (nextAgents.length === 0) {
-				console.error("No available agents found:", decision.nextSpeaker);
+				console.error(
+					"No available agents found:",
+					decision.nextSpeaker
+				);
 				break;
 			}
 
@@ -726,7 +739,10 @@ export class AgentGroupChat {
 			);
 
 			if (nextAgents.length === 0) {
-				console.error("No available agents found:", decision.nextSpeaker);
+				console.error(
+					"No available agents found:",
+					decision.nextSpeaker
+				);
 				break;
 			}
 
@@ -786,14 +802,15 @@ export class AgentGroupChat {
 				this.groupId,
 				agent.id
 			);
-		const updatedContext = this.conversationService.createConversationContext(
-			context.groupId,
-			context.groupName,
-			context.groupDescription,
-			context.members,
-			latestMessages,
-			agent.id
-		);
+		const updatedContext =
+			this.conversationService.createConversationContext(
+				context.groupId,
+				context.groupName,
+				context.groupDescription,
+				context.members,
+				latestMessages,
+				agent.id
+			);
 
 		const response = await this.responseService.generateResponse(
 			agent,
@@ -839,7 +856,9 @@ export class AgentGroupChat {
 
 	private async updateHistoryFromDatabase(): Promise<string> {
 		const latestMessages =
-			await this.conversationService.getLatestSessionMessages(this.groupId);
+			await this.conversationService.getLatestSessionMessages(
+				this.groupId
+			);
 		return this.conversationService.formatHistory(latestMessages);
 	}
 
@@ -864,7 +883,12 @@ export class AgentGroupChat {
 		groupDescription: string
 	): void {
 		this.idleTimeout = setTimeout(() => {
-			this.triggerSupervisorCycle(members, [], groupName, groupDescription);
+			this.triggerSupervisorCycle(
+				members,
+				[],
+				groupName,
+				groupDescription
+			);
 		}, AGENT_CONFIG.SUPERVISOR.IDLE_TIMEOUT_MS);
 	}
 }

@@ -59,13 +59,17 @@ function ModelSection() {
 	const {
 		provider,
 		setProvider,
-		apiKey,
+		getApiKey,
 		setApiKey,
 		baseUrl,
 		setBaseUrl,
 		modelId,
 		setModelId,
 	} = usePersistance();
+	
+	// Get the current API key for the selected provider
+	const currentApiKey = getApiKey(provider);
+	
 	return (
 		<>
 			<div className="mb-4">
@@ -109,8 +113,8 @@ function ModelSection() {
 					id="api"
 					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 					placeholder="Your API Key"
-					value={apiKey}
-					onChange={(e) => setApiKey(e.target.value)}
+					value={currentApiKey}
+					onChange={(e) => setApiKey(provider, e.target.value)}
 				/>
 			</div>
 			{provider === "Custom" && (

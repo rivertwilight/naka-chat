@@ -1,15 +1,15 @@
-import Link from "next/link";
 import React from "react";
-import { Check, Pin, X } from "lucide-react";
-import { Dropdown, DropdownProps, Tooltip } from "@lobehub/ui";
+import { Pin, X } from "lucide-react";
+import { Dropdown, DropdownProps } from "@lobehub/ui";
 import { useRouter } from "next/navigation";
-import type { Group } from "../lib/database";
+
+import type { Group } from "@/lib/database";
 
 interface GroupListItemProps {
 	group: Group;
 	selected: boolean;
 	messagePreview?: string;
-	lastMessageTime?: string; // new prop
+	lastMessageTime?: string;
 	onRemoveGroup?: (groupId: string) => void;
 }
 
@@ -20,9 +20,8 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 	lastMessageTime,
 	onRemoveGroup,
 }) => {
-	const [showCheck, setShowCheck] = React.useState(false);
 	const router = useRouter();
-	
+
 	const menu: DropdownProps["menu"] = {
 		items: [
 			{
@@ -57,11 +56,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 			}
 			onClick={handleClick}
 		>
-			<Dropdown 
-				menu={menu} 
-				trigger={["contextMenu"]} 
-				onOpenChange={(open) => {}}
-			>
+			<Dropdown menu={menu} trigger={["contextMenu"]}>
 				<div className="flex flex-col flex-1 min-w-0">
 					<div className="flex items-center justify-between w-full">
 						<span className="truncate">{group.name}</span>

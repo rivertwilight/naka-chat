@@ -69,7 +69,7 @@ interface PublicMessageBlockProps {
 }
 
 /**
- * Display public messages
+ * Message with actions
  */
 const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 	messageId,

@@ -4,7 +4,7 @@ import React from "react";
 import { ArrowRight, X, Loader, Plus, Globe, Cloud, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@lobehub/ui";
-import Dialog from "../components/Dialog";
+import Dialog from "./Dialog";
 
 import { useGroupMembers } from "../hooks/useDatabase";
 import { useGroup } from "../hooks/useDatabase";

@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, MessageCircle, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Sawarabi_Mincho } from "next/font/google";
 import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";

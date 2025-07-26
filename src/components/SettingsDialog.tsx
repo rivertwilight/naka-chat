@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Loader, Save, X } from "lucide-react";
 import { useAgents } from "@/hooks/useDatabase";
 import { dbHelpers } from "@/lib/database";
 import { getRandomName, getRandomAvatar } from "@/utils/randomUtils";
+import Link from "next/link";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -238,6 +239,17 @@ function ModelSection() {
 						</div>
 					</div>
 				)}
+				<div className="text-sm text-neutral-500 dark:text-neutral-400 mt-4">
+					You are setting the default AI model for all agents. You can
+					config AI model per-agent in their settings.
+					<Link
+						href="https://github.com/moonshot-ai/moonshot-docs/blob/main/docs/models.md"
+						target="_blank"
+						className="text-orange-500 dark:text-orange-400 ml-2"
+					>
+						Learn more
+					</Link>
+				</div>
 			</div>
 		</>
 	);

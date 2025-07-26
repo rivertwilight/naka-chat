@@ -844,5 +844,17 @@ export function useGroupOperations() {
 		console.log("Pin group:", groupId);
 	};
 
-	return { deleteGroup, pinGroup };
+	const renameGroup = async (
+		groupId: string,
+		newName: string
+	): Promise<void> => {
+		try {
+			await dbHelpers.updateGroup(groupId, { name: newName });
+		} catch (error) {
+			console.error("Error renaming group:", error);
+			throw error;
+		}
+	};
+
+	return { deleteGroup, pinGroup, renameGroup };
 }

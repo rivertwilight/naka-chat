@@ -137,6 +137,10 @@ export default function Sidebar() {
 											// Refresh the groups list after deletion
 											setGroupsVersion((prev) => prev + 1);
 										}}
+										onGroupRenamed={() => {
+											// Refresh the groups list after renaming
+											setGroupsVersion((prev) => prev + 1);
+										}}
 									/>
 								</motion.div>
 							);

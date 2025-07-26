@@ -612,11 +612,11 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 				}}
 				variant="modal"
 			>
-				<div className="flex flex-col w-full max-w-4xl p-6">
+				<div className="flex flex-col p-6">
 					<h2 className="text-xl font-semibold mb-4 text-neutral-800 dark:text-neutral-100 flex items-center gap-2">
 						Invite Agents
 					</h2>
-					<div className="flex-1 flex gap-4 mb-4 max-h-[400px]">
+					<div className="flex-1 flex gap-4 mb-4 max-h-[400px] w-[600px]">
 						{/* Left column - Available agents */}
 						<div className="flex-1 flex flex-col">
 							<div className="flex-1 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">

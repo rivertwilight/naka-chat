@@ -27,7 +27,7 @@ export const AGENT_CONFIG = {
 
 // Types and Interfaces
 export interface ProviderConfig {
-	provider: "Google" | "Anthropic" | "OpenAI" | "Custom";
+	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
 	apiKey: string;
 	baseUrl?: string;
 	modelId?: string;
@@ -240,6 +240,27 @@ class AICallService {
 				throw new Error("OpenAI provider not implemented yet");
 			case "Anthropic":
 				throw new Error("Anthropic provider not implemented yet");
+			case "Moonshot":
+				try {
+					const provider = createOpenAICompatible({
+						name: "Moonshot",
+						baseURL: "https://api.moonshot.cn/v1",
+						apiKey: this.providerConfig.apiKey,
+					});
+					const model = provider(modelId || "kimi-latest");
+					const response = await generateText({
+						model: model,
+						prompt,
+					});
+					return response.text || "";
+				} catch (error) {
+					console.error("AI call error:", error);
+					console.error(
+						"Error message:",
+						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
+					);
+					return "";
+				}
 			case "Custom":
 				try {
 					const provider = createOpenAICompatible({

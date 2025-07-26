@@ -4,7 +4,6 @@ import Dialog from "./Dialog";
 import { usePersistance } from "./PersistanceContext";
 import { ProviderType } from "./PersistanceContext";
 import Image from "next/image";
-import { AvatarGroup } from "@lobehub/ui";
 import { Avatar } from "@lobehub/ui";
 import { Plus, Edit, Trash2, Loader, Save, X } from "lucide-react";
 import { useAgents } from "@/hooks/useDatabase";
@@ -40,6 +39,10 @@ const MODEL_OPTIONS = {
 		{ value: "gpt-4o-mini", label: "GPT-4o Mini" },
 		{ value: "gpt-4-turbo", label: "GPT-4 Turbo" },
 		{ value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+	],
+	Moonshot: [
+		{ value: "kimi-latest", label: "Kimi Latest" },
+		{ value: "kimi-k2", label: "Kimi K2" },
 	],
 	Custom: [],
 };
@@ -145,8 +148,9 @@ function ModelSection() {
 						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
 					>
 						<option value="Google">Google</option>
-						<option value="Anthropic">Anthropic</option>
 						<option value="OpenAI">OpenAI</option>
+						<option value="Anthropic">Anthropic</option>
+						<option value="Moonshot">Moonshot</option>
 						<option value="Custom">Custom</option>
 					</select>
 					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center px-2 text-neutral-500">
@@ -243,7 +247,9 @@ function AgentsSection() {
 	const { agents, loading, error } = useAgents();
 	const [editingAgent, setEditingAgent] = React.useState<string | null>(null);
 	const [creatingAgent, setCreatingAgent] = React.useState(false);
-	const [deletingAgent, setDeletingAgent] = React.useState<string | null>(null);
+	const [deletingAgent, setDeletingAgent] = React.useState<string | null>(
+		null
+	);
 	const [agentForm, setAgentForm] = React.useState({
 		name: "",
 		title: "",
@@ -357,7 +363,10 @@ function AgentsSection() {
 							placeholder="Agent name"
 							value={agentForm.name}
 							onChange={(e) =>
-								setAgentForm({ ...agentForm, name: e.target.value })
+								setAgentForm({
+									...agentForm,
+									name: e.target.value,
+								})
 							}
 						/>
 					</div>
@@ -371,7 +380,10 @@ function AgentsSection() {
 							placeholder="e.g., Developer, Designer"
 							value={agentForm.title}
 							onChange={(e) =>
-								setAgentForm({ ...agentForm, title: e.target.value })
+								setAgentForm({
+									...agentForm,
+									title: e.target.value,
+								})
 							}
 						/>
 					</div>
@@ -385,7 +397,10 @@ function AgentsSection() {
 							rows={3}
 							value={agentForm.system_prompt}
 							onChange={(e) =>
-								setAgentForm({ ...agentForm, system_prompt: e.target.value })
+								setAgentForm({
+									...agentForm,
+									system_prompt: e.target.value,
+								})
 							}
 						/>
 					</div>
@@ -397,12 +412,21 @@ function AgentsSection() {
 							className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 							value={agentForm.model}
 							onChange={(e) =>
-								setAgentForm({ ...agentForm, model: e.target.value })
+								setAgentForm({
+									...agentForm,
+									model: e.target.value,
+								})
 							}
 						>
-							<option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
-							<option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-							<option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+							<option value="gemini-2.0-flash-exp">
+								Gemini 2.0 Flash
+							</option>
+							<option value="gemini-1.5-pro">
+								Gemini 1.5 Pro
+							</option>
+							<option value="claude-3-5-sonnet-20241022">
+								Claude 3.5 Sonnet
+							</option>
 							<option value="gpt-4o">GPT-4o</option>
 						</select>
 					</div>
@@ -418,7 +442,10 @@ function AgentsSection() {
 							className="w-full"
 							value={agentForm.temperature}
 							onChange={(e) =>
-								setAgentForm({ ...agentForm, temperature: parseFloat(e.target.value) })
+								setAgentForm({
+									...agentForm,
+									temperature: parseFloat(e.target.value),
+								})
 							}
 						/>
 						<div className="text-xs text-neutral-500 mt-1">
@@ -454,14 +481,20 @@ function AgentsSection() {
 							{editingAgent === agent.id ? (
 								<div className="space-y-3">
 									<div className="flex items-center gap-3">
-										<Avatar src={agent.avatar_url} size={40} />
+										<Avatar
+											src={agent.avatar_url}
+											size={40}
+										/>
 										<div className="flex-1">
 											<input
 												type="text"
 												className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 												value={agentForm.name}
 												onChange={(e) =>
-													setAgentForm({ ...agentForm, name: e.target.value })
+													setAgentForm({
+														...agentForm,
+														name: e.target.value,
+													})
 												}
 											/>
 										</div>
@@ -476,7 +509,10 @@ function AgentsSection() {
 												className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 												value={agentForm.title}
 												onChange={(e) =>
-													setAgentForm({ ...agentForm, title: e.target.value })
+													setAgentForm({
+														...agentForm,
+														title: e.target.value,
+													})
 												}
 											/>
 										</div>
@@ -488,13 +524,24 @@ function AgentsSection() {
 												className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 												value={agentForm.model}
 												onChange={(e) =>
-													setAgentForm({ ...agentForm, model: e.target.value })
+													setAgentForm({
+														...agentForm,
+														model: e.target.value,
+													})
 												}
 											>
-												<option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
-												<option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-												<option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-												<option value="gpt-4o">GPT-4o</option>
+												<option value="gemini-2.0-flash-exp">
+													Gemini 2.0 Flash
+												</option>
+												<option value="gemini-1.5-pro">
+													Gemini 1.5 Pro
+												</option>
+												<option value="claude-3-5-sonnet-20241022">
+													Claude 3.5 Sonnet
+												</option>
+												<option value="gpt-4o">
+													GPT-4o
+												</option>
 											</select>
 										</div>
 									</div>
@@ -507,13 +554,19 @@ function AgentsSection() {
 											rows={2}
 											value={agentForm.system_prompt}
 											onChange={(e) =>
-												setAgentForm({ ...agentForm, system_prompt: e.target.value })
+												setAgentForm({
+													...agentForm,
+													system_prompt:
+														e.target.value,
+												})
 											}
 										/>
 									</div>
 									<div className="flex gap-2">
 										<button
-											onClick={() => handleUpdateAgent(agent.id)}
+											onClick={() =>
+												handleUpdateAgent(agent.id)
+											}
 											className="px-3 py-1 bg-neutral-900 dark:bg-neutral-100 text-neutral-100 dark:text-neutral-900 rounded text-sm hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-1"
 										>
 											<Save size={14} />
@@ -531,7 +584,10 @@ function AgentsSection() {
 							) : (
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
-										<Avatar src={agent.avatar_url} size={40} />
+										<Avatar
+											src={agent.avatar_url}
+											size={40}
+										/>
 										<div>
 											<div className="font-medium text-neutral-900 dark:text-neutral-100">
 												{agent.name}
@@ -554,12 +610,19 @@ function AgentsSection() {
 											<Edit size={16} />
 										</button>
 										<button
-											onClick={() => handleDeleteAgent(agent.id)}
-											disabled={deletingAgent === agent.id}
+											onClick={() =>
+												handleDeleteAgent(agent.id)
+											}
+											disabled={
+												deletingAgent === agent.id
+											}
 											className="p-2 text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
 										>
 											{deletingAgent === agent.id ? (
-												<Loader size={16} className="animate-spin" />
+												<Loader
+													size={16}
+													className="animate-spin"
+												/>
 											) : (
 												<Trash2 size={16} />
 											)}
@@ -571,7 +634,8 @@ function AgentsSection() {
 					))}
 					{agents.length === 0 && (
 						<div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-							No agents created yet. Create your first agent above.
+							No agents created yet. Create your first agent
+							above.
 						</div>
 					)}
 				</div>
@@ -660,11 +724,12 @@ function AboutSection() {
 			{/* Description */}
 			<div className="mb-6 flex flex-col gap-2">
 				<p className="text-md leading-relaxed">
-					This was originally built in a Hackathon by @Rene and @Ficon.
+					This was originally built in a Hackathon by @Rene and
+					@Ficon.
 				</p>
 				<p className="text-md leading-relaxed">
-					We&apos;d like to thank the following open source projects for their
-					contributions to NakaChat:
+					We&apos;d like to thank the following open source projects
+					for their contributions to NakaChat:
 				</p>
 			</div>
 

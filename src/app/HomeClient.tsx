@@ -108,6 +108,15 @@ export default function HomeClient() {
 		return (
 			<div className="min-h-screen flex items-center justify-center text-red-500">
 				{error || userError}
+				<button
+					onClick={() => {
+						dbHelpers.resetDatabase();
+						window.location.reload();
+					}}
+					className="text-orange-500 dark:text-orange-400 cursor-pointer"
+				>
+					Reset database and reload
+				</button>
 			</div>
 		);
 	}

@@ -126,9 +126,11 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		"我们来模拟联合国，Morgan 是主持人，开始吧",
 		"我是皇上，你们是后宫的嫔妃，背景是清朝",
 		"我们来玩 COC，我是 KP",
-		"我们来玩 DND, KP",
 		"你们开个辩论会，X 是主持人，不要让我干涉",
 		"我们来玩狼人杀，我是主持人",
+		"我们玩成语接龙吧，按照名字顺序",
+		"你们给我表演个小品",
+		"你们头脑风暴一下：如何办好一场画展",
 	];
 
 	// Randomly select 3 examples each render

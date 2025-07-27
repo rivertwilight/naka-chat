@@ -241,9 +241,18 @@ export default function HomeClient() {
 						</div>
 					)}
 
-					{errorMsg && (
+					{!errorMsg && (
 						<div className="text-red-500 text-sm mt-2">
 							{errorMsg}
+							<button
+								onClick={() => {
+									dbHelpers.resetDatabase();
+									window.location.reload();
+								}}
+								className="text-orange-500 dark:text-orange-400 cursor-pointer"
+							>
+								Reset database and reload
+							</button>
 						</div>
 					)}
 				</div>

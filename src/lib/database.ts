@@ -633,6 +633,40 @@ export const dbHelpers = {
 		// 4. Finally delete the agent
 		await db.agents.delete(agentId);
 	},
+
+	// Reset the entire database - removes all data
+	async resetDatabase(): Promise<void> {
+		try {
+			// Clear all tables in the correct order to maintain referential integrity
+			console.log("Resetting database...");
+			
+			// 1. Delete message reactions first (no foreign keys pointing to them)
+			await db.messageReactions.clear();
+			
+			// 2. Delete messages (referenced by reactions)
+			await db.messages.clear();
+			
+			// 3. Delete sessions (referenced by messages)
+			await db.sessions.clear();
+			
+			// 4. Delete group members (no foreign keys pointing to them)
+			await db.groupMembers.clear();
+			
+			// 5. Delete groups (referenced by group members and sessions)
+			await db.groups.clear();
+			
+			// 6. Delete agents (referenced by group members and messages)
+			await db.agents.clear();
+			
+			// 7. Delete users (referenced by group members and messages)
+			await db.users.clear();
+			
+			console.log("Database reset successfully!");
+		} catch (error) {
+			console.error("Error resetting database:", error);
+			throw error;
+		}
+	},
 };
 
 // Clean message type with sender details for UI rendering

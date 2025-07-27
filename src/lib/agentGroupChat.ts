@@ -1,9 +1,5 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
-// Re-export types for external use
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
-export type { MessageWithDetails } from "./database";
-import { GoogleGenAI } from "@google/genai";
+import { ProviderConfig } from "./aiUtils";
 
 export const AGENT_CONFIG = {
 	RESPONSE_DELAY: {
@@ -23,14 +19,6 @@ export const AGENT_CONFIG = {
 		MAX_CHINESE_CHARS: 50,
 	},
 } as const;
-
-// Types and Interfaces
-export interface ProviderConfig {
-	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
-	apiKey: string;
-	baseUrl?: string;
-	modelId?: string;
-}
 
 export interface GroupChatMember {
 	id: string;
@@ -211,175 +199,35 @@ class ConversationService {
 	}
 }
 
-class AICallService {
-	constructor(private providerConfig: ProviderConfig) {}
-
-	async callAI(prompt: string, modelId: string): Promise<string> {
-		switch (this.providerConfig.provider) {
-			case "Google":
-				try {
-					const ai = new GoogleGenAI({
-						apiKey: this.providerConfig.apiKey,
-					});
-					const googleResponse = await ai.models.generateContent({
-						model: modelId || "gemini-2.5-pro",
-						contents: [{ role: "user", parts: [{ text: prompt }] }],
-					});
-					return googleResponse.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			case "OpenAI":
-				throw new Error("OpenAI provider not implemented yet");
-			case "Anthropic":
-				throw new Error("Anthropic provider not implemented yet");
-			case "Moonshot":
-				try {
-					const provider = createOpenAICompatible({
-						name: "Moonshot",
-						baseURL: "https://api.moonshot.cn/v1",
-						apiKey: this.providerConfig.apiKey,
-					});
-					const model = provider(modelId || "kimi-latest");
-					const response = await generateText({
-						model: model,
-						prompt,
-					});
-					return response.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			case "Custom":
-				try {
-					const provider = createOpenAICompatible({
-						name: "AI Hub Mix",
-						baseURL: this.providerConfig.baseUrl!,
-						apiKey: this.providerConfig.apiKey,
-					});
-					const model = provider(modelId || "gpt-4o");
-					const response = await generateText({
-						model: model,
-						prompt,
-					});
-					return response.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			default:
-				throw new Error(
-					`Unsupported provider: ${this.providerConfig.provider}`
-				);
-		}
-	}
-}
-
 class SupervisorService {
-	private aiCallService: AICallService;
-	constructor(private providerConfig: ProviderConfig) {
-		this.aiCallService = new AICallService(providerConfig);
-	}
+	constructor(private providerConfig: ProviderConfig) {}
 
 	async makeDecision(
 		context: ConversationContext,
 		availableMembers: GroupChatMember[]
 	): Promise<SupervisorDecision> {
-		const prompt = this.buildSupervisorPrompt(context, availableMembers);
-
 		try {
-			const response = await this.aiCallService.callAI(
-				prompt,
-				this.providerConfig.modelId!
-			);
-			const decision = this.parseDecision(response);
-			this.validateDecision(decision, context.members);
+			const response = await fetch("/api/supervisor-decision", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					context,
+					availableMembers,
+					providerConfig: this.providerConfig,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`API request failed: ${response.statusText}`);
+			}
+
+			const decision = (await response.json()) as SupervisorDecision;
 			return decision;
 		} catch (error) {
 			console.error("Supervisor decision error:", error);
 			return this.createFallbackDecision();
-		}
-	}
-
-	private buildSupervisorPrompt(
-		context: ConversationContext,
-		availableMembers: GroupChatMember[]
-	): string {
-		const membersList = availableMembers
-			.filter((m) => m.role === "agent")
-			.map((m) => `- ${m.name} (${m.title})`)
-			.join("\n");
-
-		return `You are a supervisor agent managing a group chat discussion named "${context.groupName}". Your role is to decide who should speak next based on the conversation context and each agent's expertise.
-
-<groupDescription>
-${context.groupDescription}
-</groupDescription>
-
-<groupMembers>
-${membersList}
-</groupMembers>
-
-<conversationHistory>
-${context.history}
-</conversationHistory>
-
-Analyze the conversation and decide who should speak next based on the conversation context.
-
-Respond in this exact JSON format, no other text, no markdown wrapper:
-
-{
-  "nextSpeaker": ["agent_id_1", "agent_id_2"]
-}
-
-Rules:
-- Always return nextSpeaker as an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
-- If the last message was a question directed at humans or requires human input, include 'human' in the array
-- If an agent's expertise is needed based on the conversation topic, include that agent
-- If the conversation seems complete, return empty array [] or ['human']. DM needed should not be considered as a conversation complete, and the DM sender need to be included in the nextSpeaker array.
-- Your goal is to make the conversation as natural as possible`;
-	}
-
-	private parseDecision(responseText: string): SupervisorDecision {
-		// Remove markdown code block wrappers if present
-		let cleaned = responseText.trim();
-		if (cleaned.startsWith("```")) {
-			// Remove the opening code block (optionally with language)
-			cleaned = cleaned.replace(/^```[a-zA-Z0-9]*\s*/, "");
-			// Remove the closing code block
-			cleaned = cleaned.replace(/```\s*$/, "");
-		}
-		return JSON.parse(cleaned) as SupervisorDecision;
-	}
-
-	private validateDecision(
-		decision: SupervisorDecision,
-		members: GroupChatMember[]
-	): void {
-		if (!Array.isArray(decision.nextSpeaker)) {
-			throw new Error("nextSpeaker must always be an array");
-		}
-
-		for (const speaker of decision.nextSpeaker) {
-			if (
-				speaker !== "human" &&
-				!members.find((m) => m.name === speaker || m.id === speaker)
-			) {
-				throw new Error(`Invalid nextSpeaker: ${speaker}`);
-			}
 		}
 	}
 
@@ -393,10 +241,7 @@ Rules:
 }
 
 class AgentResponseService {
-	private aiCallService: AICallService;
-	constructor(private providerConfig: ProviderConfig) {
-		this.aiCallService = new AICallService(providerConfig);
-	}
+	constructor(private providerConfig: ProviderConfig) {}
 
 	async generateResponse(
 		agent: GroupChatMember,
@@ -406,53 +251,29 @@ class AgentResponseService {
 			throw new Error("Cannot generate response for non-agent member");
 		}
 
-		const prompt = this.buildAgentPrompt(agent, context);
-
-		console.log("Agent prompt:", prompt);
-
 		try {
-			const response = await this.aiCallService.callAI(
-				prompt,
-				this.providerConfig.modelId!
-			);
-			return response;
+			const response = await fetch("/api/agent-response", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					agent,
+					context,
+					providerConfig: this.providerConfig,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`API request failed: ${response.statusText}`);
+			}
+
+			const result = await response.json();
+			return result.response;
 		} catch (error) {
 			console.error("Agent response generation error:", error);
 			return `*${agent.name} is having trouble responding right now. Please try again later.*`;
 		}
-	}
-
-	private buildAgentPrompt(
-		agent: GroupChatMember,
-		context: ConversationContext
-	): string {
-		const membersList = context.members
-			.map((m) => `- ${m.name} (${m.title} [id: ${m.id}])`)
-			.join("\n");
-
-		return `<YourBio>
-${agent.system_prompt}
-</YourBio>
-
-You are participating in a group chat in real world.
-
-<GroupMembers>
-${membersList}
-</GroupMembers>
-
-Guidelines:
-- Stay in character as ${agent.name} (${agent.title})
-- Be concise and natural, behave like a real person
-- Each message should no more than ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_WORDS} words or ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_CHINESE_CHARS} chinese characters unless it's a code block or a long quote
-- Collaborate effectively with other team members
-- Follow user's language
-- You must always return a JSON object: { "content": "your message", "target": "target_member_id (optional)" }. If you want to send a public message, omit the target field. If you want to send a DM, set the target field to the member's id.
-
-<ConversationHistory>
-${context.history}
-</ConversationHistory>
-
-Provide your response to continue this discussion. Always return a JSON object as described above. Do not return plain text.`;
 	}
 }
 

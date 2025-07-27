@@ -241,7 +241,7 @@ export default function HomeClient() {
 						</div>
 					)}
 
-					{!errorMsg && (
+					{errorMsg && (
 						<div className="text-red-500 text-sm mt-2">
 							{errorMsg}
 							<button

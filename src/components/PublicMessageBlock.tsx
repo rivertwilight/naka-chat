@@ -116,7 +116,9 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 				{isHuman ? (
 					<div className="flex items-center gap-2">
 						<Avatar src={avatar_url} size={24} />
-						<span className={`text-sm ${geistMono.className}`}>
+						<span
+							className={`text-sm text-orange-600 dark:text-orange-400 ${geistMono.className}`}
+						>
 							{sender}
 						</span>
 						<span className="text-xs text-neutral-400 dark:text-neutral-500">

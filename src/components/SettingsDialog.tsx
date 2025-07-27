@@ -59,6 +59,7 @@ const OPEN_SOURCE_PROJECTS = [
 const sidebarNav = [
 	{ key: "general", label: "General" },
 	{ key: "model", label: "Model" },
+	{ key: "chat", label: "Chat" },
 	{ key: "agents", label: "Agents" },
 	{ key: "about", label: "About" },
 ];
@@ -737,8 +738,25 @@ function AboutSection() {
 			{/* Description */}
 			<div className="mb-6 flex flex-col gap-2">
 				<p className="text-md leading-relaxed">
-					This was originally built in a Hackathon by @Rene and
-					@Ficon.
+					This was originally built in a Hackathon by{" "}
+					<Link
+						href="https://github.com/rivertwilight"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-100 transition-colors"
+					>
+						@Rene
+					</Link>{" "}
+					and
+					<Link
+						href="https://github.com/fallingsakura"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-100 transition-colors"
+					>
+						{" "}
+						@Ficon
+					</Link>
 				</p>
 				<p className="text-md leading-relaxed">
 					We&apos;d like to thank the following open source projects

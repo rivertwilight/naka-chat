@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { notFound } from "next/navigation";
-import { Geist_Mono } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import MessageInputField from "@/components/GroupInputArea";
 import MessageItem from "@/components/MessageItem";
@@ -14,18 +13,9 @@ import {
 	useGroup,
 	useGroupMembers,
 } from "@/hooks/useDatabase";
-import {
-	AgentGroupChat,
-	GroupChatMember,
-	MessageWithDetails,
-} from "@/lib/agentGroupChat";
+import { AgentGroupChat } from "@/lib/agentGroupChat";
 import { usePersistance } from "@/components/PersistanceContext";
 import { ArrowRight } from "lucide-react";
-
-const geistMono = Geist_Mono({
-	weight: ["400"],
-	subsets: ["latin"],
-});
 
 interface ChatClientProps {
 	groupId: string;
@@ -58,16 +48,16 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				baseUrl,
 				modelId,
 			});
-			
+
 			// Set up typing change callback
 			agentGroupChatRef.current.setOnTypingChange((typingAgentNames) => {
 				setTypingAgents(typingAgentNames);
 			});
-			
+
 			// Start monitoring when AgentGroupChat is created
 			agentGroupChatRef.current.startMonitoring();
 		}
-		
+
 		// Cleanup function to stop monitoring
 		return () => {
 			if (agentGroupChatRef.current) {
@@ -107,7 +97,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 	const handleDmClick = (
 		senderId: string,
 		senderName: string,
-		senderAvatar?: string
+		senderAvatar: string
 	) => {
 		setDmView({
 			senderId,
@@ -116,8 +106,20 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		});
 	};
 
+	console.log("***==", messages);
+
 	const handleBackFromDM = () => {
 		setDmView(null);
+	};
+
+	const handleDMMessageSent = async () => {
+		// Force check for new messages after sending DM to trigger supervisor
+		// Add small delay to ensure database write completes
+		setTimeout(async () => {
+			if (agentGroupChatRef.current) {
+				await agentGroupChatRef.current.forceCheckForNewMessages();
+			}
+		}, 100);
 	};
 
 	const exampleSuggestions = [
@@ -150,15 +152,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 		}
 	};
 
-	// Format time from Date to HH:MM
-	const formatTime = (date: Date) => {
-		return date.toLocaleTimeString("en-US", {
-			hour: "2-digit",
-			minute: "2-digit",
-			hour12: false,
-		});
-	};
-
 	// Format date for session divider
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString("en-US", {
@@ -166,44 +159,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 			month: "long",
 			day: "numeric",
 		});
-	};
-
-	// Get sender name from message
-	const getSenderName = (message: any) => {
-		if (message.senderUser) {
-			return user && message.senderUser.id === user.id
-				? "You"
-				: message.senderUser.name;
-		}
-		if (message.senderAgent) {
-			return message.senderAgent.name;
-		}
-		return "Unknown";
-	};
-
-	// Get sender avatar from message
-	const getSenderAvatar = (message: any) => {
-		if (message.senderUser) {
-			return user && message.senderUser.id === user.id
-				? user.avatar_url
-				: message.senderUser.avatar_url;
-		}
-		if (message.senderAgent) {
-			return message.senderAgent.avatar_url;
-		}
-		return undefined;
-	};
-
-	// Get DM target user/agent for a message
-	const getDmTarget = (message: any) => {
-		if (!message.dm_target_id) return null;
-		// Try to find in groupMembers
-		const target = groupMembers.find(
-			(m: any) =>
-				(m.user_id && m.user_id === message.dm_target_id) ||
-				(m.agent_id && m.agent_id === message.dm_target_id)
-		);
-		return target?.details || null;
 	};
 
 	// Group messages by session and add dividers
@@ -219,7 +174,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 				currentSessionId = msg.session.id;
 				result.push(
 					<div
-						key={`divider-${msg.session.id}`}
+						key={`divT ar-${msg.session.id}`}
 						className="flex items-center justify-center gap-4 py-4 my-4"
 					>
 						<div className="px-4 py-2 italic">
@@ -235,22 +190,9 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 			result.push(
 				<React.Fragment key={msg.id}>
 					<MessageItem
-						messageId={msg.id}
-						sender={getSenderName(msg)}
-						time={formatTime(msg.created_at)}
-						content={msg.content}
-						geistMono={geistMono}
-						idx={idx}
-						reactions={msg.reactions || []}
-						onReact={(emoji) => handleReaction(msg.id, emoji)}
-						avatar_url={getSenderAvatar(msg)}
-						created_at={msg.created_at}
-						type={msg.type}
-						dm_target={getDmTarget(msg)}
+						message={msg}
+						onEnterDM={handleDmClick}
 						currentUserId={user?.id}
-						senderUser={msg.senderUser}
-						senderAgent={msg.senderAgent}
-						onDmClick={handleDmClick}
 					/>
 				</React.Fragment>
 			);
@@ -258,8 +200,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 		return result;
 	};
-
-
 
 	if (loading) {
 		return (
@@ -289,6 +229,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						senderName={dmView.senderName}
 						senderAvatar={dmView.senderAvatar}
 						onBack={handleBackFromDM}
+						onMessageSent={handleDMMessageSent}
 					/>
 				) : (
 					<motion.main

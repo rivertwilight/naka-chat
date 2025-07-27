@@ -12,7 +12,7 @@ export interface User {
 }
 
 export interface Agent {
-	id: string;
+	id?: number; // Auto-incremental ID (optional for creation, required after)
 	name: string;
 	title: string;
 	system_prompt: string;
@@ -37,7 +37,7 @@ export interface GroupMember {
 	id: string;
 	group_id: string; // FK → Groups.id
 	user_id?: string; // nullable, FK → Users.id
-	agent_id?: string; // nullable, FK → Agents.id
+	agent_id?: number; // nullable, FK → Agents.id (now only number)
 	role: "human" | "agent";
 	status: "active" | "muted";
 	joined_at: Date;
@@ -56,21 +56,21 @@ export interface Session {
 export interface Message {
 	id: string;
 	session_id: string; // FK → Sessions.id
-	sender_user_id?: string; // nullable, FK → Users.id
-	sender_agent_id?: string; // nullable, FK → Agents.id
+	sender_id: string; // Can be User.id or Agent.id (as string)
+	sender_type: "user" | "agent";
 	content: string;
 	created_at: Date;
 	edited_at?: Date; // nullable
 	reply_to_id?: string; // nullable, FK → Messages.id
-	type: "public" | "dm"; // public: group chat, dm: direct message尼古拉斯·凯奇
-	dm_target_id?: string; // nullable, FK → Users.id
+	type: "public" | "dm"; // public: group chat, dm: direct message
+	dm_target_id?: string; // nullable, FK → Users.id or Agent.id
 }
 
 export interface MessageReaction {
 	id: string;
 	message_id: string; // FK → Messages.id
-	user_id?: string; // nullable, FK → Users.id
-	agent_id?: string; // nullable, FK → Agents.id
+	reactor_id: string; // Can be User.id or Agent.id (as string)
+	reactor_type: "user" | "agent";
 	emoji: string; // e.g., "👍", "😂"
 	created_at: Date;
 }
@@ -93,9 +93,11 @@ export class NakaChatDB extends Dexie {
 			users: "id, name, email, created_at",
 			agents: "id, name, model, created_at",
 			groups: "id, name, created_by, created_at",
-			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
+			groupMembers:
+				"id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
-			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
+			messages:
+				"id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 
@@ -109,7 +111,8 @@ export class NakaChatDB extends Dexie {
 				sessions: "id, group_id, created_at",
 				messages:
 					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-				messageReactions: "id, message_id, user_id, agent_id, created_at",
+				messageReactions:
+					"id, message_id, user_id, agent_id, created_at",
 			})
 			.upgrade((tx) => {
 				// Migrate existing messages to have type field
@@ -121,6 +124,86 @@ export class NakaChatDB extends Dexie {
 							message.type = "public";
 						}
 					});
+			});
+
+		// Version 3: Change agent ID to auto-incremental and clear existing data
+		this.version(3)
+			.stores({
+				users: "id, name, email, created_at",
+				agents: "++id, name, model, created_at", // ++id makes it auto-incremental
+				groups: "id, name, created_by, created_at",
+				groupMembers:
+					"id, group_id, user_id, agent_id, role, status, joined_at",
+				sessions: "id, group_id, created_at",
+				messages:
+					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
+				messageReactions:
+					"id, message_id, user_id, agent_id, created_at",
+			})
+			.upgrade(async (tx) => {
+				// Clear all existing data that references agents to avoid foreign key issues
+				await tx.table("messageReactions").clear();
+				await tx.table("messages").clear();
+				await tx.table("groupMembers").clear();
+				await tx.table("sessions").clear();
+				await tx.table("agents").clear();
+				console.log(
+					"Cleared existing agent-related data for schema migration"
+				);
+			});
+
+		// Version 4: Refactor messages to use sender_id and sender_type
+		this.version(4)
+			.stores({
+				users: "id, name, email, created_at",
+				agents: "++id, name, model, created_at",
+				groups: "id, name, created_by, created_at",
+				groupMembers:
+					"id, group_id, user_id, agent_id, role, status, joined_at",
+				sessions: "id, group_id, created_at",
+				messages:
+					"id, session_id, sender_id, sender_type, created_at, type, dm_target_id",
+				messageReactions:
+					"id, message_id, reactor_id, reactor_type, created_at",
+			})
+			.upgrade(async (tx) => {
+				// Migrate existing messages to new structure
+				const messages = await tx.table("messages").toArray();
+
+				for (const message of messages) {
+					if (message.sender_user_id) {
+						message.sender_id = message.sender_user_id;
+						message.sender_type = "user";
+					} else if (message.sender_agent_id) {
+						message.sender_id = message.sender_agent_id.toString();
+						message.sender_type = "agent";
+					}
+
+					// Remove old fields
+					delete message.sender_user_id;
+					delete message.sender_agent_id;
+				}
+
+				// Update message reactions similarly
+				const reactions = await tx.table("messageReactions").toArray();
+
+				for (const reaction of reactions) {
+					if (reaction.user_id) {
+						reaction.reactor_id = reaction.user_id;
+						reaction.reactor_type = "user";
+					} else if (reaction.agent_id) {
+						reaction.reactor_id = reaction.agent_id.toString();
+						reaction.reactor_type = "agent";
+					}
+
+					// Remove old fields
+					delete reaction.user_id;
+					delete reaction.agent_id;
+				}
+
+				console.log(
+					"Migrated messages and reactions to new sender structure"
+				);
 			});
 	}
 }
@@ -164,19 +247,22 @@ export const dbHelpers = {
 		return user;
 	},
 
-	// Create a new agent
+	// Create a new agent with auto-incremental ID
 	async createAgent(
 		agentData: Omit<Agent, "id" | "created_at" | "updated_at">
 	): Promise<Agent> {
 		const now = new Date();
-		const agent: Agent = {
-			id: uuidv4(),
+		const agentToCreate = {
 			...agentData,
 			created_at: now,
 			updated_at: now,
 		};
-		await db.agents.add(agent);
-		return agent;
+		// Let Dexie auto-generate the incremental ID
+		const id = await db.agents.add(agentToCreate);
+		return {
+			...agentToCreate,
+			id: id as number,
+		};
 	},
 
 	// Create a new group
@@ -208,13 +294,22 @@ export const dbHelpers = {
 	// Delete a group and all its related data
 	async deleteGroup(groupId: string): Promise<void> {
 		// Delete all related data in the correct order to maintain referential integrity
-		
+
 		// 1. Delete message reactions for all messages in all sessions of this group
-		const sessions = await db.sessions.where("group_id").equals(groupId).toArray();
+		const sessions = await db.sessions
+			.where("group_id")
+			.equals(groupId)
+			.toArray();
 		for (const session of sessions) {
-			const messages = await db.messages.where("session_id").equals(session.id).toArray();
+			const messages = await db.messages
+				.where("session_id")
+				.equals(session.id)
+				.toArray();
 			for (const message of messages) {
-				await db.messageReactions.where("message_id").equals(message.id).delete();
+				await db.messageReactions
+					.where("message_id")
+					.equals(message.id)
+					.delete();
 			}
 		}
 
@@ -276,13 +371,15 @@ export const dbHelpers = {
 	// Send a DM message
 	async sendDMMessage(
 		sessionId: string,
-		senderUserId: string,
+		senderId: string,
+		senderType: "user" | "agent",
 		content: string,
 		dmTargetId: string
 	): Promise<Message> {
 		return this.sendMessage({
 			session_id: sessionId,
-			sender_user_id: senderUserId,
+			sender_id: senderId,
+			sender_type: senderType,
 			content,
 			type: "dm",
 			dm_target_id: dmTargetId,
@@ -293,13 +390,14 @@ export const dbHelpers = {
 	async addReaction(
 		reactionData: Omit<MessageReaction, "id" | "created_at">
 	): Promise<MessageReaction> {
-		// Check if reaction already exists， be careful that the user_id or agent_id can be null
+		// Check if reaction already exists
 		const existing = await db.messageReactions
-			.where(["message_id", "emoji", "user_id"])
+			.where(["message_id", "emoji", "reactor_id", "reactor_type"])
 			.equals([
 				reactionData.message_id,
 				reactionData.emoji,
-				reactionData.user_id || "",
+				reactionData.reactor_id,
+				reactionData.reactor_type,
 			])
 			.first();
 
@@ -321,7 +419,9 @@ export const dbHelpers = {
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
 		sessionId: string
-	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
+	): Promise<
+		(Message & { reactions: { emoji: string; count: number }[] })[]
+	> {
 		const messages = await db.messages
 			.where("session_id")
 			.equals(sessionId)
@@ -362,7 +462,9 @@ export const dbHelpers = {
 		groupId: string,
 		userId1: string,
 		userId2: string
-	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
+	): Promise<
+		(Message & { reactions: { emoji: string; count: number }[] })[]
+	> {
 		// Get all sessions for the group
 		const sessions = await db.sessions
 			.where("group_id")
@@ -383,12 +485,10 @@ export const dbHelpers = {
 
 			// Filter messages between the two users
 			const relevantDMs = sessionMessages.filter((msg) => {
-				const isFromUser1 =
-					msg.sender_user_id === userId1 || msg.sender_agent_id === userId1;
-				const isToUser1 = msg.dm_target_id === userId1;
-				const isFromUser2 =
-					msg.sender_user_id === userId2 || msg.sender_agent_id === userId2;
-				const isToUser2 = msg.dm_target_id === userId2;
+				const isFromUser1 = msg.sender_id == userId1;
+				const isToUser1 = msg.dm_target_id == userId1;
+				const isFromUser2 = msg.sender_id == userId2;
+				const isToUser2 = msg.dm_target_id == userId2;
 
 				return (isFromUser1 && isToUser2) || (isFromUser2 && isToUser1);
 			});
@@ -489,7 +589,7 @@ export const dbHelpers = {
 
 	// Update agent details (e.g., name)
 	async updateAgent(
-		agentId: string,
+		agentId: number,
 		updates: Partial<
 			Pick<
 				Agent,
@@ -510,68 +610,43 @@ export const dbHelpers = {
 	},
 
 	// Delete an agent and all related data
-	async deleteAgent(agentId: string): Promise<void> {
+	async deleteAgent(agentId: number): Promise<void> {
 		// Delete all related data in the correct order to avoid foreign key constraints
-		
+
 		// 1. Delete message reactions for messages sent by this agent
-		await db.messageReactions.where("agent_id").equals(agentId).delete();
-		
+		await db.messageReactions
+			.where("reactor_id")
+			.equals(agentId.toString())
+			.and((r) => r.reactor_type === "agent")
+			.delete();
+
 		// 2. Delete messages sent by this agent
-		await db.messages.where("sender_agent_id").equals(agentId).delete();
-		
+		await db.messages
+			.where("sender_id")
+			.equals(agentId.toString())
+			.and((m) => m.sender_type === "agent")
+			.delete();
+
 		// 3. Delete group memberships for this agent
 		await db.groupMembers.where("agent_id").equals(agentId).delete();
-		
+
 		// 4. Finally delete the agent
 		await db.agents.delete(agentId);
 	},
-
-	// Delete a group and all related data
-	async deleteGroup(groupId: string): Promise<void> {
-		// Delete all related data in the correct order to avoid foreign key constraints
-		// 1. Delete message reactions for messages in this group's sessions
-		const sessions = await db.sessions
-			.where("group_id")
-			.equals(groupId)
-			.toArray();
-		const sessionIds = sessions.map((s) => s.id);
-
-		for (const sessionId of sessionIds) {
-			const messages = await db.messages
-				.where("session_id")
-				.equals(sessionId)
-				.toArray();
-			const messageIds = messages.map((m) => m.id);
-
-			for (const messageId of messageIds) {
-				await db.messageReactions
-					.where("message_id")
-					.equals(messageId)
-					.delete();
-			}
-		}
-
-		// 2. Delete messages in this group's sessions
-		for (const sessionId of sessionIds) {
-			await db.messages.where("session_id").equals(sessionId).delete();
-		}
-
-		// 3. Delete sessions
-		await db.sessions.where("group_id").equals(groupId).delete();
-
-		// 4. Delete group members
-		await db.groupMembers.where("group_id").equals(groupId).delete();
-
-		// 5. Finally delete the group
-		await db.groups.delete(groupId);
-	},
 };
 
-// Extended message type with sender details (re-export from useDatabase.ts)
-export interface MessageWithDetails extends Message {
+// Clean message type with sender details for UI rendering
+export interface MessageWithDetails {
+	id: string;
+	content: string;
+	created_at: Date;
+	edited_at?: Date;
+	type: "public" | "dm";
+	dm_target_id?: string; // needed for DM logic in UI
+	reply_to_id?: string; // might be needed for reply functionality
 	reactions: { emoji: string; count: number }[];
-	senderUser?: User;
-	senderAgent?: Agent;
+	sender?: User | Agent;
+	recipient?: User | Agent; // For DM messages, the target user/agent
 	session?: Session;
 }
 

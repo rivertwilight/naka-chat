@@ -14,6 +14,14 @@ import {
 	Flag,
 	MessageCircle,
 } from "lucide-react";
+import { Geist_Mono } from "next/font/google";
+import { MessageWithDetails } from "@/lib/database";
+import { formatTimestamp } from "@/utils/dateUtils";
+
+const geistMono = Geist_Mono({
+	subsets: ["latin"],
+	weight: ["400", "500", "600", "700"],
+});
 
 export const menu: DropdownProps["menu"] = {
 	items: [
@@ -50,51 +58,28 @@ export const messageMenu: DropdownProps["menu"] = {
 	],
 };
 
-interface PublicMessageBlockProps {
-	messageId: string;
-	sender: string;
-	time: string;
-	content: string;
-	geistMono: { className: string };
-	idx: number;
-	reactions?: { emoji: string; count: number }[];
-	onReact?: (emoji: string) => void;
-	avatar_url?: string;
-	created_at: Date;
-	senderUser?: any;
-	senderAgent?: any;
-	currentUserId?: string;
-	showActions?: boolean;
+interface MessageBlockProps {
+	message: MessageWithDetails;
+	side: "left" | "right";
 	className?: string;
+	enableActions?: boolean;
 }
 
 /**
  * Message with actions
  */
-const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
-	messageId,
-	sender,
-	time,
-	content,
-	geistMono,
-	idx,
-	reactions = [],
-	onReact,
-	avatar_url,
-	created_at,
-	senderUser,
-	senderAgent,
-	currentUserId,
-	showActions = true,
+const MessageBlock: React.FC<MessageBlockProps> = ({
+	message,
+	side,
 	className = "",
+	enableActions = true,
 }) => {
-	const isHuman = sender === "You";
 	const [showEmojis, setShowEmojis] = useState(false);
 	const [copied, setCopied] = useState(false);
 
 	// Calculate opacity: messages older than 1 hour use minOpacity, else full opacity
 	const now = Date.now();
-	const msgTime = new Date(created_at).getTime();
+	const msgTime = new Date(message.created_at).getTime();
 	const oneHour = 1000 * 60 * 60;
 	const minOpacity = 0.75;
 	const opacity = now - msgTime >= oneHour ? minOpacity : 1;
@@ -102,40 +87,42 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 	return (
 		<div
 			className={`flex flex-col gap-4 py-2 mt-2 ${
-				isHuman ? "items-end" : "items-start"
+				side === "left" ? "items-start" : "items-end"
 			} ${className}`}
 			onMouseEnter={() => setShowEmojis(true)}
 			onMouseLeave={() => setShowEmojis(false)}
 		>
 			<div
 				className={`flex items-center gap-2 w-full ${
-					isHuman ? "justify-end" : "justify-start"
+					side === "left" ? "justify-start" : "justify-end"
 				}`}
 			>
-				{/* DM by current user: show sender and target avatars with arrow */}
-				{isHuman ? (
+				{side === "right" ? (
 					<div className="flex items-center gap-2">
-						<Avatar src={avatar_url} size={24} />
+						<Avatar src={message.sender?.avatar_url} size={24} />
 						<span
 							className={`text-sm text-orange-600 dark:text-orange-400 ${geistMono.className}`}
 						>
-							{sender}
+							{message.sender?.name}
 						</span>
 						<span className="text-xs text-neutral-400 dark:text-neutral-500">
-							{time}
+							{formatTimestamp(message.created_at)}
 						</span>
 					</div>
 				) : (
 					<Dropdown menu={menu} trigger={["click"]}>
 						<span className="flex items-center gap-2 cursor-pointer">
-							<Avatar src={avatar_url} size={24} />
+							<Avatar
+								src={message.sender?.avatar_url}
+								size={24}
+							/>
 							<span
 								className={`text-sm dark:hover:text-white transition-colors duration-300 text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 							>
-								{sender}
+								{message.sender?.name}
 							</span>
 							<span className="text-xs text-neutral-400 dark:text-neutral-500">
-								{time}
+								{formatTimestamp(message.created_at)}
 							</span>
 						</span>
 					</Dropdown>
@@ -143,19 +130,19 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 			</div>
 			<div
 				className={`w-full ${
-					isHuman ? "flex justify-end" : ""
+					side === "left" ? "flex justify-start" : "flex justify-end"
 				} relative`}
 				style={{ opacity }}
 			>
 				<Markdown
 					className={`text-base text-neutral-900 dark:text-neutral-100 max-w-lg ${
-						isHuman ? "text-right" : "text-left"
+						side === "left" ? "text-left" : "text-right"
 					}`}
 				>
-					{content}
+					{message.content}
 				</Markdown>
 				{/* Action row: only show on hover, positioned relative to message bubble */}
-				{showActions && showEmojis && !isHuman && (
+				{enableActions && showEmojis && (
 					<div className="flex gap-2 absolute right-2 -bottom-4 z-10 bg-white/80 dark:bg-neutral-900/80 px-2 py-1 transition-opacity text-neutral-500 dark:text-neutral-400">
 						<Tooltip
 							title={copied ? "Copied" : "Copy"}
@@ -164,7 +151,7 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 							<button
 								onClick={async () => {
 									await navigator.clipboard.writeText(
-										content
+										message.content
 									);
 									setCopied(true);
 									setTimeout(() => setCopied(false), 1500);
@@ -194,12 +181,12 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 			</div>
 			<div
 				className={`flex items-center gap-2 mt-1 ${
-					isHuman ? "justify-end" : "justify-start"
+					side === "left" ? "justify-start" : "justify-end"
 				} w-full`}
 			>
-				{reactions.length > 0 && (
+				{message.reactions.length > 0 && (
 					<div className="flex gap-1">
-						{reactions.map((r, i) => (
+						{message.reactions.map((r, i) => (
 							<span
 								key={i}
 								className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-sm cursor-pointer border border-neutral-200 dark:border-neutral-700"
@@ -214,4 +201,4 @@ const PublicMessageBlock: React.FC<PublicMessageBlockProps> = ({
 	);
 };
 
-export default PublicMessageBlock;
+export default MessageBlock;

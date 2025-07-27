@@ -258,9 +258,9 @@ function ModelSection() {
 
 function AgentsSection() {
 	const { agents, loading, error } = useAgents();
-	const [editingAgent, setEditingAgent] = React.useState<string | null>(null);
+	const [editingAgent, setEditingAgent] = React.useState<number | null>(null);
 	const [creatingAgent, setCreatingAgent] = React.useState(false);
-	const [deletingAgent, setDeletingAgent] = React.useState<string | null>(
+	const [deletingAgent, setDeletingAgent] = React.useState<number | null>(
 		null
 	);
 	const [agentForm, setAgentForm] = React.useState({
@@ -296,7 +296,7 @@ function AgentsSection() {
 		}
 	};
 
-	const handleUpdateAgent = async (agentId: string) => {
+	const handleUpdateAgent = async (agentId: number) => {
 		if (!agentForm.name.trim()) return;
 		setEditingAgent(agentId);
 		try {
@@ -307,7 +307,7 @@ function AgentsSection() {
 		}
 	};
 
-	const handleDeleteAgent = async (agentId: string) => {
+	const handleDeleteAgent = async (agentId: number) => {
 		setDeletingAgent(agentId);
 		try {
 			await dbHelpers.deleteAgent(agentId);

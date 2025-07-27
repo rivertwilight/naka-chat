@@ -12,12 +12,18 @@ export interface GroupChatMember {
 	max_output_tokens?: number;
 }
 
+export interface MessageHistory {
+	senderId: string;
+	senderName: string;
+	content: string;
+}
+
 export interface ConversationContext {
 	groupId: string;
 	groupName: string;
 	groupDescription: string;
 	members: GroupChatMember[];
-	history: string;
+	history: MessageHistory[];
 }
 
 interface AgentResponseRequest {
@@ -41,7 +47,10 @@ function buildAgentPrompt(
 		.map((m) => `- ${m.name} (${m.title} [id: ${m.id}])`)
 		.join("\n");
 
-	return `<YourBio>
+	const historyJson = JSON.stringify(context.history, null, 2);
+
+	const prompt = `
+<YourBio>
 ${agent.system_prompt}
 </YourBio>
 
@@ -52,18 +61,21 @@ ${membersList}
 </GroupMembers>
 
 Guidelines:
-- Stay in character as ${agent.name} (${agent.title})
+- Stay in character as ${agent.name}
 - Be concise and natural, behave like a real person
 - Each message should no more than ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_WORDS} words or ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_CHINESE_CHARS} chinese characters unless it's a code block or a long quote
 - Collaborate effectively with other team members
 - Follow user's language
 - You must always return a JSON object: { "content": "your message", "target": "target_member_id (optional)" }. If you want to send a public message, omit the target field. If you want to send a DM, set the target field to the member's id.
+- Do not use DM unless it's necessary
 
 <ConversationHistory>
-${context.history}
+${historyJson}
 </ConversationHistory>
 
-Provide your response to continue this discussion. Always return a JSON object as described above. Do not return plain text.`;
+Provide your response to continue this discussion. Always return a JSON object as described above.`;
+
+	return prompt.trim();
 }
 
 export async function POST(request: NextRequest) {

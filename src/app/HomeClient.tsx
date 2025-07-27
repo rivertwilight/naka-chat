@@ -11,7 +11,7 @@ import { usePersistance } from "../components/PersistanceContext";
 import Image from "next/image";
 
 interface Agent {
-	id: string;
+	id: number;
 	name: string;
 	title: string;
 	system_prompt: string;

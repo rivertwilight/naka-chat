@@ -1,6 +1,9 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
 import { ProviderConfig } from "./aiUtils";
 
+// Re-export types that are used in other files
+export type { MessageWithDetails };
+
 export const AGENT_CONFIG = {
 	RESPONSE_DELAY: {
 		MIN_MS: 1000,
@@ -36,12 +39,18 @@ export interface SupervisorDecision {
 	reasoning: string;
 }
 
+export interface MessageHistory {
+	senderId: string;
+	senderName: string;
+	content: string;
+}
+
 export interface ConversationContext {
 	groupId: string;
 	groupName: string;
 	groupDescription: string;
 	members: GroupChatMember[];
-	history: string;
+	history: MessageHistory[];
 }
 
 // Service Classes
@@ -66,7 +75,7 @@ class MemberService {
 			if (member.role === "agent" && member.details) {
 				const agentDetails = member.details as Agent;
 				return {
-					id: member.agent_id!,
+					id: String(member.agent_id!),
 					name: agentDetails.name,
 					title: agentDetails.title,
 					role: "agent" as const,
@@ -111,7 +120,7 @@ class ConversationService {
 		messages: MessageWithDetails[],
 		agentId?: string,
 		isSupervisor?: boolean
-	): string {
+	): MessageHistory[] {
 		// Sort messages by created_at ascending (oldest first)
 		const sortedMessages = [...messages].sort((a, b) => {
 			const aTime =
@@ -130,16 +139,17 @@ class ConversationService {
 				if (msg.type !== "dm") return true;
 				if (!agentId) return false;
 				const isSender =
-					msg.senderAgent && msg.senderAgent.id === agentId;
+					msg.sender &&
+					"temperature" in msg.sender &&
+					String(msg.sender.id) === agentId;
 				const isTarget = msg.dm_target_id === agentId;
 				return isSender || isTarget;
 			})
-			.map((msg) => {
-				const sender =
-					msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
-				return `${sender}: ${msg.content}`;
-			})
-			.join("\n");
+			.map((msg) => ({
+				senderId: String(msg.sender?.id || "unknown"),
+				senderName: msg.sender?.name || "Unknown",
+				content: msg.content,
+			}));
 	}
 
 	async getLatestSessionMessages(
@@ -154,27 +164,54 @@ class ConversationService {
 
 		const enhancedMessages = await Promise.all(
 			sessionMessages.map(async (message) => {
-				const senderUser = message.sender_user_id
-					? await db.users.get(message.sender_user_id)
-					: undefined;
-				const senderAgent = message.sender_agent_id
-					? await db.agents.get(message.sender_agent_id)
-					: undefined;
+				let sender = undefined;
+				let recipient = undefined;
+
+				if (message.sender_type === "user" && message.sender_id) {
+					sender = await db.users.get(message.sender_id);
+				} else if (
+					message.sender_type === "agent" &&
+					message.sender_id
+				) {
+					sender = await db.agents.get(parseInt(message.sender_id));
+				}
+
+				// For DM messages, resolve the recipient
+				if (message.type === "dm" && message.dm_target_id) {
+					// Try to find recipient in users first, then agents
+					const userRecipient = await db.users.get(
+						message.dm_target_id
+					);
+					if (userRecipient) {
+						recipient = userRecipient;
+					} else {
+						// Try parsing as agent ID (numeric)
+						const agentId = parseInt(message.dm_target_id);
+						if (!isNaN(agentId)) {
+							recipient = await db.agents.get(agentId);
+						}
+					}
+				}
 
 				return {
 					...message,
-					senderUser,
-					senderAgent,
+					sender,
+					recipient,
 					session: currentSession,
 				};
 			})
 		);
 
+		// For supervisor, include all messages (public and DM)
+		// For agents, include public messages and DMs they are involved in
 		return enhancedMessages.filter((msg) => {
 			if (isSupervisor) return true;
 			if (msg.type !== "dm") return true;
 			if (!agentId) return false;
-			const isSender = msg.senderAgent && msg.senderAgent.id === agentId;
+			const isSender =
+				msg.sender &&
+				"temperature" in msg.sender &&
+				String(msg.sender.id) === agentId;
 			const isTarget = msg.dm_target_id === agentId;
 			return isSender || isTarget;
 		});
@@ -233,9 +270,9 @@ class SupervisorService {
 
 	private createFallbackDecision(): SupervisorDecision {
 		return {
-			nextSpeaker: ["human"],
+			nextSpeaker: [],
 			reasoning:
-				"Error in supervisor decision, defaulting to human input",
+				"Error in supervisor decision, defaulting to no automatic responses",
 		};
 	}
 }
@@ -349,7 +386,9 @@ export class AgentGroupChat {
 		return this.memberService.getGroupMembers();
 	}
 
-	formatConversationHistory(messages: MessageWithDetails[]): string {
+	formatConversationHistory(
+		messages: MessageWithDetails[]
+	): MessageHistory[] {
 		return this.conversationService.formatHistory(messages);
 	}
 
@@ -385,10 +424,12 @@ export class AgentGroupChat {
 		this.groupDescription = group?.description || "";
 		this.members = await this.memberService.getGroupMembers();
 
-		// Get initial message count
+		// Get initial message count - include all messages including DMs
 		const messages =
 			await this.conversationService.getLatestSessionMessages(
-				this.groupId
+				this.groupId,
+				undefined,
+				true // isSupervisor = true to see all messages including DMs
 			);
 		this.lastMessageCount = messages.length;
 
@@ -397,7 +438,9 @@ export class AgentGroupChat {
 			await this.checkForNewMessages();
 		}, 1000); // Check every second
 
-		console.log(`Started monitoring group ${this.groupId}`);
+		console.log(
+			`[AgentGroupChat] Started monitoring group ${this.groupId} with ${messages.length} initial messages`
+		);
 	}
 
 	/**
@@ -427,16 +470,42 @@ export class AgentGroupChat {
 		// This method is mainly for external integrations
 	}
 
+	/**
+	 * Force check for new messages (useful after external message sends)
+	 */
+	async forceCheckForNewMessages(): Promise<void> {
+		console.log(`[AgentGroupChat] Force checking for new messages`);
+		await this.checkForNewMessages();
+	}
+
 	private async checkForNewMessages(): Promise<void> {
 		try {
+			// Get all messages (including DMs) to detect new activity
 			const messages =
 				await this.conversationService.getLatestSessionMessages(
-					this.groupId
+					this.groupId,
+					undefined,
+					true // isSupervisor = true to see all messages including DMs
 				);
 			const currentMessageCount = messages.length;
 
+			// Debug logging
+			console.log(
+				`[AgentGroupChat] Checking messages for group ${this.groupId}:`,
+				{
+					currentCount: currentMessageCount,
+					lastCount: this.lastMessageCount,
+					hasNewMessages: currentMessageCount > this.lastMessageCount,
+					isMonitoring: this.isMonitoring,
+					isSupervisorActive: this.isSupervisorActive,
+				}
+			);
+
 			// If there are new messages, reset the debounce timer
 			if (currentMessageCount > this.lastMessageCount) {
+				console.log(
+					`[AgentGroupChat] New messages detected! Triggering debounce timer.`
+				);
 				this.lastMessageCount = currentMessageCount;
 				this.resetDebounceTimer();
 			}
@@ -449,34 +518,64 @@ export class AgentGroupChat {
 		// Clear existing timer
 		if (this.debounceTimeout) {
 			clearTimeout(this.debounceTimeout);
+			console.log(`[AgentGroupChat] Clearing existing debounce timer`);
 		}
+
+		console.log(
+			`[AgentGroupChat] Setting debounce timer for ${AGENT_CONFIG.SUPERVISOR.DEBOUNCE_DELAY_MS}ms`
+		);
 
 		// Set new timer
 		this.debounceTimeout = setTimeout(async () => {
+			console.log(
+				`[AgentGroupChat] Debounce timer expired, triggering supervision`
+			);
 			await this.triggerSupervision();
 		}, AGENT_CONFIG.SUPERVISOR.DEBOUNCE_DELAY_MS);
 	}
 
 	private async triggerSupervision(): Promise<void> {
+		console.log(
+			`[AgentGroupChat] triggerSupervision called - isSupervisorActive: ${this.isSupervisorActive}, isMonitoring: ${this.isMonitoring}`
+		);
+
 		if (this.isSupervisorActive || !this.isMonitoring) {
+			console.log(
+				`[AgentGroupChat] Supervision skipped - already active or not monitoring`
+			);
 			return;
 		}
 
+		console.log(`[AgentGroupChat] Starting supervision process`);
 		this.isSupervisorActive = true;
 
 		try {
-			// Get latest data
+			// Get latest data - include all messages for supervisor view
 			const messages =
 				await this.conversationService.getLatestSessionMessages(
-					this.groupId
+					this.groupId,
+					undefined,
+					true // isSupervisor = true to see all messages including DMs
 				);
 			const members = await this.memberService.getGroupMembers();
+
+			console.log(`[AgentGroupChat] Supervision data:`, {
+				messageCount: messages.length,
+				memberCount: members.length,
+				messages: messages.map((m) => ({
+					type: m.type,
+					senderName: m.sender?.name,
+					content: m.content.substring(0, 50) + "...",
+					dmTargetId: m.dm_target_id,
+				})),
+			});
 
 			// Run supervision loop
 			await this.runSupervisorLoop(members, messages);
 		} catch (error) {
 			console.error("Error in supervision:", error);
 		} finally {
+			console.log(`[AgentGroupChat] Supervision process completed`);
 			this.isSupervisorActive = false;
 		}
 	}
@@ -485,15 +584,27 @@ export class AgentGroupChat {
 		members: GroupChatMember[],
 		messages: MessageWithDetails[]
 	): Promise<void> {
+		console.log(`[AgentGroupChat] Starting supervisor loop`);
+
 		while (true) {
 			const availableAgents = this.memberService.getAvailableAgents(
 				members,
 				this.typingPool.typingAgents
 			);
-			const availableMembers = [
-				...members.filter((m) => m.role === "human"),
-				...availableAgents,
-			];
+
+			// Pass all members (human and agent) to supervisor
+			const availableMembers = members.filter((member) => {
+				if (member.role === "human") return true;
+				return !this.typingPool.has(member.id);
+			});
+
+			console.log(`[AgentGroupChat] Available members for decision:`, {
+				availableAgents: availableAgents.map((a) => a.name),
+				availableMembers: availableMembers.map(
+					(m) => `${m.name} (${m.role})`
+				),
+				typingPool: Array.from(this.typingPool.typingAgents),
+			});
 
 			const context = this.conversationService.createConversationContext(
 				this.groupId,
@@ -505,44 +616,59 @@ export class AgentGroupChat {
 				true
 			);
 
+			console.log(`[AgentGroupChat] Sending context to supervisor:`, {
+				groupName: context.groupName,
+				messageHistoryLength: context.history.length,
+				lastFewMessages: context.history.slice(-3),
+			});
+
 			const decision = await this.supervisorService.makeDecision(
 				context,
 				availableMembers
 			);
-			console.log("Supervisor decision:", decision);
 
-			// Stop if no agents to speak or only human should speak
-			const agentsToSpeak = decision.nextSpeaker.filter(
-				(speaker) => speaker !== "human"
-			);
-			if (
-				decision.nextSpeaker.length === 0 ||
-				agentsToSpeak.length === 0
-			) {
+			console.log("[AgentGroupChat] Supervisor decision:", decision);
+
+			if (decision.nextSpeaker.length === 0) {
+				console.log(
+					`[AgentGroupChat] No next speakers, ending supervision loop`
+				);
 				break;
 			}
 
-			const nextAgents = this.memberService.findMembersByIdentifiers(
-				availableAgents,
-				agentsToSpeak
+			const nextMembers = this.memberService.findMembersByIdentifiers(
+				availableMembers,
+				decision.nextSpeaker
 			);
 
-			if (nextAgents.length === 0) {
-				console.error(
-					"No available agents found:",
-					decision.nextSpeaker
+			console.log(
+				`[AgentGroupChat] Found next members:`,
+				nextMembers.map((m) => `${m.name} (${m.role})`)
+			);
+
+			if (nextMembers.length === 0) {
+				console.log(
+					`[AgentGroupChat] No valid next members found, ending supervision loop`
 				);
 				break;
 			}
 
 			if (!this.typingPool.canAddMore()) {
+				console.log(
+					`[AgentGroupChat] Typing pool full, waiting for agents to finish`
+				);
 				await this.waitForAgentsToFinish();
 				continue;
 			}
 
-			const agentsToStart = nextAgents.slice(
+			const agentsToStart = nextMembers.slice(
 				0,
 				this.typingPool.getAvailableSlots()
+			);
+
+			console.log(
+				`[AgentGroupChat] Starting agent responses for:`,
+				agentsToStart.map((a) => a.name)
 			);
 			await this.processAgentResponses(agentsToStart, context);
 
@@ -554,6 +680,8 @@ export class AgentGroupChat {
 			);
 			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
 		}
+
+		console.log(`[AgentGroupChat] Supervisor loop completed`);
 	}
 
 	private async processAgentResponses(
@@ -645,7 +773,8 @@ export class AgentGroupChat {
 
 		await dbHelpers.sendMessage({
 			session_id: currentSession.id,
-			sender_agent_id: agent.id,
+			sender_id: agent.id!.toString(),
+			sender_type: "agent" as const,
 			content,
 			type,
 			...(dm_target_id ? { dm_target_id } : {}),

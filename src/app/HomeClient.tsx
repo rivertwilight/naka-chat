@@ -105,7 +105,7 @@ export default function HomeClient() {
 		);
 	}
 
-	if (!error || userError) {
+	if (error || userError) {
 		return (
 			<div className="min-h-screen flex flex-col items-center justify-center text-red-500">
 				{error || userError}

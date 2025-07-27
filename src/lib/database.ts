@@ -667,6 +667,24 @@ export const dbHelpers = {
 			throw error;
 		}
 	},
+
+	// Delete the entire database completely
+	async deleteDatabase(): Promise<void> {
+		try {
+			console.log("Deleting database completely...");
+			
+			// Close the database connection
+			await db.close();
+			
+			// Delete the database from IndexedDB
+			await Dexie.delete("NakaChatDB");
+			
+			console.log("Database deleted successfully!");
+		} catch (error) {
+			console.error("Error deleting database:", error);
+			throw error;
+		}
+	},
 };
 
 // Clean message type with sender details for UI rendering

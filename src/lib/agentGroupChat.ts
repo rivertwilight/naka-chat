@@ -39,9 +39,9 @@ export interface SupervisorDecision {
 	reasoning: string;
 }
 
+// We do not need sender name as we've provided the member list
 export interface MessageHistory {
 	senderId: string;
-	senderName: string;
 	content: string;
 }
 
@@ -147,7 +147,6 @@ class ConversationService {
 			})
 			.map((msg) => ({
 				senderId: String(msg.sender?.id || "unknown"),
-				senderName: msg.sender?.name || "Unknown",
 				content: msg.content,
 			}));
 	}

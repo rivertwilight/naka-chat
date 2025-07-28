@@ -38,6 +38,9 @@ importers:
       framer-motion:
         specifier: ^12.23.7
         version: 12.23.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      google:
+        specifier: link:@next/third-parties/google
+        version: link:@next/third-parties/google
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.1.0)

@@ -6,6 +6,7 @@ import Sidebar from "../components/Sidebar";
 import { ThemeProvider } from "next-themes";
 import { UiProvider } from "../components/UiContext";
 import { PersistanceProvider } from "../components/PersistanceContext";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
+				<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
 				<PersistanceProvider>
 					<UiProvider>
 						<ThemeProvider

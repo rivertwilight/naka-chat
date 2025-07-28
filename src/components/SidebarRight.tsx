@@ -54,7 +54,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 	const [memberNameSaving, setMemberNameSaving] = React.useState(false);
 	const [inviteAgentOpen, setInviteAgentOpen] = React.useState(false);
 	const [inviteAgentLoading, setInviteAgentLoading] = React.useState(false);
-	const [selectedAgentIds, setSelectedAgentIds] = React.useState<string[]>([]);
+	const [selectedAgentIds, setSelectedAgentIds] = React.useState<number[]>([]);
 	const { renameGroup } = useGroupOperations();
 
 	React.useEffect(() => {
@@ -563,68 +563,37 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 											<li
 												key={agent.id}
 												className={`flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 transition-colors cursor-pointer ${
-													selectedAgentIds.includes(
-														agent.id
-													)
+													selectedAgentIds.includes(agent.id)
 														? "bg-neutral-100 dark:bg-neutral-800"
 														: "hover:bg-neutral-50 dark:hover:bg-neutral-900"
 												}`}
 												onClick={() => {
-													setSelectedAgentIds(
-														(prev) =>
-															prev.includes(
-																agent.id
-															)
-																? prev.filter(
-																		(id) =>
-																			id !==
-																			agent.id
-																  )
-																: [
-																		...prev,
-																		agent.id,
-																  ]
+													setSelectedAgentIds((prev) =>
+														prev.includes(agent.id)
+															? prev.filter((id) => id !== agent.id)
+															: [...prev, agent.id]
 													);
 												}}
 											>
 												<input
 													type="checkbox"
-													checked={selectedAgentIds.includes(
-														agent.id
-													)}
+													checked={selectedAgentIds.includes(agent.id)}
 													onChange={() => {
-														setSelectedAgentIds(
-															(prev) =>
-																prev.includes(
-																	agent.id
-																)
-																	? prev.filter(
-																			(
-																				id
-																			) =>
-																				id !==
-																				agent.id
-																	  )
-																	: [
-																			...prev,
-																			agent.id,
-																	  ]
+														setSelectedAgentIds((prev) =>
+															prev.includes(agent.id)
+																? prev.filter((id) => id !== agent.id)
+																: [...prev, agent.id]
 														);
 													}}
 													className="accent-neutral-600 w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-neutral-400"
 													id={`invite-agent-${agent.id}`}
 												/>
-												<Avatar
-													src={agent.avatar_url}
-													size={28}
-												/>
+												<Avatar src={agent.avatar_url} size={28} />
 												<label
 													htmlFor={`invite-agent-${agent.id}`}
 													className="flex-1 cursor-pointer text-neutral-800 dark:text-neutral-100"
 												>
-													<span className="font-medium">
-														{agent.name}
-													</span>
+													<span className="font-medium">{agent.name}</span>
 													<span className="ml-2 text-xs text-neutral-400">
 														{agent.title}
 													</span>
@@ -646,9 +615,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 								) : (
 									<ul className="flex flex-col">
 										{selectedAgentIds.map((agentId) => {
-											const agent = allAgents.find(
-												(a) => a.id === agentId
-											);
+											const agent = allAgents.find((a) => a.id === agentId);
 											if (!agent) return null;
 
 											return (
@@ -656,10 +623,7 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 													key={agent.id}
 													className="flex items-center gap-3 p-3 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
 												>
-													<Avatar
-														src={agent.avatar_url}
-														size={28}
-													/>
+													<Avatar src={agent.avatar_url} size={28} />
 													<div className="flex-1">
 														<span className="font-medium text-neutral-800 dark:text-neutral-100">
 															{agent.name}
@@ -670,21 +634,13 @@ const SidebarRight: React.FC<SidebarRightProps> = ({ groupId }) => {
 													</div>
 													<button
 														onClick={() => {
-															setSelectedAgentIds(
-																(prev) =>
-																	prev.filter(
-																		(id) =>
-																			id !==
-																			agent.id
-																	)
+															setSelectedAgentIds((prev) =>
+																prev.filter((id) => id !== agent.id)
 															);
 														}}
 														className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 													>
-														<X
-															size={16}
-															className="text-neutral-400"
-														/>
+														<X size={16} className="text-neutral-400" />
 													</button>
 												</li>
 											);

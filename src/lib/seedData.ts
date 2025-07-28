@@ -84,10 +84,13 @@ export async function seedDatabase() {
 		// Add a welcome message
 		await dbHelpers.sendMessage({
 			session_id: session.id,
-			sender_user_id: user1.id,
+			sender_id: user1.id,
+			sender_type: "user",
 			content:
 				"Welcome to our Product Development Team! Let's collaborate on building amazing products together. 🚀",
+			type: "public",
 		});
+
 		console.log("Database seeded successfully!");
 		return {
 			users: createdUsers,

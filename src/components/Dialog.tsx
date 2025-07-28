@@ -72,7 +72,7 @@ const Dialog: React.FC<DialogProps> = ({
 						/>
 						{/* Dialog content */}
 						<motion.div
-							className={`relative bg-white dark:bg-neutral-900 rounded-xl shadow-xl p-0 sm:p-0 mx-4 ${className}`}
+							className={`relative bg-white dark:bg-neutral-900 rounded-xl shadow-xl p-0 sm:p-0 mx-4 overflow-hidden ${className}`}
 							initial={{ y: 40, opacity: 0 }}
 							animate={{ y: 0, opacity: 1 }}
 							exit={{ y: 40, opacity: 0 }}

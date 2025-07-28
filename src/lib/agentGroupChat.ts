@@ -1,9 +1,8 @@
 import { dbHelpers, Agent, MessageWithDetails, db } from "./database";
-// Re-export types for external use
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
-export type { MessageWithDetails } from "./database";
-import { GoogleGenAI } from "@google/genai";
+import { ProviderConfig } from "./aiUtils";
+
+// Re-export types that are used in other files
+export type { MessageWithDetails };
 
 export const AGENT_CONFIG = {
 	RESPONSE_DELAY: {
@@ -24,14 +23,6 @@ export const AGENT_CONFIG = {
 	},
 } as const;
 
-// Types and Interfaces
-export interface ProviderConfig {
-	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
-	apiKey: string;
-	baseUrl?: string;
-	modelId?: string;
-}
-
 export interface GroupChatMember {
 	id: string;
 	name: string;
@@ -48,12 +39,18 @@ export interface SupervisorDecision {
 	reasoning: string;
 }
 
+// We do not need sender name as we've provided the member list
+export interface MessageHistory {
+	senderId: string;
+	content: string;
+}
+
 export interface ConversationContext {
 	groupId: string;
 	groupName: string;
 	groupDescription: string;
 	members: GroupChatMember[];
-	history: string;
+	history: MessageHistory[];
 }
 
 // Service Classes
@@ -78,7 +75,7 @@ class MemberService {
 			if (member.role === "agent" && member.details) {
 				const agentDetails = member.details as Agent;
 				return {
-					id: member.agent_id!,
+					id: String(member.agent_id!),
 					name: agentDetails.name,
 					title: agentDetails.title,
 					role: "agent" as const,
@@ -120,7 +117,7 @@ class ConversationService {
 		messages: MessageWithDetails[],
 		agentId?: string,
 		isSupervisor?: boolean
-	): string {
+	): MessageHistory[] {
 		// Sort messages by created_at ascending (oldest first)
 		const sortedMessages = [...messages].sort((a, b) => {
 			const aTime =
@@ -138,16 +135,17 @@ class ConversationService {
 				if (isSupervisor) return true;
 				if (msg.type !== "dm") return true;
 				if (!agentId) return false;
-				const isSender = msg.senderAgent && msg.senderAgent.id === agentId;
+				const isSender =
+					msg.sender &&
+					"temperature" in msg.sender &&
+					String(msg.sender.id) === agentId;
 				const isTarget = msg.dm_target_id === agentId;
 				return isSender || isTarget;
 			})
-			.map((msg) => {
-				const sender =
-					msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
-				return `${sender}: ${msg.content}`;
-			})
-			.join("\n");
+			.map((msg) => ({
+				senderId: String(msg.sender?.id || "unknown"),
+				content: msg.content,
+			}));
 	}
 
 	async getLatestSessionMessages(
@@ -162,27 +160,49 @@ class ConversationService {
 
 		const enhancedMessages = await Promise.all(
 			sessionMessages.map(async (message) => {
-				const senderUser = message.sender_user_id
-					? await db.users.get(message.sender_user_id)
-					: undefined;
-				const senderAgent = message.sender_agent_id
-					? await db.agents.get(message.sender_agent_id)
-					: undefined;
+				let sender = undefined;
+				let recipient = undefined;
+
+				if (message.sender_type === "user" && message.sender_id) {
+					sender = await db.users.get(message.sender_id);
+				} else if (message.sender_type === "agent" && message.sender_id) {
+					sender = await db.agents.get(parseInt(message.sender_id));
+				}
+
+				// For DM messages, resolve the recipient
+				if (message.type === "dm" && message.dm_target_id) {
+					// Try to find recipient in users first, then agents
+					const userRecipient = await db.users.get(message.dm_target_id);
+					if (userRecipient) {
+						recipient = userRecipient;
+					} else {
+						// Try parsing as agent ID (numeric)
+						const agentId = parseInt(message.dm_target_id);
+						if (!isNaN(agentId)) {
+							recipient = await db.agents.get(agentId);
+						}
+					}
+				}
 
 				return {
 					...message,
-					senderUser,
-					senderAgent,
+					sender,
+					recipient,
 					session: currentSession,
 				};
 			})
 		);
 
+		// For supervisor, include all messages (public and DM)
+		// For agents, include public messages and DMs they are involved in
 		return enhancedMessages.filter((msg) => {
 			if (isSupervisor) return true;
 			if (msg.type !== "dm") return true;
 			if (!agentId) return false;
-			const isSender = msg.senderAgent && msg.senderAgent.id === agentId;
+			const isSender =
+				msg.sender &&
+				"temperature" in msg.sender &&
+				String(msg.sender.id) === agentId;
 			const isTarget = msg.dm_target_id === agentId;
 			return isSender || isTarget;
 		});
@@ -207,102 +227,31 @@ class ConversationService {
 	}
 }
 
-class AICallService {
-	constructor(private providerConfig: ProviderConfig) {}
-
-	async callAI(prompt: string, modelId: string): Promise<string> {
-		switch (this.providerConfig.provider) {
-			case "Google":
-				try {
-					const ai = new GoogleGenAI({
-						apiKey: this.providerConfig.apiKey,
-					});
-					const googleResponse = await ai.models.generateContent({
-						model: modelId || "gemini-2.5-pro",
-						contents: [{ role: "user", parts: [{ text: prompt }] }],
-					});
-					return googleResponse.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			case "OpenAI":
-				throw new Error("OpenAI provider not implemented yet");
-			case "Anthropic":
-				throw new Error("Anthropic provider not implemented yet");
-			case "Moonshot":
-				try {
-					const provider = createOpenAICompatible({
-						name: "Moonshot",
-						baseURL: "https://api.moonshot.cn/v1",
-						apiKey: this.providerConfig.apiKey,
-					});
-					const model = provider(modelId || "kimi-latest");
-					const response = await generateText({
-						model: model,
-						prompt,
-					});
-					return response.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			case "Custom":
-				try {
-					const provider = createOpenAICompatible({
-						name: "AI Hub Mix",
-						baseURL: this.providerConfig.baseUrl!,
-						apiKey: this.providerConfig.apiKey,
-					});
-					const model = provider(modelId || "gpt-4o");
-					const response = await generateText({
-						model: model,
-						prompt,
-					});
-					return response.text || "";
-				} catch (error) {
-					console.error("AI call error:", error);
-					console.error(
-						"Error message:",
-						`*${this.providerConfig.provider} is having trouble responding right now. Please try again later.*`
-					);
-					return "";
-				}
-			default:
-				throw new Error(
-					`Unsupported provider: ${this.providerConfig.provider}`
-				);
-		}
-	}
-}
-
 class SupervisorService {
-	private aiCallService: AICallService;
-	constructor(private providerConfig: ProviderConfig) {
-		this.aiCallService = new AICallService(providerConfig);
-	}
+	constructor(private providerConfig: ProviderConfig) {}
 
 	async makeDecision(
 		context: ConversationContext,
 		availableMembers: GroupChatMember[]
 	): Promise<SupervisorDecision> {
-		const prompt = this.buildSupervisorPrompt(context, availableMembers);
-
 		try {
-			const response = await this.aiCallService.callAI(
-				prompt,
-				this.providerConfig.modelId!
-			);
-			const decision = this.parseDecision(response);
-			this.validateDecision(decision, context.members);
+			const response = await fetch("/api/supervisor-decision", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					context,
+					availableMembers,
+					providerConfig: this.providerConfig,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`API request failed: ${response.statusText}`);
+			}
+
+			const decision = (await response.json()) as SupervisorDecision;
 			return decision;
 		} catch (error) {
 			console.error("Supervisor decision error:", error);
@@ -310,88 +259,17 @@ class SupervisorService {
 		}
 	}
 
-	private buildSupervisorPrompt(
-		context: ConversationContext,
-		availableMembers: GroupChatMember[]
-	): string {
-		const membersList = availableMembers
-			.filter((m) => m.role === "agent")
-			.map((m) => `- ${m.name} (${m.title})`)
-			.join("\n");
-
-		return `You are a supervisor agent managing a group chat discussion named "${context.groupName}". Your role is to decide who should speak next based on the conversation context and each agent's expertise.
-
-<groupDescription>
-${context.groupDescription}
-</groupDescription>
-
-<groupMembers>
-${membersList}
-</groupMembers>
-
-<conversationHistory>
-${context.history}
-</conversationHistory>
-
-Analyze the conversation and decide who should speak next based on the conversation context.
-
-Respond in this exact JSON format, no other text, no markdown wrapper:
-
-{
-  "nextSpeaker": ["agent_id_1", "agent_id_2"]
-}
-
-Rules:
-- Always return nextSpeaker as an array, e.g., ['human'], ['agent_id'], or ['human', 'agent_id']
-- If the last message was a question directed at humans or requires human input, include 'human' in the array
-- If an agent's expertise is needed based on the conversation topic, include that agent
-- If the conversation seems complete, return empty array [] or ['human']. DM needed should not be considered as a conversation complete, and the DM sender need to be included in the nextSpeaker array.
-- Your goal is to make the conversation as natural as possible`;
-	}
-
-	private parseDecision(responseText: string): SupervisorDecision {
-		// Remove markdown code block wrappers if present
-		let cleaned = responseText.trim();
-		if (cleaned.startsWith("```")) {
-			// Remove the opening code block (optionally with language)
-			cleaned = cleaned.replace(/^```[a-zA-Z0-9]*\s*/, "");
-			// Remove the closing code block
-			cleaned = cleaned.replace(/```\s*$/, "");
-		}
-		return JSON.parse(cleaned) as SupervisorDecision;
-	}
-
-	private validateDecision(
-		decision: SupervisorDecision,
-		members: GroupChatMember[]
-	): void {
-		if (!Array.isArray(decision.nextSpeaker)) {
-			throw new Error("nextSpeaker must always be an array");
-		}
-
-		for (const speaker of decision.nextSpeaker) {
-			if (
-				speaker !== "human" &&
-				!members.find((m) => m.name === speaker || m.id === speaker)
-			) {
-				throw new Error(`Invalid nextSpeaker: ${speaker}`);
-			}
-		}
-	}
-
 	private createFallbackDecision(): SupervisorDecision {
 		return {
-			nextSpeaker: ["human"],
-			reasoning: "Error in supervisor decision, defaulting to human input",
+			nextSpeaker: [],
+			reasoning:
+				"Error in supervisor decision, defaulting to no automatic responses",
 		};
 	}
 }
 
 class AgentResponseService {
-	private aiCallService: AICallService;
-	constructor(private providerConfig: ProviderConfig) {
-		this.aiCallService = new AICallService(providerConfig);
-	}
+	constructor(private providerConfig: ProviderConfig) {}
 
 	async generateResponse(
 		agent: GroupChatMember,
@@ -401,53 +279,29 @@ class AgentResponseService {
 			throw new Error("Cannot generate response for non-agent member");
 		}
 
-		const prompt = this.buildAgentPrompt(agent, context);
-
-		console.log("Agent prompt:", prompt);
-
 		try {
-			const response = await this.aiCallService.callAI(
-				prompt,
-				this.providerConfig.modelId!
-			);
-			return response;
+			const response = await fetch("/api/agent-response", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					agent,
+					context,
+					providerConfig: this.providerConfig,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(`API request failed: ${response.statusText}`);
+			}
+
+			const result = await response.json();
+			return result.response;
 		} catch (error) {
 			console.error("Agent response generation error:", error);
 			return `*${agent.name} is having trouble responding right now. Please try again later.*`;
 		}
-	}
-
-	private buildAgentPrompt(
-		agent: GroupChatMember,
-		context: ConversationContext
-	): string {
-		const membersList = context.members
-			.map((m) => `- ${m.name} (${m.title} [id: ${m.id}])`)
-			.join("\n");
-
-		return `<YourBio>
-${agent.system_prompt}
-</YourBio>
-
-You are participating in a group chat in real world.
-
-<GroupMembers>
-${membersList}
-</GroupMembers>
-
-Guidelines:
-- Stay in character as ${agent.name} (${agent.title})
-- Be concise and natural, behave like a real person
-- Each message should no more than ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_WORDS} words or ${AGENT_CONFIG.RESPONSE_LIMITS.MAX_CHINESE_CHARS} chinese characters unless it's a code block or a long quote
-- Collaborate effectively with other team members
-- Follow user's language
-- You must always return a JSON object: { "content": "your message", "target": "target_member_id (optional)" }. If you want to send a public message, omit the target field. If you want to send a DM, set the target field to the member's id.
-
-<ConversationHistory>
-${context.history}
-</ConversationHistory>
-
-Provide your response to continue this discussion. Always return a JSON object as described above. Do not return plain text.`;
 	}
 }
 
@@ -523,7 +377,7 @@ export class AgentGroupChat {
 		return this.memberService.getGroupMembers();
 	}
 
-	formatConversationHistory(messages: MessageWithDetails[]): string {
+	formatConversationHistory(messages: MessageWithDetails[]): MessageHistory[] {
 		return this.conversationService.formatHistory(messages);
 	}
 
@@ -559,9 +413,11 @@ export class AgentGroupChat {
 		this.groupDescription = group?.description || "";
 		this.members = await this.memberService.getGroupMembers();
 
-		// Get initial message count
+		// Get initial message count - include all messages including DMs
 		const messages = await this.conversationService.getLatestSessionMessages(
-			this.groupId
+			this.groupId,
+			undefined,
+			true // isSupervisor = true to see all messages including DMs
 		);
 		this.lastMessageCount = messages.length;
 
@@ -570,7 +426,9 @@ export class AgentGroupChat {
 			await this.checkForNewMessages();
 		}, 1000); // Check every second
 
-		console.log(`Started monitoring group ${this.groupId}`);
+		console.log(
+			`[AgentGroupChat] Started monitoring group ${this.groupId} with ${messages.length} initial messages`
+		);
 	}
 
 	/**
@@ -600,15 +458,41 @@ export class AgentGroupChat {
 		// This method is mainly for external integrations
 	}
 
+	/**
+	 * Force check for new messages (useful after external message sends)
+	 */
+	async forceCheckForNewMessages(): Promise<void> {
+		console.log(`[AgentGroupChat] Force checking for new messages`);
+		await this.checkForNewMessages();
+	}
+
 	private async checkForNewMessages(): Promise<void> {
 		try {
+			// Get all messages (including DMs) to detect new activity
 			const messages = await this.conversationService.getLatestSessionMessages(
-				this.groupId
+				this.groupId,
+				undefined,
+				true // isSupervisor = true to see all messages including DMs
 			);
 			const currentMessageCount = messages.length;
 
+			// Debug logging
+			console.log(
+				`[AgentGroupChat] Checking messages for group ${this.groupId}:`,
+				{
+					currentCount: currentMessageCount,
+					lastCount: this.lastMessageCount,
+					hasNewMessages: currentMessageCount > this.lastMessageCount,
+					isMonitoring: this.isMonitoring,
+					isSupervisorActive: this.isSupervisorActive,
+				}
+			);
+
 			// If there are new messages, reset the debounce timer
 			if (currentMessageCount > this.lastMessageCount) {
+				console.log(
+					`[AgentGroupChat] New messages detected! Triggering debounce timer.`
+				);
 				this.lastMessageCount = currentMessageCount;
 				this.resetDebounceTimer();
 			}
@@ -621,33 +505,63 @@ export class AgentGroupChat {
 		// Clear existing timer
 		if (this.debounceTimeout) {
 			clearTimeout(this.debounceTimeout);
+			console.log(`[AgentGroupChat] Clearing existing debounce timer`);
 		}
+
+		console.log(
+			`[AgentGroupChat] Setting debounce timer for ${AGENT_CONFIG.SUPERVISOR.DEBOUNCE_DELAY_MS}ms`
+		);
 
 		// Set new timer
 		this.debounceTimeout = setTimeout(async () => {
+			console.log(
+				`[AgentGroupChat] Debounce timer expired, triggering supervision`
+			);
 			await this.triggerSupervision();
 		}, AGENT_CONFIG.SUPERVISOR.DEBOUNCE_DELAY_MS);
 	}
 
 	private async triggerSupervision(): Promise<void> {
+		console.log(
+			`[AgentGroupChat] triggerSupervision called - isSupervisorActive: ${this.isSupervisorActive}, isMonitoring: ${this.isMonitoring}`
+		);
+
 		if (this.isSupervisorActive || !this.isMonitoring) {
+			console.log(
+				`[AgentGroupChat] Supervision skipped - already active or not monitoring`
+			);
 			return;
 		}
 
+		console.log(`[AgentGroupChat] Starting supervision process`);
 		this.isSupervisorActive = true;
 
 		try {
-			// Get latest data
+			// Get latest data - include all messages for supervisor view
 			const messages = await this.conversationService.getLatestSessionMessages(
-				this.groupId
+				this.groupId,
+				undefined,
+				true // isSupervisor = true to see all messages including DMs
 			);
 			const members = await this.memberService.getGroupMembers();
+
+			console.log(`[AgentGroupChat] Supervision data:`, {
+				messageCount: messages.length,
+				memberCount: members.length,
+				messages: messages.map((m) => ({
+					type: m.type,
+					senderName: m.sender?.name,
+					content: m.content.substring(0, 50) + "...",
+					dmTargetId: m.dm_target_id,
+				})),
+			});
 
 			// Run supervision loop
 			await this.runSupervisorLoop(members, messages);
 		} catch (error) {
 			console.error("Error in supervision:", error);
 		} finally {
+			console.log(`[AgentGroupChat] Supervision process completed`);
 			this.isSupervisorActive = false;
 		}
 	}
@@ -656,15 +570,25 @@ export class AgentGroupChat {
 		members: GroupChatMember[],
 		messages: MessageWithDetails[]
 	): Promise<void> {
+		console.log(`[AgentGroupChat] Starting supervisor loop`);
+
 		while (true) {
 			const availableAgents = this.memberService.getAvailableAgents(
 				members,
 				this.typingPool.typingAgents
 			);
-			const availableMembers = [
-				...members.filter((m) => m.role === "human"),
-				...availableAgents,
-			];
+
+			// Pass all members (human and agent) to supervisor
+			const availableMembers = members.filter((member) => {
+				if (member.role === "human") return true;
+				return !this.typingPool.has(member.id);
+			});
+
+			console.log(`[AgentGroupChat] Available members for decision:`, {
+				availableAgents: availableAgents.map((a) => a.name),
+				availableMembers: availableMembers.map((m) => `${m.name} (${m.role})`),
+				typingPool: Array.from(this.typingPool.typingAgents),
+			});
 
 			const context = this.conversationService.createConversationContext(
 				this.groupId,
@@ -676,38 +600,59 @@ export class AgentGroupChat {
 				true
 			);
 
+			console.log(`[AgentGroupChat] Sending context to supervisor:`, {
+				groupName: context.groupName,
+				messageHistoryLength: context.history.length,
+				lastFewMessages: context.history.slice(-3),
+			});
+
 			const decision = await this.supervisorService.makeDecision(
 				context,
 				availableMembers
 			);
-			console.log("Supervisor decision:", decision);
 
-			// Stop if no agents to speak or only human should speak
-			const agentsToSpeak = decision.nextSpeaker.filter(
-				(speaker) => speaker !== "human"
-			);
-			if (decision.nextSpeaker.length === 0 || agentsToSpeak.length === 0) {
+			console.log("[AgentGroupChat] Supervisor decision:", decision);
+
+			if (decision.nextSpeaker.length === 0) {
+				console.log(
+					`[AgentGroupChat] No next speakers, ending supervision loop`
+				);
 				break;
 			}
 
-			const nextAgents = this.memberService.findMembersByIdentifiers(
-				availableAgents,
-				agentsToSpeak
+			const nextMembers = this.memberService.findMembersByIdentifiers(
+				availableMembers,
+				decision.nextSpeaker
 			);
 
-			if (nextAgents.length === 0) {
-				console.error("No available agents found:", decision.nextSpeaker);
+			console.log(
+				`[AgentGroupChat] Found next members:`,
+				nextMembers.map((m) => `${m.name} (${m.role})`)
+			);
+
+			if (nextMembers.length === 0) {
+				console.log(
+					`[AgentGroupChat] No valid next members found, ending supervision loop`
+				);
 				break;
 			}
 
 			if (!this.typingPool.canAddMore()) {
+				console.log(
+					`[AgentGroupChat] Typing pool full, waiting for agents to finish`
+				);
 				await this.waitForAgentsToFinish();
 				continue;
 			}
 
-			const agentsToStart = nextAgents.slice(
+			const agentsToStart = nextMembers.slice(
 				0,
 				this.typingPool.getAvailableSlots()
+			);
+
+			console.log(
+				`[AgentGroupChat] Starting agent responses for:`,
+				agentsToStart.map((a) => a.name)
 			);
 			await this.processAgentResponses(agentsToStart, context);
 
@@ -719,6 +664,8 @@ export class AgentGroupChat {
 			);
 			await this.delay(AGENT_CONFIG.SUPERVISOR.POST_RESPONSE_DELAY_MS);
 		}
+
+		console.log(`[AgentGroupChat] Supervisor loop completed`);
 	}
 
 	private async processAgentResponses(
@@ -809,7 +756,8 @@ export class AgentGroupChat {
 
 		await dbHelpers.sendMessage({
 			session_id: currentSession.id,
-			sender_agent_id: agent.id,
+			sender_id: agent.id!.toString(),
+			sender_type: "agent" as const,
 			content,
 			type,
 			...(dm_target_id ? { dm_target_id } : {}),

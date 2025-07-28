@@ -11,7 +11,7 @@ import { usePersistance } from "../components/PersistanceContext";
 import Image from "next/image";
 
 interface Agent {
-	id: string;
+	id?: number;
 	name: string;
 	title: string;
 	system_prompt: string;
@@ -78,7 +78,8 @@ export default function HomeClient() {
 			// Add selected agents as members
 			const selectedAgentIds = agents
 				.filter((_, idx) => checked[idx])
-				.map((a) => a.id);
+				.map((a) => a.id)
+				.filter((id): id is number => id !== undefined);
 			for (const agentId of selectedAgentIds) {
 				await dbHelpers.addGroupMember({
 					group_id: group.id,
@@ -106,8 +107,22 @@ export default function HomeClient() {
 
 	if (error || userError) {
 		return (
-			<div className="min-h-screen flex items-center justify-center text-red-500">
+			<div className="min-h-screen flex flex-col items-center justify-center text-red-500">
 				{error || userError}
+				<button
+					onClick={async () => {
+						try {
+							await dbHelpers.deleteDatabase();
+							window.location.reload();
+						} catch (e) {
+							console.error("Failed to delete database:", e);
+							window.location.reload();
+						}
+					}}
+					className="text-orange-500 dark:text-orange-400 cursor-pointer"
+				>
+					Delete database and reload
+				</button>
 			</div>
 		);
 	}
@@ -140,7 +155,7 @@ export default function HomeClient() {
 				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10 max-w-4xl mx-auto">
 					{agents.slice(0, 9).map((agent: Agent, index: number) => (
 						<div
-							key={agent.id}
+							key={agent.id || index}
 							className={
 								"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px] cursor-pointer select-none"
 							}
@@ -199,10 +214,10 @@ export default function HomeClient() {
 							size={20}
 							items={agents
 								.map((agent: Agent, idx: number) =>
-									checked[idx] && agent.avatar_url
+									checked[idx] && agent.avatar_url && agent.id
 										? {
 												src: agent.avatar_url,
-												key: agent.id,
+												key: agent.id.toString(),
 												name: agent.name,
 											}
 										: undefined
@@ -239,7 +254,23 @@ export default function HomeClient() {
 					)}
 
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">{errorMsg}</div>
+						<div className="text-red-500 text-sm mt-2">
+							{errorMsg}
+							<button
+								onClick={async () => {
+									try {
+										await dbHelpers.deleteDatabase();
+										window.location.reload();
+									} catch (e) {
+										console.error("Failed to delete database:", e);
+										window.location.reload();
+									}
+								}}
+								className="text-orange-500 dark:text-orange-400 cursor-pointer"
+							>
+								Delete database and reload
+							</button>
+						</div>
 					)}
 				</div>
 			</div>

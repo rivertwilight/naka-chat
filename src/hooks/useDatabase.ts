@@ -6,19 +6,12 @@ import {
 	dbHelpers,
 	initializeDatabaseOnce,
 	Message,
+	MessageWithDetails,
 	User,
 	Agent,
 	Group,
 	Session,
 } from "../lib/database";
-
-// Extended message type with sender details
-export interface MessageWithDetails extends Message {
-	reactions: { emoji: string; count: number }[];
-	senderUser?: User;
-	senderAgent?: Agent;
-	session?: Session;
-}
 
 // Hook for getting all messages from all sessions in a group
 export function useGroupMessages(groupId: string | null) {
@@ -68,24 +61,50 @@ export function useGroupMessages(groupId: string | null) {
 
 					// Enhance messages with sender details and session info
 					const enhancedMessages = await Promise.all(
-						sessionMessages.map(async (message) => {
-							let senderUser: User | undefined;
-							let senderAgent: Agent | undefined;
+						sessionMessages.map(
+							async (message): Promise<MessageWithDetails> => {
+								let sender: User | Agent | undefined;
+								let recipient: User | Agent | undefined;
 
-							if (message.sender_user_id) {
-								senderUser = await db.users.get(message.sender_user_id);
-							}
-							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(message.sender_agent_id);
-							}
+								if (message.sender_type === "user") {
+									sender = await db.users.get(message.sender_id);
+								} else if (message.sender_type === "agent") {
+									sender = await db.agents.get(parseInt(message.sender_id));
+								}
 
-							return {
-								...message,
-								senderUser,
-								senderAgent,
-								session,
-							};
-						})
+								// For DM messages, resolve the recipient
+								if (message.type === "dm" && message.dm_target_id) {
+									// Try to find recipient in users first, then agents
+									const userRecipient = await db.users.get(
+										message.dm_target_id
+									);
+									if (userRecipient) {
+										recipient = userRecipient;
+									} else {
+										// Try parsing as agent ID (numeric)
+										const agentId = parseInt(message.dm_target_id);
+										if (!isNaN(agentId)) {
+											recipient = await db.agents.get(agentId);
+										}
+									}
+								}
+
+								// Map to clean MessageWithDetails interface
+								return {
+									id: message.id,
+									content: message.content,
+									created_at: message.created_at,
+									edited_at: message.edited_at,
+									type: message.type,
+									dm_target_id: message.dm_target_id,
+									reply_to_id: message.reply_to_id,
+									reactions: message.reactions,
+									sender,
+									recipient,
+									session,
+								};
+							}
+						)
 					);
 
 					allMessages.push(...enhancedMessages);
@@ -126,10 +145,10 @@ export function useGroupMessages(groupId: string | null) {
 
 	const sendMessage = async (
 		content: string,
-		senderUserId?: string,
-		senderAgentId?: string
+		senderId?: string,
+		senderType: "user" | "agent" = "user"
 	) => {
-		if (!groupId) return;
+		if (!groupId || !senderId) return;
 
 		try {
 			// Get current session or create one
@@ -137,8 +156,8 @@ export function useGroupMessages(groupId: string | null) {
 
 			await dbHelpers.sendMessage({
 				session_id: currentSession.id,
-				sender_user_id: senderUserId,
-				sender_agent_id: senderAgentId,
+				sender_id: senderId,
+				sender_type: senderType,
 				content,
 				type: "public",
 			});
@@ -161,21 +180,43 @@ export function useGroupMessages(groupId: string | null) {
 				);
 
 				const enhancedMessages = await Promise.all(
-					sessionMessages.map(async (message) => {
-						let senderUser: User | undefined;
-						let senderAgent: Agent | undefined;
+					sessionMessages.map(async (message): Promise<MessageWithDetails> => {
+						let sender: User | Agent | undefined;
+						let recipient: User | Agent | undefined;
 
-						if (message.sender_user_id) {
-							senderUser = await db.users.get(message.sender_user_id);
-						}
-						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(message.sender_agent_id);
+						if (message.sender_type === "user") {
+							sender = await db.users.get(message.sender_id);
+						} else if (message.sender_type === "agent") {
+							sender = await db.agents.get(parseInt(message.sender_id));
 						}
 
+						// For DM messages, resolve the recipient
+						if (message.type === "dm" && message.dm_target_id) {
+							// Try to find recipient in users first, then agents
+							const userRecipient = await db.users.get(message.dm_target_id);
+							if (userRecipient) {
+								recipient = userRecipient;
+							} else {
+								// Try parsing as agent ID (numeric)
+								const agentId = parseInt(message.dm_target_id);
+								if (!isNaN(agentId)) {
+									recipient = await db.agents.get(agentId);
+								}
+							}
+						}
+
+						// Map to clean MessageWithDetails interface
 						return {
-							...message,
-							senderUser,
-							senderAgent,
+							id: message.id,
+							content: message.content,
+							created_at: message.created_at,
+							edited_at: message.edited_at,
+							type: message.type,
+							dm_target_id: message.dm_target_id,
+							reply_to_id: message.reply_to_id,
+							reactions: message.reactions,
+							sender,
+							recipient,
 							session,
 						};
 					})
@@ -199,15 +240,15 @@ export function useGroupMessages(groupId: string | null) {
 	const addReaction = async (
 		messageId: string,
 		emoji: string,
-		userId?: string,
-		agentId?: string
+		reactorId: string,
+		reactorType: "user" | "agent"
 	) => {
 		try {
 			await dbHelpers.addReaction({
 				message_id: messageId,
 				emoji,
-				user_id: userId,
-				agent_id: agentId,
+				reactor_id: reactorId,
+				reactor_type: reactorType,
 			});
 
 			// Reload all messages
@@ -229,24 +270,50 @@ export function useGroupMessages(groupId: string | null) {
 					);
 
 					const enhancedMessages = await Promise.all(
-						sessionMessages.map(async (message) => {
-							let senderUser: User | undefined;
-							let senderAgent: Agent | undefined;
+						sessionMessages.map(
+							async (message): Promise<MessageWithDetails> => {
+								let sender: User | Agent | undefined;
+								let recipient: User | Agent | undefined;
 
-							if (message.sender_user_id) {
-								senderUser = await db.users.get(message.sender_user_id);
-							}
-							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(message.sender_agent_id);
-							}
+								if (message.sender_type === "user") {
+									sender = await db.users.get(message.sender_id);
+								} else if (message.sender_type === "agent") {
+									sender = await db.agents.get(parseInt(message.sender_id));
+								}
 
-							return {
-								...message,
-								senderUser,
-								senderAgent,
-								session,
-							};
-						})
+								// For DM messages, resolve the recipient
+								if (message.type === "dm" && message.dm_target_id) {
+									// Try to find recipient in users first, then agents
+									const userRecipient = await db.users.get(
+										message.dm_target_id
+									);
+									if (userRecipient) {
+										recipient = userRecipient;
+									} else {
+										// Try parsing as agent ID (numeric)
+										const agentId = parseInt(message.dm_target_id);
+										if (!isNaN(agentId)) {
+											recipient = await db.agents.get(agentId);
+										}
+									}
+								}
+
+								// Map to clean MessageWithDetails interface
+								return {
+									id: message.id,
+									content: message.content,
+									created_at: message.created_at,
+									edited_at: message.edited_at,
+									type: message.type,
+									dm_target_id: message.dm_target_id,
+									reply_to_id: message.reply_to_id,
+									reactions: message.reactions,
+									sender,
+									recipient,
+									session,
+								};
+							}
+						)
 					);
 
 					allMessages.push(...enhancedMessages);
@@ -279,24 +346,50 @@ export function useGroupMessages(groupId: string | null) {
 						);
 
 						const enhancedMessages = await Promise.all(
-							sessionMessages.map(async (message) => {
-								let senderUser: User | undefined;
-								let senderAgent: Agent | undefined;
+							sessionMessages.map(
+								async (message): Promise<MessageWithDetails> => {
+									let sender: User | Agent | undefined;
+									let recipient: User | Agent | undefined;
 
-								if (message.sender_user_id) {
-									senderUser = await db.users.get(message.sender_user_id);
-								}
-								if (message.sender_agent_id) {
-									senderAgent = await db.agents.get(message.sender_agent_id);
-								}
+									if (message.sender_type === "user") {
+										sender = await db.users.get(message.sender_id);
+									} else if (message.sender_type === "agent") {
+										sender = await db.agents.get(parseInt(message.sender_id));
+									}
 
-								return {
-									...message,
-									senderUser,
-									senderAgent,
-									session,
-								};
-							})
+									// For DM messages, resolve the recipient
+									if (message.type === "dm" && message.dm_target_id) {
+										// Try to find recipient in users first, then agents
+										const userRecipient = await db.users.get(
+											message.dm_target_id
+										);
+										if (userRecipient) {
+											recipient = userRecipient;
+										} else {
+											// Try parsing as agent ID (numeric)
+											const agentId = parseInt(message.dm_target_id);
+											if (!isNaN(agentId)) {
+												recipient = await db.agents.get(agentId);
+											}
+										}
+									}
+
+									// Map to clean MessageWithDetails interface
+									return {
+										id: message.id,
+										content: message.content,
+										created_at: message.created_at,
+										edited_at: message.edited_at,
+										type: message.type,
+										dm_target_id: message.dm_target_id,
+										reply_to_id: message.reply_to_id,
+										reactions: message.reactions,
+										sender,
+										recipient,
+										session,
+									};
+								}
+							)
 						);
 
 						allMessages.push(...enhancedMessages);
@@ -345,20 +438,17 @@ export function useSessionMessages(sessionId: string | null) {
 				// Enhance messages with sender details
 				const enhancedMessages = await Promise.all(
 					messagesWithReactions.map(async (message) => {
-						let senderUser: User | undefined;
-						let senderAgent: Agent | undefined;
+						let sender: User | Agent | undefined;
 
-						if (message.sender_user_id) {
-							senderUser = await db.users.get(message.sender_user_id);
-						}
-						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(message.sender_agent_id);
+						if (message.sender_type === "user") {
+							sender = await db.users.get(message.sender_id);
+						} else if (message.sender_type === "agent") {
+							sender = await db.agents.get(parseInt(message.sender_id));
 						}
 
 						return {
 							...message,
-							senderUser,
-							senderAgent,
+							sender,
 						};
 					})
 				);
@@ -389,16 +479,16 @@ export function useSessionMessages(sessionId: string | null) {
 
 	const sendMessage = async (
 		content: string,
-		senderUserId?: string,
-		senderAgentId?: string
+		senderId?: string,
+		senderType: "user" | "agent" = "user"
 	) => {
-		if (!sessionId) return;
+		if (!sessionId || !senderId) return;
 
 		try {
 			await dbHelpers.sendMessage({
 				session_id: sessionId,
-				sender_user_id: senderUserId,
-				sender_agent_id: senderAgentId,
+				sender_id: senderId,
+				sender_type: senderType,
 				content,
 				type: "public",
 			});
@@ -408,23 +498,30 @@ export function useSessionMessages(sessionId: string | null) {
 
 			// Enhance messages with sender details
 			const enhancedMessages = await Promise.all(
-				messagesWithReactions.map(async (message) => {
-					let senderUser: User | undefined;
-					let senderAgent: Agent | undefined;
+				messagesWithReactions.map(
+					async (message): Promise<MessageWithDetails> => {
+						let sender: User | Agent | undefined;
 
-					if (message.sender_user_id) {
-						senderUser = await db.users.get(message.sender_user_id);
-					}
-					if (message.sender_agent_id) {
-						senderAgent = await db.agents.get(message.sender_agent_id);
-					}
+						if (message.sender_type === "user") {
+							sender = await db.users.get(message.sender_id);
+						} else if (message.sender_type === "agent") {
+							sender = await db.agents.get(parseInt(message.sender_id));
+						}
 
-					return {
-						...message,
-						senderUser,
-						senderAgent,
-					};
-				})
+						// Map to clean MessageWithDetails interface
+						return {
+							id: message.id,
+							content: message.content,
+							created_at: message.created_at,
+							edited_at: message.edited_at,
+							type: message.type,
+							dm_target_id: message.dm_target_id,
+							reply_to_id: message.reply_to_id,
+							reactions: message.reactions,
+							sender,
+						};
+					}
+				)
 			);
 
 			setMessages(enhancedMessages);
@@ -436,15 +533,15 @@ export function useSessionMessages(sessionId: string | null) {
 	const addReaction = async (
 		messageId: string,
 		emoji: string,
-		userId?: string,
-		agentId?: string
+		reactorId: string,
+		reactorType: "user" | "agent"
 	) => {
 		try {
 			await dbHelpers.addReaction({
 				message_id: messageId,
 				emoji,
-				user_id: userId,
-				agent_id: agentId,
+				reactor_id: reactorId,
+				reactor_type: reactorType,
 			});
 			// Reload messages to update reactions
 			if (sessionId) {
@@ -453,23 +550,30 @@ export function useSessionMessages(sessionId: string | null) {
 
 				// Enhance messages with sender details
 				const enhancedMessages = await Promise.all(
-					messagesWithReactions.map(async (message) => {
-						let senderUser: User | undefined;
-						let senderAgent: Agent | undefined;
+					messagesWithReactions.map(
+						async (message): Promise<MessageWithDetails> => {
+							let sender: User | Agent | undefined;
 
-						if (message.sender_user_id) {
-							senderUser = await db.users.get(message.sender_user_id);
-						}
-						if (message.sender_agent_id) {
-							senderAgent = await db.agents.get(message.sender_agent_id);
-						}
+							if (message.sender_type === "user") {
+								sender = await db.users.get(message.sender_id);
+							} else if (message.sender_type === "agent") {
+								sender = await db.agents.get(parseInt(message.sender_id));
+							}
 
-						return {
-							...message,
-							senderUser,
-							senderAgent,
-						};
-					})
+							// Map to clean MessageWithDetails interface
+							return {
+								id: message.id,
+								content: message.content,
+								created_at: message.created_at,
+								edited_at: message.edited_at,
+								type: message.type,
+								dm_target_id: message.dm_target_id,
+								reply_to_id: message.reply_to_id,
+								reactions: message.reactions,
+								sender,
+							};
+						}
+					)
 				);
 
 				setMessages(enhancedMessages);
@@ -483,23 +587,30 @@ export function useSessionMessages(sessionId: string | null) {
 
 					// Enhance messages with sender details
 					const enhancedMessages = await Promise.all(
-						messagesWithReactions.map(async (message) => {
-							let senderUser: User | undefined;
-							let senderAgent: Agent | undefined;
+						messagesWithReactions.map(
+							async (message): Promise<MessageWithDetails> => {
+								let sender: User | Agent | undefined;
 
-							if (message.sender_user_id) {
-								senderUser = await db.users.get(message.sender_user_id);
-							}
-							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(message.sender_agent_id);
-							}
+								if (message.sender_type === "user") {
+									sender = await db.users.get(message.sender_id);
+								} else if (message.sender_type === "agent") {
+									sender = await db.agents.get(parseInt(message.sender_id));
+								}
 
-							return {
-								...message,
-								senderUser,
-								senderAgent,
-							};
-						})
+								// Map to clean MessageWithDetails interface
+								return {
+									id: message.id,
+									content: message.content,
+									created_at: message.created_at,
+									edited_at: message.edited_at,
+									type: message.type,
+									dm_target_id: message.dm_target_id,
+									reply_to_id: message.reply_to_id,
+									reactions: message.reactions,
+									sender,
+								};
+							}
+						)
 					);
 
 					setMessages(enhancedMessages);
@@ -747,29 +858,36 @@ export function useLatestGroupMessages(groupIds: string[]) {
 					continue;
 				}
 				// Get all messages for all sessions
-				let allMessages: MessageWithDetails[] = [];
+				const allMessages: MessageWithDetails[] = [];
 				for (const session of sessions) {
 					const sessionMessages = await dbHelpers.getMessagesWithReactions(
 						session.id
 					);
 					// Enhance messages with sender details
 					const enhancedMessages = await Promise.all(
-						sessionMessages.map(async (message) => {
-							let senderUser: User | undefined;
-							let senderAgent: Agent | undefined;
-							if (message.sender_user_id) {
-								senderUser = await db.users.get(message.sender_user_id);
+						sessionMessages.map(
+							async (message): Promise<MessageWithDetails> => {
+								let sender: User | Agent | undefined;
+								if (message.sender_type === "user") {
+									sender = await db.users.get(message.sender_id);
+								} else if (message.sender_type === "agent") {
+									sender = await db.agents.get(parseInt(message.sender_id));
+								}
+								// Map to clean MessageWithDetails interface
+								return {
+									id: message.id,
+									content: message.content,
+									created_at: message.created_at,
+									edited_at: message.edited_at,
+									type: message.type,
+									dm_target_id: message.dm_target_id,
+									reply_to_id: message.reply_to_id,
+									reactions: message.reactions,
+									sender,
+									session,
+								};
 							}
-							if (message.sender_agent_id) {
-								senderAgent = await db.agents.get(message.sender_agent_id);
-							}
-							return {
-								...message,
-								senderUser,
-								senderAgent,
-								session,
-							};
-						})
+						)
 					);
 					allMessages.push(...enhancedMessages);
 				}
@@ -787,6 +905,331 @@ export function useLatestGroupMessages(groupIds: string[]) {
 		};
 	}, [JSON.stringify(groupIds)]);
 	return latestMessages;
+}
+
+// Hook for getting DM messages between current user and another user/agent
+export function useDMMessages(groupId: string | null, targetId: string | null) {
+	const [messages, setMessages] = useState<MessageWithDetails[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const { user } = useCurrentUser();
+	const lastLoadTimeRef = useRef(0);
+
+	useEffect(() => {
+		if (!groupId || !targetId || !user) {
+			setMessages([]);
+			setLoading(false);
+			return;
+		}
+
+		const loadDMMessages = async () => {
+			try {
+				setLoading(true);
+
+				// Get DM messages between user and target
+				const dmMessages = await dbHelpers.getDMMessages(
+					groupId,
+					user.id,
+					targetId
+				);
+
+				// Enhance messages with sender details and session info
+				const enhancedMessages = await Promise.all(
+					dmMessages.map(async (message): Promise<MessageWithDetails> => {
+						let sender: User | Agent | undefined;
+						let recipient: User | Agent | undefined;
+
+						if (message.sender_type === "user") {
+							sender = await db.users.get(message.sender_id);
+						} else if (message.sender_type === "agent") {
+							sender = await db.agents.get(parseInt(message.sender_id));
+						}
+
+						// For DM messages, resolve the recipient
+						if (message.type === "dm" && message.dm_target_id) {
+							// Try to find recipient in users first, then agents
+							const userRecipient = await db.users.get(message.dm_target_id);
+							if (userRecipient) {
+								recipient = userRecipient;
+							} else {
+								// Try parsing as agent ID (numeric)
+								const agentId = parseInt(message.dm_target_id);
+								if (!isNaN(agentId)) {
+									recipient = await db.agents.get(agentId);
+								}
+							}
+						}
+
+						// Get session info
+						const session = await db.sessions.get(message.session_id);
+
+						// Map to clean MessageWithDetails interface
+						return {
+							id: message.id,
+							content: message.content,
+							created_at: message.created_at,
+							edited_at: message.edited_at,
+							type: message.type,
+							dm_target_id: message.dm_target_id,
+							reply_to_id: message.reply_to_id,
+							reactions: message.reactions,
+							sender,
+							recipient,
+							session,
+						};
+					})
+				);
+
+				setMessages(enhancedMessages);
+			} catch (err) {
+				setError(
+					err instanceof Error ? err.message : "Failed to load DM messages"
+				);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadDMMessages();
+
+		// Set up polling for new messages
+		const pollInterval = setInterval(() => {
+			const now = Date.now();
+			if (now - lastLoadTimeRef.current > 1500) {
+				lastLoadTimeRef.current = now;
+				loadDMMessages();
+			}
+		}, 5000);
+
+		return () => {
+			clearInterval(pollInterval);
+		};
+	}, [groupId, targetId, user]);
+
+	const sendDMMessage = async (content: string) => {
+		if (!groupId || !targetId || !user) return;
+
+		try {
+			// Get current session
+			const currentSession = await dbHelpers.getCurrentSession(groupId);
+
+			// Send DM message
+			await dbHelpers.sendDMMessage(
+				currentSession.id,
+				user.id,
+				"user",
+				content,
+				targetId
+			);
+
+			// Reload DM messages
+			const dmMessages = await dbHelpers.getDMMessages(
+				groupId,
+				user.id,
+				targetId
+			);
+
+			// Enhance messages with sender details and session info
+			const enhancedMessages = await Promise.all(
+				dmMessages.map(async (message): Promise<MessageWithDetails> => {
+					let sender: User | Agent | undefined;
+					let recipient: User | Agent | undefined;
+
+					if (message.sender_type === "user") {
+						sender = await db.users.get(message.sender_id);
+					} else if (message.sender_type === "agent") {
+						sender = await db.agents.get(parseInt(message.sender_id));
+					}
+
+					// For DM messages, resolve the recipient
+					if (message.type === "dm" && message.dm_target_id) {
+						// Try to find recipient in users first, then agents
+						const userRecipient = await db.users.get(message.dm_target_id);
+						if (userRecipient) {
+							recipient = userRecipient;
+						} else {
+							// Try parsing as agent ID (numeric)
+							const agentId = parseInt(message.dm_target_id);
+							if (!isNaN(agentId)) {
+								recipient = await db.agents.get(agentId);
+							}
+						}
+					}
+
+					// Get session info
+					const session = await db.sessions.get(message.session_id);
+
+					// Map to clean MessageWithDetails interface
+					return {
+						id: message.id,
+						content: message.content,
+						created_at: message.created_at,
+						edited_at: message.edited_at,
+						type: message.type,
+						dm_target_id: message.dm_target_id,
+						reply_to_id: message.reply_to_id,
+						reactions: message.reactions,
+						sender,
+						recipient,
+						session,
+					};
+				})
+			);
+
+			setMessages(enhancedMessages);
+
+			// Update lastLoadTime to prevent immediate polling reload
+			lastLoadTimeRef.current = Date.now();
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Failed to send DM message"
+			);
+		}
+	};
+
+	const addReaction = async (
+		messageId: string,
+		emoji: string,
+		reactorId: string,
+		reactorType: "user" | "agent"
+	) => {
+		try {
+			await dbHelpers.addReaction({
+				message_id: messageId,
+				emoji,
+				reactor_id: reactorId,
+				reactor_type: reactorType,
+			});
+
+			// Reload DM messages
+			if (groupId && targetId && user) {
+				const dmMessages = await dbHelpers.getDMMessages(
+					groupId,
+					user.id,
+					targetId
+				);
+
+				// Enhance messages with sender details and session info
+				const enhancedMessages = await Promise.all(
+					dmMessages.map(async (message): Promise<MessageWithDetails> => {
+						let sender: User | Agent | undefined;
+						let recipient: User | Agent | undefined;
+
+						if (message.sender_type === "user") {
+							sender = await db.users.get(message.sender_id);
+						} else if (message.sender_type === "agent") {
+							sender = await db.agents.get(parseInt(message.sender_id));
+						}
+
+						// For DM messages, resolve the recipient
+						if (message.type === "dm" && message.dm_target_id) {
+							// Try to find recipient in users first, then agents
+							const userRecipient = await db.users.get(message.dm_target_id);
+							if (userRecipient) {
+								recipient = userRecipient;
+							} else {
+								// Try parsing as agent ID (numeric)
+								const agentId = parseInt(message.dm_target_id);
+								if (!isNaN(agentId)) {
+									recipient = await db.agents.get(agentId);
+								}
+							}
+						}
+
+						// Get session info
+						const session = await db.sessions.get(message.session_id);
+
+						// Map to clean MessageWithDetails interface
+						return {
+							id: message.id,
+							content: message.content,
+							created_at: message.created_at,
+							edited_at: message.edited_at,
+							type: message.type,
+							dm_target_id: message.dm_target_id,
+							reply_to_id: message.reply_to_id,
+							reactions: message.reactions,
+							sender,
+							recipient,
+							session,
+						};
+					})
+				);
+
+				setMessages(enhancedMessages);
+			}
+		} catch (err) {
+			// If the reaction was removed (toggle behavior), reload messages
+			if (err instanceof Error && err.message === "Reaction removed") {
+				if (groupId && targetId && user) {
+					const dmMessages = await dbHelpers.getDMMessages(
+						groupId,
+						user.id,
+						targetId
+					);
+
+					// Enhance messages with sender details and session info
+					const enhancedMessages = await Promise.all(
+						dmMessages.map(async (message): Promise<MessageWithDetails> => {
+							let sender: User | Agent | undefined;
+							let recipient: User | Agent | undefined;
+
+							if (message.sender_type === "user") {
+								sender = await db.users.get(message.sender_id);
+							} else if (message.sender_type === "agent") {
+								sender = await db.agents.get(parseInt(message.sender_id));
+							}
+
+							// For DM messages, resolve the recipient
+							if (message.type === "dm" && message.dm_target_id) {
+								// Try to find recipient in users first, then agents
+								const userRecipient = await db.users.get(message.dm_target_id);
+								if (userRecipient) {
+									recipient = userRecipient;
+								} else {
+									// Try parsing as agent ID (numeric)
+									const agentId = parseInt(message.dm_target_id);
+									if (!isNaN(agentId)) {
+										recipient = await db.agents.get(agentId);
+									}
+								}
+							}
+
+							// Get session info
+							const session = await db.sessions.get(message.session_id);
+
+							// Map to clean MessageWithDetails interface
+							return {
+								id: message.id,
+								content: message.content,
+								created_at: message.created_at,
+								edited_at: message.edited_at,
+								type: message.type,
+								dm_target_id: message.dm_target_id,
+								reply_to_id: message.reply_to_id,
+								reactions: message.reactions,
+								sender,
+								recipient,
+								session,
+							};
+						})
+					);
+
+					setMessages(enhancedMessages);
+				}
+			} else {
+				setError(err instanceof Error ? err.message : "Failed to add reaction");
+			}
+		}
+	};
+
+	return {
+		messages,
+		loading,
+		error,
+		sendDMMessage,
+		addReaction,
+	};
 }
 
 // Hook for getting all agents

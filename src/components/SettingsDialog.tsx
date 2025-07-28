@@ -561,7 +561,7 @@ function AgentsSection() {
 									</div>
 									<div className="flex gap-2">
 										<button
-											onClick={() => handleUpdateAgent(agent.id)}
+											onClick={() => handleUpdateAgent(agent.id!)}
 											className="px-3 py-1 bg-neutral-900 dark:bg-neutral-100 text-neutral-100 dark:text-neutral-900 rounded text-sm hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-1"
 										>
 											<Save size={14} />
@@ -606,7 +606,7 @@ function AgentsSection() {
 											<Edit size={16} />
 										</button>
 										<button
-											onClick={() => handleDeleteAgent(agent.id)}
+											onClick={() => handleDeleteAgent(agent.id!)}
 											disabled={deletingAgent === agent.id}
 											className="p-2 text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
 										>

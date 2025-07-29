@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ProviderType = "Google" | "Anthropic" | "OpenAI" | "Custom";
+export type ProviderType =
+	| "Google"
+	| "Anthropic"
+	| "OpenAI"
+	| "Custom"
+	| "FreeTrial";
 
 interface PersistanceSettings {
 	provider: ProviderType;
@@ -36,23 +41,25 @@ function getInitialSettings() {
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const [provider, setProvider] = useState<ProviderType>("OpenAI");
+	const [provider, setProvider] = useState<ProviderType>("FreeTrial");
 	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
 		Google: "",
 		Anthropic: "",
 		OpenAI: "",
 		Custom: "",
+		FreeTrial: "",
 	});
 	const [baseUrl, setBaseUrl] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [modelId, setModelId] = useState("");
+	const freeTrialKey: string = process.env.NEXT_PUBLIC_FREE_TRIAL_KEY || "";
 
 	// Load from localStorage on mount
 	useEffect(() => {
 		const initial = getInitialSettings();
 		if (initial) {
-			setProvider(initial.provider || "OpenAI");
+			setProvider(initial.provider);
 			// Handle migration from old single apiKey format
 			if (initial.apiKey && !initial.apiKeys) {
 				setApiKeys({
@@ -60,6 +67,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 					Anthropic: "",
 					OpenAI: initial.apiKey,
 					Custom: "",
+					FreeTrial: freeTrialKey,
 				});
 			} else {
 				setApiKeys(
@@ -68,6 +76,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 						Anthropic: "",
 						OpenAI: "",
 						Custom: "",
+						FreeTrial: freeTrialKey,
 					}
 				);
 			}

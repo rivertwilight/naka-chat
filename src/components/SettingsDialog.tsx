@@ -825,9 +825,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
 						<button
 							key={item.key}
 							onClick={() => setSelectedTab(item.key)}
-							className={`text-left rounded-lg px-3 py-2 text-md font-medium transition-colors ${
-								sawarabi.className
-							} text-neutral-700 dark:text-neutral-200 tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none ${
+							className={`text-left rounded-lg px-3 py-2 text-md font-medium transition-colors text-neutral-700 dark:text-neutral-200 tracking-wide hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none ${
 								selectedTab === item.key
 									? "bg-neutral-100 dark:bg-neutral-800 font-semibold"
 									: "bg-transparent"

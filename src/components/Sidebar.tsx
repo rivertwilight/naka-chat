@@ -164,7 +164,7 @@ export default function Sidebar() {
 				</nav>
 
 				{/* Add Group Button - Fixed at bottom */}
-				<div className="px-4 pb-4">
+				<div className="px-4">
 					<button
 						type="button"
 						className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"

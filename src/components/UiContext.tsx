@@ -6,6 +6,10 @@ interface UiContextType {
   closeSettingsPanel: () => void;
   toggleSettingsPanel: () => void;
   settingsInitialTab: string;
+  isSidebarOpen: boolean;
+  openSidebar: () => void;
+  closeSidebar: () => void;
+  toggleSidebar: () => void;
 }
 
 const UiContext = createContext<UiContextType | undefined>(undefined);
@@ -13,6 +17,7 @@ const UiContext = createContext<UiContextType | undefined>(undefined);
 export const UiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("general");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const openSettingsPanel = useCallback((initialTab?: string) => {
     if (initialTab) {
@@ -23,6 +28,10 @@ export const UiProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const closeSettingsPanel = useCallback(() => setIsSettingsPanelOpen(false), []);
   const toggleSettingsPanel = useCallback(() => setIsSettingsPanelOpen((v) => !v), []);
 
+  const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
+  const toggleSidebar = useCallback(() => setIsSidebarOpen((v) => !v), []);
+
   return (
     <UiContext.Provider
       value={{
@@ -31,6 +40,10 @@ export const UiProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         closeSettingsPanel,
         toggleSettingsPanel,
         settingsInitialTab,
+        isSidebarOpen,
+        openSidebar,
+        closeSidebar,
+        toggleSidebar,
       }}
     >
       {children}

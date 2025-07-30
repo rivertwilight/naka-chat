@@ -40,7 +40,7 @@ export default function RootLayout({
 						>
 							<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
 								<Sidebar />
-								<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
+								<div className="flex-1 md:ml-56 md:sm:ml-72 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
 									{children}
 								</div>
 							</div>

@@ -135,7 +135,7 @@ const MessageBlock: React.FC<MessageBlockProps> = ({
 				style={{ opacity }}
 			>
 				<Markdown
-					className={`text-base text-neutral-900 dark:text-neutral-100 max-w-lg ${
+					className={`text-base text-neutral-900 dark:text-neutral-100 max-w-full sm:max-w-lg break-words ${
 						side === "left" ? "text-left" : "text-right"
 					}`}
 				>

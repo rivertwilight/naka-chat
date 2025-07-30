@@ -89,7 +89,7 @@ export default function DMView({
 			animate={{ opacity: 1, x: 0 }}
 			exit={{ opacity: 0, x: -20 }}
 			transition={{ duration: 0.3, ease: "easeInOut" }}
-			className="flex-1 flex flex-col justify-end px-0 py-8 relative min-h-screen max-w-2xl mx-auto"
+			className="flex-1 flex flex-col justify-end px-4 sm:px-8 py-8 pt-16 md:pt-8 relative min-h-screen max-w-full sm:max-w-2xl mx-auto"
 		>
 			{/* Header */}
 			<div className="flex items-center justify-between mb-6">
@@ -111,7 +111,7 @@ export default function DMView({
 			</div>
 
 			{/* Messages */}
-			<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24 relative">
+			<section className="flex-1 flex flex-col justify-end gap-0 max-w-full sm:max-w-2xl mx-auto w-full pb-24 relative">
 				<div className="flex flex-col min-h-[200px]">
 					{dmMessages.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-24 text-center">

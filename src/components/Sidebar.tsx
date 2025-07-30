@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
-import { Moon, Sun, Plus, Settings } from "lucide-react";
+import { Moon, Sun, Plus, Settings, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import {
@@ -63,12 +63,37 @@ export default function Sidebar() {
 		openSettingsPanel,
 		closeSettingsPanel,
 		settingsInitialTab,
+		isSidebarOpen,
+		closeSidebar,
+		toggleSidebar,
 	} = useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
 	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
+
+	// Close sidebar when clicking outside on mobile
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (isSidebarOpen && window.innerWidth < 768) {
+				const sidebar = document.getElementById('mobile-sidebar');
+				if (sidebar && !sidebar.contains(event.target as Node)) {
+					closeSidebar();
+				}
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, [isSidebarOpen, closeSidebar]);
+
+	// Close sidebar on route change on mobile
+	useEffect(() => {
+		if (window.innerWidth < 768) {
+			closeSidebar();
+		}
+	}, [pathname, closeSidebar]);
 
 	const handleCreateGroup = async () => {
 		if (!user) return;
@@ -117,8 +142,32 @@ export default function Sidebar() {
 
 	return (
 		<>
+			{/* Mobile Hamburger Button */}
+			<button
+				onClick={toggleSidebar}
+				className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 shadow-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+				aria-label="Toggle sidebar"
+			>
+				{isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+			</button>
+
+			{/* Mobile Overlay */}
+			{isSidebarOpen && (
+				<div
+					className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+					onClick={closeSidebar}
+				/>
+			)}
+
+			{/* Sidebar */}
 			<aside
-				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
+				id="mobile-sidebar"
+				className={`
+					w-56 sm:w-72 h-screen fixed left-0 top-0 z-40 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800
+					transition-transform duration-300 ease-in-out
+					md:translate-x-0 md:z-20
+					${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+				`}
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				<div className="mb-4 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -158,10 +207,7 @@ export default function Sidebar() {
 							const msg = latestMessages[group.id];
 							let preview = "";
 							if (msg) {
-								const sender =
-									msg.senderUser?.name ||
-									msg.senderAgent?.name ||
-									"Unknown";
+								const sender = msg.sender?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (

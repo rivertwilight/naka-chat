@@ -130,37 +130,37 @@ export default function HomeClient() {
 	}
 
 	return (
-		<div className="h-screen flex flex-col justify-center items-center overflow-y-hidden">
-			<div className="container mx-auto px-4 py-16 pl-24">
+		<div className="sm:h-screen flex flex-col justify-center items-center sm:overflow-y-hidden">
+			<div className="container mx-auto px-4 py-8 md:py-16 md:pl-24">
 				{/* Header */}
-				<div className="text-center mb-10">
-					<div className="flex items-center justify-center mb-6">
+				<div className="text-center mb-8 md:mb-10">
+					<div className="flex items-center justify-center mb-4 md:mb-6">
 						<Image
 							src="/android-icon-192x192.png"
 							alt="NakaChat"
-							width={96}
-							height={96}
-							className="mask mask-squircle"
+							width={80}
+							height={80}
+							className="mask mask-squircle md:w-24 md:h-24"
 						/>
 					</div>
 					<h1
-						className={`text-3xl md:text-4xl font-light text-neutral-800 dark:text-neutral-200 mb-4 ${sawarabi.className}`}
+						className={`text-2xl md:text-3xl lg:text-4xl font-light text-neutral-800 dark:text-neutral-200 mb-3 md:mb-4 ${sawarabi.className}`}
 					>
 						NakaChat
 					</h1>
-					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+					<p className="text-base md:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed px-4">
 						Group chat with AI agents. Brianstorm, werewolf, COC,
 						and more.
 					</p>
 				</div>
 
 				{/* Agent Cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10 max-w-4xl mx-auto">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-8 md:mb-10 max-w-4xl mx-auto px-2 md:px-0">
 					{agents.slice(0, 9).map((agent: Agent, index: number) => (
 						<div
 							key={agent.id || index}
 							className={
-								"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 transition-all duration-500 min-h-[64px] h-[72px] max-h-[80px] cursor-pointer select-none"
+								"group flex flex-row items-center bg-neutral-50 dark:bg-neutral-800 rounded-lg p-3 border border-neutral-200 dark:border-neutral-700 transition-all duration-500 min-h-[64px] h-auto md:h-[72px] md:max-h-[80px] cursor-pointer select-none"
 							}
 							style={{ animationDelay: `${index * 100}ms` }}
 							onClick={() => {
@@ -175,21 +175,21 @@ export default function HomeClient() {
 								<Avatar
 									src={agent.avatar_url}
 									alt={agent.name}
-									className="w-12 h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
+									className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white dark:border-neutral-700 shadow group-hover:scale-105 transition-transform duration-300"
 								/>
 							</div>
 							<div className="flex flex-col justify-center min-w-0 flex-1">
-								<h3 className="text-base font-medium text-neutral-800 dark:text-neutral-200 truncate">
+								<h3 className="text-sm md:text-base font-medium text-neutral-800 dark:text-neutral-200 truncate">
 									{agent.name}
 								</h3>
 								<p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 truncate">
 									{agent.title}
 								</p>
-								<p className="text-xs text-neutral-500 dark:text-neutral-500 leading-tight truncate">
+								<p className="text-xs text-neutral-500 dark:text-neutral-500 leading-tight truncate hidden md:block">
 									{agent.system_prompt || agent.model}
 								</p>
 							</div>
-							<div className="ml-3 flex items-center">
+							<div className="ml-2 md:ml-3 flex items-center">
 								<div
 									className={`w-5 h-5 flex items-center justify-center rounded-full border-2 transition-colors duration-200 ${
 										checked[index]
@@ -198,7 +198,7 @@ export default function HomeClient() {
 									}`}
 								>
 									{checked[index] && (
-										<Check className="w-4 h-4 text-white" />
+										<Check className="w-3 h-3 md:w-4 md:h-4 text-white" />
 									)}
 								</div>
 							</div>
@@ -206,72 +206,85 @@ export default function HomeClient() {
 					))}
 				</div>
 
-				<div className="flex flex-col items-center gap-3 mb-4">
+				<div className="flex flex-col items-center gap-3 mb-4 px-4">
 					<button
 						onClick={handleStartGroupChat}
 						disabled={isLoading || !hasApiKeyConfigured}
-						className="flex hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-6 py-2 rounded-xl text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60"
+						className="flex hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 items-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl text-sm md:text-base font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 flex-wrap justify-center"
 					>
-						<ArrowRight className="w-5 h-5" />
-						{isLoading ? "Creating..." : "Create group with"}
-						<AvatarGroup
-							className="ml-1"
-							size={20}
-							items={agents
-								.map((agent: Agent, idx: number) =>
-									checked[idx] && agent.avatar_url && agent.id
-										? {
-												src: agent.avatar_url,
-												key: agent.id.toString(),
-												name: agent.name,
-										  }
-										: undefined
-								)
-								.filter(
-									(
-										item:
-											| {
-													src: string;
-													key: string;
-													name: string;
+						<div className="flex items-center gap-2">
+							<ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+							<span>
+								{isLoading
+									? "Creating..."
+									: "Create group with"}
+							</span>
+						</div>
+						{selectedAgents > 0 && (
+							<AvatarGroup
+								className="ml-1"
+								size={18}
+								items={agents
+									.map((agent: Agent, idx: number) =>
+										checked[idx] &&
+										agent.avatar_url &&
+										agent.id
+											? {
+													src: agent.avatar_url,
+													key: agent.id.toString(),
+													name: agent.name,
 											  }
-											| undefined
-									): item is {
-										src: string;
-										key: string;
-										name: string;
-									} => Boolean(item)
-								)}
-						/>
+											: undefined
+									)
+									.filter(
+										(
+											item:
+												| {
+														src: string;
+														key: string;
+														name: string;
+												  }
+												| undefined
+										): item is {
+											src: string;
+											key: string;
+											name: string;
+										} => Boolean(item)
+									)}
+							/>
+						)}
 					</button>
 
-					{hasApiKeyConfigured && selectedAgents > 0 && (
-						<div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 px-4 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
-							Please
+					{!hasApiKeyConfigured && selectedAgents > 0 && (
+						<div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 px-3 sm:px-4 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-center">
+							<span>Please</span>
 							<span
 								onClick={() => openSettingsPanel("model")}
-								className="text-orange-500 dark:text-orange-400 cursor-pointer"
+								className="text-orange-500 dark:text-orange-400 cursor-pointer underline"
 							>
 								Configure Your API key
 							</span>
-							in Settings first
+							<span>in Settings first</span>
 						</div>
 					)}
 
 					{errorMsg && (
-						<div className="text-red-500 text-sm mt-2">
-							{errorMsg}
+						<div className="text-red-500 text-xs sm:text-sm mt-2 text-center px-4">
+							<div className="mb-2">{errorMsg}</div>
 							<button
 								onClick={async () => {
 									try {
 										await dbHelpers.deleteDatabase();
 										window.location.reload();
 									} catch (e) {
-										console.error("Failed to delete database:", e);
+										console.error(
+											"Failed to delete database:",
+											e
+										);
 										window.location.reload();
 									}
 								}}
-								className="text-orange-500 dark:text-orange-400 cursor-pointer"
+								className="text-orange-500 dark:text-orange-400 cursor-pointer underline"
 							>
 								Delete database and reload
 							</button>

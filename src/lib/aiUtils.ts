@@ -1,9 +1,10 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import { GoogleGenAI } from "@google/genai";
+import { ProviderType } from "@/components/PersistanceContext";
 
 export interface ProviderConfig {
-	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
+	provider: ProviderType;
 	apiKey: string;
 	baseUrl?: string;
 	modelId?: string;

@@ -4,6 +4,7 @@ export type ProviderType =
 	| "Google"
 	| "Anthropic"
 	| "OpenAI"
+	| "Moonshot"
 	| "Custom"
 	| "FreeTrial";
 
@@ -46,6 +47,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 		Google: "",
 		Anthropic: "",
 		OpenAI: "",
+		Moonshot: "",
 		Custom: "",
 		FreeTrial: "",
 	});
@@ -66,6 +68,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 					Google: "",
 					Anthropic: "",
 					OpenAI: initial.apiKey,
+					Moonshot: "",
 					Custom: "",
 					FreeTrial: freeTrialKey,
 				});

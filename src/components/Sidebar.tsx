@@ -163,7 +163,7 @@ export default function Sidebar() {
 			<aside
 				id="mobile-sidebar"
 				className={`
-					w-56 sm:w-72 h-screen fixed left-0 top-0 z-40 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800
+					w-72 sm:w-80 h-screen fixed left-0 top-0 z-40 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800
 					transition-transform duration-300 ease-in-out
 					md:translate-x-0 md:z-20
 					${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}

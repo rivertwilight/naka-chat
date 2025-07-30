@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
 		const prompt = buildSupervisorPrompt(context, availableMembers);
 
-		console.log("Supervisor prompt:", prompt);
+		// console.log("Supervisor prompt:", prompt);
 
 		try {
 			const response = await callAI(

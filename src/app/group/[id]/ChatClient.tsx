@@ -42,6 +42,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	useEffect(() => {
 		if (groupId) {
+			console.log("apiKey____", getApiKey(provider), provider);
 			agentGroupChatRef.current = new AgentGroupChat(groupId, {
 				provider,
 				apiKey: getApiKey(provider),

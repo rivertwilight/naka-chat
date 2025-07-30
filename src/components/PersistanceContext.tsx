@@ -42,6 +42,7 @@ function getInitialSettings() {
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
+	const freeTrialKey: string = process.env.NEXT_PUBLIC_FREE_TRIAL_KEY || "";
 	const [provider, setProvider] = useState<ProviderType>("FreeTrial");
 	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
 		Google: "",
@@ -49,13 +50,12 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 		OpenAI: "",
 		Moonshot: "",
 		Custom: "",
-		FreeTrial: "",
+		FreeTrial: freeTrialKey,
 	});
-	const [baseUrl, setBaseUrl] = useState("");
+	const [baseUrl, setBaseUrl] = useState("https://api.siliconflow.cn/v1");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [modelId, setModelId] = useState("");
-	const freeTrialKey: string = process.env.NEXT_PUBLIC_FREE_TRIAL_KEY || "";
 
 	// Load from localStorage on mount
 	useEffect(() => {
@@ -86,7 +86,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 			setBaseUrl(initial.baseUrl || "");
 			setFirstName(initial.firstName || "");
 			setLastName(initial.lastName || "");
-			setModelId(initial.modelId || "");
+			setModelId(initial.modelId || "Qwen/Qwen3-8B");
 		}
 	}, []);
 

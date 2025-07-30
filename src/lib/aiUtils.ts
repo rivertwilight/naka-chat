@@ -60,13 +60,14 @@ export async function callAI(
 				return "";
 			}
 		case "Custom":
+		case "FreeTrial":
 			try {
 				const provider = createOpenAICompatible({
-					name: "AI Hub Mix",
+					name: "AI",
 					baseURL: providerConfig.baseUrl!,
 					apiKey: providerConfig.apiKey,
 				});
-				const model = provider(modelId || "gpt-4o");
+				const model = provider(modelId);
 				const response = await generateText({
 					model: model,
 					prompt,

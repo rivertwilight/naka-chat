@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
-import { Moon, Sun, Plus, Settings } from "lucide-react";
+import { Moon, Sun, Plus, Settings, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +27,28 @@ function formatMessageTime(date: Date | undefined): string {
 	return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
 }
 
+// Skeleton component for group list loading
+function GroupListSkeleton() {
+	return (
+		<div className="flex flex-col gap-1">
+			{Array.from({ length: 5 }).map((_, index) => (
+				<div
+					key={index}
+					className="px-3 py-2 rounded-lg flex items-center justify-between"
+				>
+					<div className="flex flex-col flex-1 min-w-0 gap-1">
+						<div className="flex items-center justify-between w-full">
+							<div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-24"></div>
+							<div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-8"></div>
+						</div>
+						<div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-32"></div>
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
 	subsets: ["latin"],
@@ -36,13 +58,42 @@ export default function Sidebar() {
 	const pathname = usePathname();
 	const match = pathname.match(/\/group\/(.+)/);
 	const groupId = match ? match[1] : undefined;
-	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
-		useUiContext();
+	const {
+		isSettingsPanelOpen,
+		openSettingsPanel,
+		closeSettingsPanel,
+		settingsInitialTab,
+		isSidebarOpen,
+		closeSidebar,
+		toggleSidebar,
+	} = useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
 	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
 	const router = useRouter();
 	const [creating, setCreating] = useState(false);
+
+	// Close sidebar when clicking outside on mobile
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (isSidebarOpen && window.innerWidth < 768) {
+				const sidebar = document.getElementById("mobile-sidebar");
+				if (sidebar && !sidebar.contains(event.target as Node)) {
+					closeSidebar();
+				}
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isSidebarOpen, closeSidebar]);
+
+	// Close sidebar on route change on mobile
+	useEffect(() => {
+		if (window.innerWidth < 768) {
+			closeSidebar();
+		}
+	}, [pathname, closeSidebar]);
 
 	const handleCreateGroup = async () => {
 		if (!user) return;
@@ -91,8 +142,32 @@ export default function Sidebar() {
 
 	return (
 		<>
+			{/* Mobile Hamburger Button */}
+			<button
+				onClick={toggleSidebar}
+				className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 shadow-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+				aria-label="Toggle sidebar"
+			>
+				{isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+			</button>
+
+			{/* Mobile Overlay */}
+			{isSidebarOpen && (
+				<div
+					className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+					onClick={closeSidebar}
+				/>
+			)}
+
+			{/* Sidebar */}
 			<aside
-				className="w-56 sm:w-72 h-screen fixed left-0 top-0 z-20 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800"
+				id="mobile-sidebar"
+				className={`
+					w-72 sm:w-80 h-screen fixed left-0 top-0 z-40 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800
+					transition-transform duration-300 ease-in-out
+					md:translate-x-0 md:z-20
+					${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+				`}
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
 				<div className="mb-4 px-6 text-center select-none flex items-center justify-between gap-2">
@@ -104,7 +179,7 @@ export default function Sidebar() {
 					</div>
 					<div className="flex items-center gap-2">
 						<button
-							onClick={openSettingsPanel}
+							onClick={() => openSettingsPanel()}
 							aria-label="Open settings"
 							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 							type="button"
@@ -118,9 +193,7 @@ export default function Sidebar() {
 				{/* Group List - scrollable */}
 				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto px-4">
 					{loading ? (
-						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
-							Loading groups...
-						</div>
+						<GroupListSkeleton />
 					) : error ? (
 						<div className="px-3 py-2 text-red-500 text-sm">
 							Failed to load groups
@@ -134,8 +207,7 @@ export default function Sidebar() {
 							const msg = latestMessages[group.id];
 							let preview = "";
 							if (msg) {
-								const sender =
-									msg.senderUser?.name || msg.senderAgent?.name || "Unknown";
+								const sender = msg.sender?.name || "Unknown";
 								preview = `${sender}: ${msg.content}`;
 							}
 							return (
@@ -160,7 +232,7 @@ export default function Sidebar() {
 				</nav>
 
 				{/* Add Group Button - Fixed at bottom */}
-				<div className="px-4 pb-4">
+				<div className="px-4">
 					<button
 						type="button"
 						className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-neutral-700 dark:text-neutral-200 bg-transparent hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-md font-medium focus:outline-none disabled:opacity-60"
@@ -172,7 +244,11 @@ export default function Sidebar() {
 					</button>
 				</div>
 			</aside>
-			<SettingsDialog open={isSettingsPanelOpen} onClose={closeSettingsPanel} />
+			<SettingsDialog
+				open={isSettingsPanelOpen}
+				onClose={closeSettingsPanel}
+				initialTab={settingsInitialTab}
+			/>
 		</>
 	);
 }

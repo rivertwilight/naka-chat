@@ -780,9 +780,16 @@ export function useUserGroups(version: number = 0) {
 	const [groups, setGroups] = useState<Group[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const { user } = useCurrentUser();
+	const { user, loading: userLoading } = useCurrentUser();
 
 	useEffect(() => {
+		// If user is still loading, keep groups in loading state
+		if (userLoading) {
+			setLoading(true);
+			return;
+		}
+
+		// If no user after loading is complete, show empty state
 		if (!user) {
 			setGroups([]);
 			setLoading(false);
@@ -825,7 +832,7 @@ export function useUserGroups(version: number = 0) {
 		};
 
 		loadUserGroups();
-	}, [user, version]);
+	}, [user, userLoading, version]);
 
 	return {
 		groups,

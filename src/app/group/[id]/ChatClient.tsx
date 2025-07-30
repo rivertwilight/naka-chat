@@ -91,7 +91,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	const handleReaction = async (messageId: string, emoji: string) => {
 		if (!user) return;
-		await addReaction(messageId, emoji, user.id);
+		await addReaction(messageId, emoji, user.id, "user");
 	};
 
 	const handleDmClick = (
@@ -194,7 +194,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 					<MessageItem
 						message={msg}
 						onEnterDM={handleDmClick}
-						currentUserId={user?.id}
+						currentUserId={user?.id || ""}
 					/>
 				</React.Fragment>
 			);
@@ -240,9 +240,9 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 20 }}
 						transition={{ duration: 0.3, ease: "easeInOut" }}
-						className="flex-1 flex flex-col justify-end px-0 sm:px-8 py-8 relative min-h-screen"
+						className="flex-1 flex flex-col justify-end px-4 sm:px-8 py-8 pt-16 md:pt-8 relative min-h-screen"
 					>
-						<section className="flex-1 flex flex-col justify-end gap-0 max-w-2xl mx-auto w-full pb-24 relative">
+						<section className="flex-1 flex flex-col justify-end gap-0 max-w-full sm:max-w-2xl mx-auto w-full pb-24 relative">
 							<div className="flex flex-col min-h-[200px]">
 								{messages.length === 0 ? (
 									<div className="absolute inset-0 flex flex-col items-start justify-end py-24 pointer-events-none select-none z-10">
@@ -250,7 +250,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 											<button
 												key={idx}
 												onClick={() => handleExampleClick(example)}
-												className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
+												className="flex text-start gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
 											>
 												<ArrowRight />
 												{example}

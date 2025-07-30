@@ -15,6 +15,7 @@
 		"@ai-sdk/openai-compatible": "^0.2.16",
 		"@google/genai": "^1.11.0",
 		"@lobehub/ui": "^2.7.4",
+		"@next/third-parties": "^15.4.4",
 		"@types/uuid": "^10.0.0",
 		"@zumer/snapdom": "^1.9.6",
 		"ai": "^4.3.19",

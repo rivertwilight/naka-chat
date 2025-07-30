@@ -90,7 +90,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 		const typingUsersString = typingUsers.join(", ") + " are typing";
 
 		return (
-			<div className="fixed left-96 right-96 bottom-0 z-20 max-w-3xl mx-auto">
+			<div className="fixed left-4 right-4 md:left-96 md:right-96 bottom-0 z-20 max-w-3xl mx-auto">
 				<form
 					onSubmit={handleSubmit}
 					className="flex items-center gap-4 w-full"

@@ -6,6 +6,7 @@ import Sidebar from "../components/Sidebar";
 import { ThemeProvider } from "next-themes";
 import { UiProvider } from "../components/UiContext";
 import { PersistanceProvider } from "../components/PersistanceContext";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import "./globals.css";
 
@@ -29,12 +30,13 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
+				<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
 				<PersistanceProvider>
 					<UiProvider>
 						<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 							<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
 								<Sidebar />
-								<div className="flex-1 ml-56 sm:ml-64 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
+								<div className="flex-1 md:ml-72 md:sm:ml-80 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">
 									{children}
 								</div>
 							</div>

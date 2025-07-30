@@ -27,6 +27,28 @@ function formatMessageTime(date: Date | undefined): string {
 	return isToday ? format(date, "HH:mm") : format(date, "MM/dd");
 }
 
+// Skeleton component for group list loading
+function GroupListSkeleton() {
+	return (
+		<div className="flex flex-col gap-1">
+			{Array.from({ length: 5 }).map((_, index) => (
+				<div
+					key={index}
+					className="px-3 py-2 rounded-lg flex items-center justify-between"
+				>
+					<div className="flex flex-col flex-1 min-w-0 gap-1">
+						<div className="flex items-center justify-between w-full">
+							<div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-24"></div>
+							<div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-8"></div>
+						</div>
+						<div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse w-32"></div>
+					</div>
+				</div>
+			))}
+		</div>
+	);
+}
+
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
 	subsets: ["latin"],
@@ -36,8 +58,12 @@ export default function Sidebar() {
 	const pathname = usePathname();
 	const match = pathname.match(/\/group\/(.+)/);
 	const groupId = match ? match[1] : undefined;
-	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel, settingsInitialTab } =
-		useUiContext();
+	const {
+		isSettingsPanelOpen,
+		openSettingsPanel,
+		closeSettingsPanel,
+		settingsInitialTab,
+	} = useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
 	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
@@ -118,9 +144,7 @@ export default function Sidebar() {
 				{/* Group List - scrollable */}
 				<nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto px-4">
 					{loading ? (
-						<div className="px-3 py-2 text-neutral-500 dark:text-neutral-400 text-sm">
-							Loading groups...
-						</div>
+						<GroupListSkeleton />
 					) : error ? (
 						<div className="px-3 py-2 text-red-500 text-sm">
 							Failed to load groups

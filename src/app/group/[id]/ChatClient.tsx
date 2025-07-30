@@ -252,7 +252,7 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 												onClick={() =>
 													handleExampleClick(example)
 												}
-												className="flex gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
+												className="flex text-start gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
 											>
 												<ArrowRight />
 												{example}

@@ -804,10 +804,16 @@ function AboutSection() {
 interface SettingsDialogProps {
 	open: boolean;
 	onClose: () => void;
+	initialTab?: string;
 }
 
-const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
-	const [selectedTab, setSelectedTab] = React.useState("general");
+const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose, initialTab = "general" }) => {
+	const [selectedTab, setSelectedTab] = React.useState(initialTab);
+
+	// Update selected tab when initialTab prop changes
+	React.useEffect(() => {
+		setSelectedTab(initialTab);
+	}, [initialTab]);
 	return (
 		<Dialog open={open} onClose={onClose} variant="modal">
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">

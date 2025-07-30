@@ -8,6 +8,7 @@ import { Avatar, AvatarGroup } from "@lobehub/ui";
 import { useAgents, useCurrentUser } from "../hooks/useDatabase";
 import { dbHelpers } from "../lib/database";
 import { usePersistance } from "../components/PersistanceContext";
+import { useUiContext } from "../components/UiContext";
 import Image from "next/image";
 
 interface Agent {
@@ -36,6 +37,7 @@ export default function HomeClient() {
 	const router = useRouter();
 	const [errorMsg, setErrorMsg] = useState("");
 	const { apiKeys } = usePersistance();
+	const { openSettingsPanel } = useUiContext();
 
 	// Sync checked state with agents length
 	useEffect(() => {
@@ -128,10 +130,10 @@ export default function HomeClient() {
 	}
 
 	return (
-		<div className="min-h-screen flex flex-col justify-center items-center">
+		<div className="h-screen flex flex-col justify-center items-center overflow-y-hidden">
 			<div className="container mx-auto px-4 py-16 pl-24">
 				{/* Header */}
-				<div className="text-center mb-16">
+				<div className="text-center mb-10">
 					<div className="flex items-center justify-center mb-6">
 						<Image
 							src="/android-icon-192x192.png"
@@ -243,11 +245,11 @@ export default function HomeClient() {
 						/>
 					</button>
 
-					{!hasApiKeyConfigured && selectedAgents > 0 && (
+					{hasApiKeyConfigured && selectedAgents > 0 && (
 						<div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 px-4 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
 							Please
 							<span
-								onClick={() => {}}
+								onClick={() => openSettingsPanel("model")}
 								className="text-orange-500 dark:text-orange-400 cursor-pointer"
 							>
 								Configure Your API key

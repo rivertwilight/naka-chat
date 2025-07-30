@@ -36,7 +36,7 @@ export default function Sidebar() {
 	const pathname = usePathname();
 	const match = pathname.match(/\/group\/(.+)/);
 	const groupId = match ? match[1] : undefined;
-	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel } =
+	const { isSettingsPanelOpen, openSettingsPanel, closeSettingsPanel, settingsInitialTab } =
 		useUiContext();
 	const [groupsVersion, setGroupsVersion] = useState(0); // Add version state
 	const { groups, loading, error } = useUserGroups(groupsVersion);
@@ -104,7 +104,7 @@ export default function Sidebar() {
 					</div>
 					<div className="flex items-center gap-2">
 						<button
-							onClick={openSettingsPanel}
+							onClick={() => openSettingsPanel()}
 							aria-label="Open settings"
 							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 							type="button"
@@ -181,6 +181,7 @@ export default function Sidebar() {
 			<SettingsDialog
 				open={isSettingsPanelOpen}
 				onClose={closeSettingsPanel}
+				initialTab={settingsInitialTab}
 			/>
 		</>
 	);

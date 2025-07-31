@@ -23,11 +23,21 @@ const Dialog: React.FC<DialogProps> = ({
 }) => {
 	React.useEffect(() => {
 		if (!open) return;
+
+		// Disable background scroll when dialog is open
+		const originalStyle = window.getComputedStyle(document.body).overflow;
+		document.body.style.overflow = "hidden";
+
 		const onEsc = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
 		};
 		document.addEventListener("keydown", onEsc);
-		return () => document.removeEventListener("keydown", onEsc);
+
+		return () => {
+			document.removeEventListener("keydown", onEsc);
+			// Restore original scroll behavior when dialog closes
+			document.body.style.overflow = originalStyle;
+		};
 	}, [open, onClose]);
 
 	return (

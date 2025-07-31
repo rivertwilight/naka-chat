@@ -46,10 +46,7 @@ function buildSupervisorPrompt(
 			name: member.name,
 			id: member.id,
 			title: member.title,
-			bio:
-				member.role === "agent"
-					? `AI Agent: ${member.title}`
-					: "Human User",
+			bio: member.role === "agent" ? `AI Agent: ${member.title}` : "Human User",
 		})),
 		null,
 		2
@@ -129,7 +126,7 @@ export async function POST(request: NextRequest) {
 
 		const prompt = buildSupervisorPrompt(context, availableMembers);
 
-		console.log("Supervisor prompt:", prompt);
+		// console.log("Supervisor prompt:", prompt);
 
 		try {
 			const response = await callAI(

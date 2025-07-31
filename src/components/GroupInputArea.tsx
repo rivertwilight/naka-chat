@@ -7,7 +7,13 @@ import React, {
 	forwardRef,
 	useImperativeHandle,
 } from "react";
-import { Image as ImageIcon, ArrowUp, Command, Share, Trash } from "lucide-react";
+import {
+	Image as ImageIcon,
+	ArrowUp,
+	Command,
+	Share,
+	Trash,
+} from "lucide-react";
 import { Dropdown, DropdownProps, Icon } from "@lobehub/ui";
 
 interface MessageInputFieldProps {
@@ -94,9 +100,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 						style={{
 							minHeight: "40px",
 							alignItems:
-								message.split("\n").length === 1
-									? "center"
-									: "flex-center",
+								message.split("\n").length === 1 ? "center" : "flex-center",
 						}}
 					>
 						<Dropdown menu={menu} trigger={["click"]}>
@@ -145,9 +149,7 @@ const MessageInputField = forwardRef<any, MessageInputFieldProps>(
 				</form>
 				<div className="text-xs h-6 bg-neutral-100/20 dark:bg-neutral-800/20 backdrop-blur-xs mx-auto text-center py-1 text-neutral-500 dark:text-neutral-400">
 					{typingUsers.length > 0 ? (
-						<span className="animate-pulse">
-							{typingUsersString}
-						</span>
+						<span className="animate-pulse">{typingUsersString}</span>
 					) : (
 						""
 					)}

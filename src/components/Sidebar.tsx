@@ -77,15 +77,15 @@ export default function Sidebar() {
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (isSidebarOpen && window.innerWidth < 768) {
-				const sidebar = document.getElementById('mobile-sidebar');
+				const sidebar = document.getElementById("mobile-sidebar");
 				if (sidebar && !sidebar.contains(event.target as Node)) {
 					closeSidebar();
 				}
 			}
 		};
 
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isSidebarOpen, closeSidebar]);
 
 	// Close sidebar on route change on mobile
@@ -166,7 +166,7 @@ export default function Sidebar() {
 					w-72 sm:w-80 h-screen fixed left-0 top-0 z-40 py-8 flex flex-col gap-2 justify-between overflow-hidden border-none select-none bg-neutral-100 dark:bg-neutral-800
 					transition-transform duration-300 ease-in-out
 					md:translate-x-0 md:z-20
-					${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+					${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
 				`}
 				style={{ WebkitOverflowScrolling: "auto" }}
 			>
@@ -216,9 +216,7 @@ export default function Sidebar() {
 									group={group}
 									selected={groupId === group.id}
 									messagePreview={preview}
-									lastMessageTime={formatMessageTime(
-										msg?.created_at
-									)}
+									lastMessageTime={formatMessageTime(msg?.created_at)}
 									onGroupDeleted={() => {
 										// Refresh the groups list after deletion
 										setGroupsVersion((prev) => prev + 1);
@@ -242,9 +240,7 @@ export default function Sidebar() {
 						disabled={creating}
 					>
 						<Plus size={16} />
-						<span>
-							{creating ? "Creating..." : "Create new group"}
-						</span>
+						<span>{creating ? "Creating..." : "Create new group"}</span>
 					</button>
 				</div>
 			</aside>

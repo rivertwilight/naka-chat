@@ -3,7 +3,7 @@ import HomeClient from "./HomeClient";
 export const metadata = {
 	title: "NakaChat - Group Chat with AI Agents",
 	description:
-		"Group Chat with AI. Brainstorming, Mock Interview, COC, Werewolf, and more.",
+		"Group Chat with AI and multi-agent orchestration. Brainstorming, Mock Interview, COC, Werewolf, and more.",
 	keywords: [
 		"NakaChat",
 		"Group Chat",
@@ -15,7 +15,7 @@ export const metadata = {
 	openGraph: {
 		title: "NakaChat - Group Chat with AI Agents",
 		description:
-			"Group Chat with AI. Brainstorming, Mock Interview, COC, Werewolf, and more.",
+			"Group Chat with AI and multi-agent orchestration. Brainstorming, Mock Interview, COC, Werewolf, and more.",
 		images: ["/og.png"],
 	},
 	twitter: {

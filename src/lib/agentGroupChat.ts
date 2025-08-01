@@ -94,9 +94,7 @@ class MemberService {
 		members: GroupChatMember[],
 		typingPool: Set<string>
 	): GroupChatMember[] {
-		return members.filter(
-			(m) => m.role === "agent" && !typingPool.has(m.id)
-		);
+		return members.filter((m) => m.role === "agent" && !typingPool.has(m.id));
 	}
 
 	findMembersByIdentifiers(
@@ -107,8 +105,7 @@ class MemberService {
 			.map((identifier) =>
 				members.find(
 					(m) =>
-						(m.name === identifier || m.id === identifier) &&
-						m.role === "agent"
+						(m.name === identifier || m.id === identifier) && m.role === "agent"
 				)
 			)
 			.filter(Boolean) as GroupChatMember[];
@@ -168,19 +165,14 @@ class ConversationService {
 
 				if (message.sender_type === "user" && message.sender_id) {
 					sender = await db.users.get(message.sender_id);
-				} else if (
-					message.sender_type === "agent" &&
-					message.sender_id
-				) {
+				} else if (message.sender_type === "agent" && message.sender_id) {
 					sender = await db.agents.get(parseInt(message.sender_id));
 				}
 
 				// For DM messages, resolve the recipient
 				if (message.type === "dm" && message.dm_target_id) {
 					// Try to find recipient in users first, then agents
-					const userRecipient = await db.users.get(
-						message.dm_target_id
-					);
+					const userRecipient = await db.users.get(message.dm_target_id);
 					if (userRecipient) {
 						recipient = userRecipient;
 					} else {
@@ -385,9 +377,7 @@ export class AgentGroupChat {
 		return this.memberService.getGroupMembers();
 	}
 
-	formatConversationHistory(
-		messages: MessageWithDetails[]
-	): MessageHistory[] {
+	formatConversationHistory(messages: MessageWithDetails[]): MessageHistory[] {
 		return this.conversationService.formatHistory(messages);
 	}
 
@@ -424,12 +414,11 @@ export class AgentGroupChat {
 		this.members = await this.memberService.getGroupMembers();
 
 		// Get initial message count - include all messages including DMs
-		const messages =
-			await this.conversationService.getLatestSessionMessages(
-				this.groupId,
-				undefined,
-				true // isSupervisor = true to see all messages including DMs
-			);
+		const messages = await this.conversationService.getLatestSessionMessages(
+			this.groupId,
+			undefined,
+			true // isSupervisor = true to see all messages including DMs
+		);
 		this.lastMessageCount = messages.length;
 
 		// Start monitoring for new messages
@@ -480,12 +469,11 @@ export class AgentGroupChat {
 	private async checkForNewMessages(): Promise<void> {
 		try {
 			// Get all messages (including DMs) to detect new activity
-			const messages =
-				await this.conversationService.getLatestSessionMessages(
-					this.groupId,
-					undefined,
-					true // isSupervisor = true to see all messages including DMs
-				);
+			const messages = await this.conversationService.getLatestSessionMessages(
+				this.groupId,
+				undefined,
+				true // isSupervisor = true to see all messages including DMs
+			);
 			const currentMessageCount = messages.length;
 
 			// Debug logging
@@ -550,12 +538,11 @@ export class AgentGroupChat {
 
 		try {
 			// Get latest data - include all messages for supervisor view
-			const messages =
-				await this.conversationService.getLatestSessionMessages(
-					this.groupId,
-					undefined,
-					true // isSupervisor = true to see all messages including DMs
-				);
+			const messages = await this.conversationService.getLatestSessionMessages(
+				this.groupId,
+				undefined,
+				true // isSupervisor = true to see all messages including DMs
+			);
 			const members = await this.memberService.getGroupMembers();
 
 			console.log(`[AgentGroupChat] Supervision data:`, {
@@ -599,9 +586,7 @@ export class AgentGroupChat {
 
 			console.log(`[AgentGroupChat] Available members for decision:`, {
 				availableAgents: availableAgents.map((a) => a.name),
-				availableMembers: availableMembers.map(
-					(m) => `${m.name} (${m.role})`
-				),
+				availableMembers: availableMembers.map((m) => `${m.name} (${m.role})`),
 				typingPool: Array.from(this.typingPool.typingAgents),
 			});
 
@@ -732,15 +717,14 @@ export class AgentGroupChat {
 				this.groupId,
 				agent.id
 			);
-		const updatedContext =
-			this.conversationService.createConversationContext(
-				context.groupId,
-				context.groupName,
-				context.groupDescription,
-				context.members,
-				latestMessages,
-				agent.id
-			);
+		const updatedContext = this.conversationService.createConversationContext(
+			context.groupId,
+			context.groupName,
+			context.groupDescription,
+			context.members,
+			latestMessages,
+			agent.id
+		);
 
 		const response = await this.responseService.generateResponse(
 			agent,

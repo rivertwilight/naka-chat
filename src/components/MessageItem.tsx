@@ -8,7 +8,11 @@ import MessageBlock from "@/components/ChatMessageBlock";
 interface MessageItemProps {
 	message: MessageWithDetails;
 	currentUserId: string;
-	onEnterDM?: (senderId: string, senderName: string, senderAvatar: string) => void;
+	onEnterDM?: (
+		senderId: string,
+		senderName: string,
+		senderAvatar: string
+	) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({

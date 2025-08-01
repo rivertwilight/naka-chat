@@ -1,15 +1,20 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import { GoogleGenAI } from "@google/genai";
+import { ProviderType } from "@/components/PersistanceContext";
 
 export interface ProviderConfig {
-	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
+	provider: ProviderType;
 	apiKey: string;
 	baseUrl?: string;
 	modelId?: string;
 }
 
-export async function callAI(prompt: string, modelId: string, providerConfig: ProviderConfig): Promise<string> {
+export async function callAI(
+	prompt: string,
+	modelId: string,
+	providerConfig: ProviderConfig
+): Promise<string> {
 	switch (providerConfig.provider) {
 		case "Google":
 			try {
@@ -57,11 +62,32 @@ export async function callAI(prompt: string, modelId: string, providerConfig: Pr
 		case "Custom":
 			try {
 				const provider = createOpenAICompatible({
-					name: "AI Hub Mix",
+					name: "Custom",
 					baseURL: providerConfig.baseUrl!,
 					apiKey: providerConfig.apiKey,
 				});
-				const model = provider(modelId || "gpt-4o");
+				const model = provider(modelId);
+				const response = await generateText({
+					model: model,
+					prompt,
+				});
+				return response.text || "";
+			} catch (error) {
+				console.error("AI call error:", error);
+				console.error(
+					"Error message:",
+					`*${providerConfig.provider} is having trouble responding right now. Please try again later.*`
+				);
+				return "";
+			}
+		case "FreeTrial":
+			try {
+				const provider = createOpenAICompatible({
+					name: "AI",
+					baseURL: providerConfig.baseUrl!,
+					apiKey: process.env.FREE_TRIAL_API_KEY!,
+				});
+				const model = provider(modelId);
 				const response = await generateText({
 					model: model,
 					prompt,
@@ -76,8 +102,6 @@ export async function callAI(prompt: string, modelId: string, providerConfig: Pr
 				return "";
 			}
 		default:
-			throw new Error(
-				`Unsupported provider: ${providerConfig.provider}`
-			);
+			throw new Error(`Unsupported provider: ${providerConfig.provider}`);
 	}
-} 
+}

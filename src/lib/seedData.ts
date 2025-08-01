@@ -48,8 +48,7 @@ export async function seedDatabase() {
 		// Create a test group
 		const group = await dbHelpers.createGroup({
 			name: "Product Development Team",
-			description:
-				"A collaborative space for product development discussions",
+			description: "A collaborative space for product development discussions",
 			created_by: user1.id,
 		});
 		console.log("Created group:", group);
@@ -91,7 +90,6 @@ export async function seedDatabase() {
 				"Welcome to our Product Development Team! Let's collaborate on building amazing products together. 🚀",
 			type: "public",
 		});
-
 
 		console.log("Database seeded successfully!");
 		return {

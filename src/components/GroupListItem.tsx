@@ -140,9 +140,7 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
 					href={`/group/${group.id}`}
 					className={
 						`group text-left px-3 py-2 rounded-lg bg-transparent transition-colors text-neutral-800 dark:text-neutral-200 focus:outline-none hover:bg-neutral-50 dark:hover:bg-neutral-900 flex items-center justify-between` +
-						(selected
-							? " font-semibold bg-white dark:bg-neutral-900"
-							: "")
+						(selected ? " font-semibold bg-white dark:bg-neutral-900" : "")
 					}
 				>
 					<div className="flex flex-col flex-1 min-w-0">

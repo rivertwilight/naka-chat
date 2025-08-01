@@ -148,8 +148,9 @@ export default function HomeClient() {
 					>
 						NakaChat
 					</h1>
-					<p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-						Group chat with AI agents. Brianstorm, werewolf, COC, and more.
+					<p className="text-base md:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed px-4">
+						Group chat with AI agents. Brianstorm, werewolf, COC,
+						and more.
 					</p>
 				</div>
 
@@ -196,7 +197,9 @@ export default function HomeClient() {
 											: "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-600"
 									}`}
 								>
-									{checked[index] && <Check className="w-4 h-4 text-white" />}
+									{checked[index] && (
+										<Check className="w-3 h-3 md:w-4 md:h-4 text-white" />
+									)}
 								</div>
 							</div>
 						</div>
@@ -211,7 +214,11 @@ export default function HomeClient() {
 					>
 						<div className="flex items-center gap-2">
 							<ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-							<span>{isLoading ? "Creating..." : "Create group with"}</span>
+							<span>
+								{isLoading
+									? "Creating..."
+									: "Create group with"}
+							</span>
 						</div>
 						{selectedAgents > 0 && (
 							<AvatarGroup
@@ -219,12 +226,14 @@ export default function HomeClient() {
 								size={18}
 								items={agents
 									.map((agent: Agent, idx: number) =>
-										checked[idx] && agent.avatar_url && agent.id
+										checked[idx] &&
+										agent.avatar_url &&
+										agent.id
 											? {
 													src: agent.avatar_url,
 													key: agent.id.toString(),
 													name: agent.name,
-												}
+											  }
 											: undefined
 									)
 									.filter(
@@ -268,7 +277,10 @@ export default function HomeClient() {
 										await dbHelpers.deleteDatabase();
 										window.location.reload();
 									} catch (e) {
-										console.error("Failed to delete database:", e);
+										console.error(
+											"Failed to delete database:",
+											e
+										);
 										window.location.reload();
 									}
 								}}

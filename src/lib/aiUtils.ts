@@ -1,20 +1,15 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import { GoogleGenAI } from "@google/genai";
-import { ProviderType } from "@/components/PersistanceContext";
 
 export interface ProviderConfig {
-	provider: ProviderType;
+	provider: "Google" | "Anthropic" | "OpenAI" | "Custom" | "Moonshot";
 	apiKey: string;
 	baseUrl?: string;
 	modelId?: string;
 }
 
-export async function callAI(
-	prompt: string,
-	modelId: string,
-	providerConfig: ProviderConfig
-): Promise<string> {
+export async function callAI(prompt: string, modelId: string, providerConfig: ProviderConfig): Promise<string> {
 	switch (providerConfig.provider) {
 		case "Google":
 			try {
@@ -60,14 +55,13 @@ export async function callAI(
 				return "";
 			}
 		case "Custom":
-		case "FreeTrial":
 			try {
 				const provider = createOpenAICompatible({
-					name: "AI",
+					name: "AI Hub Mix",
 					baseURL: providerConfig.baseUrl!,
 					apiKey: providerConfig.apiKey,
 				});
-				const model = provider(modelId);
+				const model = provider(modelId || "gpt-4o");
 				const response = await generateText({
 					model: model,
 					prompt,
@@ -82,6 +76,8 @@ export async function callAI(
 				return "";
 			}
 		default:
-			throw new Error(`Unsupported provider: ${providerConfig.provider}`);
+			throw new Error(
+				`Unsupported provider: ${providerConfig.provider}`
+			);
 	}
-}
+} 

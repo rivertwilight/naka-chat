@@ -1,12 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ProviderType =
-	| "Google"
-	| "Anthropic"
-	| "OpenAI"
-	| "Moonshot"
-	| "Custom"
-	| "FreeTrial";
+export type ProviderType = "Google" | "Anthropic" | "OpenAI" | "Custom";
 
 interface PersistanceSettings {
 	provider: ProviderType;
@@ -42,17 +36,14 @@ function getInitialSettings() {
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const freeTrialKey: string = process.env.NEXT_PUBLIC_FREE_TRIAL_KEY || "";
-	const [provider, setProvider] = useState<ProviderType>("FreeTrial");
+	const [provider, setProvider] = useState<ProviderType>("OpenAI");
 	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
 		Google: "",
 		Anthropic: "",
 		OpenAI: "",
-		Moonshot: "",
 		Custom: "",
-		FreeTrial: freeTrialKey,
 	});
-	const [baseUrl, setBaseUrl] = useState("https://api.siliconflow.cn/v1");
+	const [baseUrl, setBaseUrl] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [modelId, setModelId] = useState("");
@@ -61,32 +52,27 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	useEffect(() => {
 		const initial = getInitialSettings();
 		if (initial) {
-			setProvider(initial.provider);
+			setProvider(initial.provider || "OpenAI");
 			// Handle migration from old single apiKey format
 			if (initial.apiKey && !initial.apiKeys) {
 				setApiKeys({
 					Google: "",
 					Anthropic: "",
 					OpenAI: initial.apiKey,
-					Moonshot: "",
 					Custom: "",
-					FreeTrial: freeTrialKey,
 				});
 			} else {
-				setApiKeys(
-					initial.apiKeys || {
-						Google: "",
-						Anthropic: "",
-						OpenAI: "",
-						Custom: "",
-						FreeTrial: freeTrialKey,
-					}
-				);
+				setApiKeys(initial.apiKeys || {
+					Google: "",
+					Anthropic: "",
+					OpenAI: "",
+					Custom: "",
+				});
 			}
 			setBaseUrl(initial.baseUrl || "");
 			setFirstName(initial.firstName || "");
 			setLastName(initial.lastName || "");
-			setModelId(initial.modelId || "Qwen/Qwen3-8B");
+			setModelId(initial.modelId || "");
 		}
 	}, []);
 
@@ -106,7 +92,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	}, [provider, apiKeys, baseUrl, firstName, lastName, modelId]);
 
 	const setApiKey = (providerType: ProviderType, apiKey: string) => {
-		setApiKeys((prev) => ({
+		setApiKeys(prev => ({
 			...prev,
 			[providerType]: apiKey,
 		}));

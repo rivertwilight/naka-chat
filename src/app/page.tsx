@@ -67,7 +67,8 @@ export default function Page() {
 				"@type": "Person",
 				"@id": "https://naka.chat/#developer",
 				name: "YGeeker",
-				description: "Developer of NakaChat - AI-powered group chat platform",
+				description:
+					"Developer of NakaChat - AI-powered group chat platform",
 				knowsAbout: [
 					"Artificial Intelligence",
 					"Web Development",

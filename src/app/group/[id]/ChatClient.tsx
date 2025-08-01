@@ -42,7 +42,6 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 
 	useEffect(() => {
 		if (groupId) {
-			console.log("apiKey____", getApiKey(provider), provider);
 			agentGroupChatRef.current = new AgentGroupChat(groupId, {
 				provider,
 				apiKey: getApiKey(provider),
@@ -250,7 +249,9 @@ export default function ChatClient({ groupId }: ChatClientProps) {
 										{randomExamples.map((example, idx) => (
 											<button
 												key={idx}
-												onClick={() => handleExampleClick(example)}
+												onClick={() =>
+													handleExampleClick(example)
+												}
 												className="flex text-start gap-2 text-neutral-400 dark:text-neutral-500 text-lg font-medium mb-2 opacity-80 pointer-events-auto select-auto hover:text-neutral-800 dark:hover:text-white transition-colors duration-300 focus:outline-none"
 											>
 												<ArrowRight />

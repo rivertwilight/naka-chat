@@ -6,7 +6,7 @@ export type ProviderType =
 	| "OpenAI"
 	| "Moonshot"
 	| "Custom"
-	| "FreeTrial";
+	| "NakaChat";
 
 interface PersistanceSettings {
 	provider: ProviderType;
@@ -42,14 +42,14 @@ function getInitialSettings() {
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const [provider, setProvider] = useState<ProviderType>("FreeTrial");
+	const [provider, setProvider] = useState<ProviderType>("NakaChat");
 	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
 		Google: "",
 		Anthropic: "",
 		OpenAI: "",
 		Moonshot: "",
 		Custom: "",
-		FreeTrial: "",
+		NakaChat: "",
 	});
 	const [baseUrl, setBaseUrl] = useState("https://api.siliconflow.cn/v1");
 	const [firstName, setFirstName] = useState("");
@@ -69,7 +69,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 					OpenAI: initial.apiKey,
 					Moonshot: "",
 					Custom: "",
-					FreeTrial: "",
+					NakaChat: "",
 				});
 			} else {
 				setApiKeys(

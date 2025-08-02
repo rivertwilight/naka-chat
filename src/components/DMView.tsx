@@ -122,11 +122,8 @@ export default function DMView({
 					) : (
 						dmMessages.map((msg) => {
 							// Determine side based on sender
-							const isCurrentUserMessage =
-								msg.sender?.id === user?.id;
-							const side = isCurrentUserMessage
-								? "right"
-								: "left";
+							const isCurrentUserMessage = msg.sender?.id === user?.id;
+							const side = isCurrentUserMessage ? "right" : "left";
 
 							return (
 								<React.Fragment key={msg.id}>

@@ -6,7 +6,9 @@
 		"dev": "next dev --turbopack",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"format": "prettier --write .",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^1.2.22",
@@ -36,7 +38,19 @@
 		"@types/react-dom": "^19",
 		"eslint": "^9",
 		"eslint-config-next": "15.4.3",
+		"eslint-config-prettier": "^10.1.8",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.2",
+		"prettier": "3.6.2",
+		"pretty-quick": "^4.2.2",
+		"simple-git-hooks": "^2.13.0",
 		"tailwindcss": "^4",
 		"typescript": "^5"
+	},
+	"lint-staged": {
+		"*.{js,ts,jsx,tsx}": [
+			"eslint --cache --fix",
+			"prettier --write"
+		]
 	}
 }

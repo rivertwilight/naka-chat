@@ -93,11 +93,9 @@ export class NakaChatDB extends Dexie {
 			users: "id, name, email, created_at",
 			agents: "id, name, model, created_at",
 			groups: "id, name, created_by, created_at",
-			groupMembers:
-				"id, group_id, user_id, agent_id, role, status, joined_at",
+			groupMembers: "id, group_id, user_id, agent_id, role, status, joined_at",
 			sessions: "id, group_id, created_at",
-			messages:
-				"id, session_id, sender_user_id, sender_agent_id, created_at",
+			messages: "id, session_id, sender_user_id, sender_agent_id, created_at",
 			messageReactions: "id, message_id, user_id, agent_id, created_at",
 		});
 
@@ -111,8 +109,7 @@ export class NakaChatDB extends Dexie {
 				sessions: "id, group_id, created_at",
 				messages:
 					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-				messageReactions:
-					"id, message_id, user_id, agent_id, created_at",
+				messageReactions: "id, message_id, user_id, agent_id, created_at",
 			})
 			.upgrade((tx) => {
 				// Migrate existing messages to have type field
@@ -137,8 +134,7 @@ export class NakaChatDB extends Dexie {
 				sessions: "id, group_id, created_at",
 				messages:
 					"id, session_id, sender_user_id, sender_agent_id, created_at, type, dm_target_id",
-				messageReactions:
-					"id, message_id, user_id, agent_id, created_at",
+				messageReactions: "id, message_id, user_id, agent_id, created_at",
 			})
 			.upgrade(async (tx) => {
 				// Clear all existing data that references agents to avoid foreign key issues
@@ -147,9 +143,7 @@ export class NakaChatDB extends Dexie {
 				await tx.table("groupMembers").clear();
 				await tx.table("sessions").clear();
 				await tx.table("agents").clear();
-				console.log(
-					"Cleared existing agent-related data for schema migration"
-				);
+				console.log("Cleared existing agent-related data for schema migration");
 			});
 
 		// Version 4: Refactor messages to use sender_id and sender_type
@@ -201,9 +195,7 @@ export class NakaChatDB extends Dexie {
 					delete reaction.agent_id;
 				}
 
-				console.log(
-					"Migrated messages and reactions to new sender structure"
-				);
+				console.log("Migrated messages and reactions to new sender structure");
 			});
 	}
 }
@@ -419,9 +411,7 @@ export const dbHelpers = {
 	// Get messages for a session with reactions
 	async getMessagesWithReactions(
 		sessionId: string
-	): Promise<
-		(Message & { reactions: { emoji: string; count: number }[] })[]
-	> {
+	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		const messages = await db.messages
 			.where("session_id")
 			.equals(sessionId)
@@ -435,10 +425,13 @@ export const dbHelpers = {
 					.toArray();
 
 				// Group reactions by emoji and count them
-				const reactionCounts = reactions.reduce((acc, reaction) => {
-					acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
-					return acc;
-				}, {} as Record<string, number>);
+				const reactionCounts = reactions.reduce(
+					(acc, reaction) => {
+						acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+						return acc;
+					},
+					{} as Record<string, number>
+				);
 
 				const reactionArray = Object.entries(reactionCounts).map(
 					([emoji, count]) => ({
@@ -462,9 +455,7 @@ export const dbHelpers = {
 		groupId: string,
 		userId1: string,
 		userId2: string
-	): Promise<
-		(Message & { reactions: { emoji: string; count: number }[] })[]
-	> {
+	): Promise<(Message & { reactions: { emoji: string; count: number }[] })[]> {
 		// Get all sessions for the group
 		const sessions = await db.sessions
 			.where("group_id")
@@ -501,10 +492,13 @@ export const dbHelpers = {
 						.equals(message.id)
 						.toArray();
 
-					const reactionCounts = reactions.reduce((acc, reaction) => {
-						acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
-						return acc;
-					}, {} as Record<string, number>);
+					const reactionCounts = reactions.reduce(
+						(acc, reaction) => {
+							acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+							return acc;
+						},
+						{} as Record<string, number>
+					);
 
 					const reactionArray = Object.entries(reactionCounts).map(
 						([emoji, count]) => ({
@@ -639,28 +633,28 @@ export const dbHelpers = {
 		try {
 			// Clear all tables in the correct order to maintain referential integrity
 			console.log("Resetting database...");
-			
+
 			// 1. Delete message reactions first (no foreign keys pointing to them)
 			await db.messageReactions.clear();
-			
+
 			// 2. Delete messages (referenced by reactions)
 			await db.messages.clear();
-			
+
 			// 3. Delete sessions (referenced by messages)
 			await db.sessions.clear();
-			
+
 			// 4. Delete group members (no foreign keys pointing to them)
 			await db.groupMembers.clear();
-			
+
 			// 5. Delete groups (referenced by group members and sessions)
 			await db.groups.clear();
-			
+
 			// 6. Delete agents (referenced by group members and messages)
 			await db.agents.clear();
-			
+
 			// 7. Delete users (referenced by group members and messages)
 			await db.users.clear();
-			
+
 			console.log("Database reset successfully!");
 		} catch (error) {
 			console.error("Error resetting database:", error);
@@ -672,13 +666,13 @@ export const dbHelpers = {
 	async deleteDatabase(): Promise<void> {
 		try {
 			console.log("Deleting database completely...");
-			
+
 			// Close the database connection
 			await db.close();
-			
+
 			// Delete the database from IndexedDB
 			await Dexie.delete("NakaChatDB");
-			
+
 			console.log("Database deleted successfully!");
 		} catch (error) {
 			console.error("Error deleting database:", error);

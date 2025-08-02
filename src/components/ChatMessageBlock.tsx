@@ -112,10 +112,7 @@ const MessageBlock: React.FC<MessageBlockProps> = ({
 				) : (
 					<Dropdown menu={menu} trigger={["click"]}>
 						<span className="flex items-center gap-2 cursor-pointer">
-							<Avatar
-								src={message.sender?.avatar_url}
-								size={24}
-							/>
+							<Avatar src={message.sender?.avatar_url} size={24} />
 							<span
 								className={`text-sm dark:hover:text-white transition-colors duration-300 text-orange-600 dark:text-neutral-400 ${geistMono.className}`}
 							>
@@ -144,15 +141,10 @@ const MessageBlock: React.FC<MessageBlockProps> = ({
 				{/* Action row: only show on hover, positioned relative to message bubble */}
 				{enableActions && showEmojis && (
 					<div className="flex gap-2 absolute right-2 -bottom-4 z-10 bg-white/80 dark:bg-neutral-900/80 px-2 py-1 transition-opacity text-neutral-500 dark:text-neutral-400">
-						<Tooltip
-							title={copied ? "Copied" : "Copy"}
-							placement="top"
-						>
+						<Tooltip title={copied ? "Copied" : "Copy"} placement="top">
 							<button
 								onClick={async () => {
-									await navigator.clipboard.writeText(
-										message.content
-									);
+									await navigator.clipboard.writeText(message.content);
 									setCopied(true);
 									setTimeout(() => setCopied(false), 1500);
 								}}
@@ -169,10 +161,7 @@ const MessageBlock: React.FC<MessageBlockProps> = ({
 							<Smile size={18} />
 						</button>
 						<Dropdown menu={messageMenu} trigger={["click"]}>
-							<button
-								className="hover:text-orange-600"
-								title="React"
-							>
+							<button className="hover:text-orange-600" title="React">
 								<MoreHorizontal size={18} />
 							</button>
 						</Dropdown>

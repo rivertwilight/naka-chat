@@ -33,11 +33,7 @@ export default function RootLayout({
 				<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
 				<PersistanceProvider>
 					<UiProvider>
-						<ThemeProvider
-							attribute="class"
-							defaultTheme="system"
-							enableSystem
-						>
+						<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 							<div className="flex bg-white dark:bg-neutral-900 dark:text-white">
 								<Sidebar />
 								<div className="flex-1 md:ml-72 md:sm:ml-80 mr-0 md:mr-56 md:sm:mr-64 min-h-screen relative w-full">

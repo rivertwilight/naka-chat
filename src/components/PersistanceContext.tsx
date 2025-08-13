@@ -42,7 +42,6 @@ function getInitialSettings() {
 export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const freeTrialKey: string = process.env.NEXT_PUBLIC_FREE_TRIAL_KEY || "";
 	const [provider, setProvider] = useState<ProviderType>("FreeTrial");
 	const [apiKeys, setApiKeys] = useState<Record<ProviderType, string>>({
 		Google: "",
@@ -50,7 +49,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 		OpenAI: "",
 		Moonshot: "",
 		Custom: "",
-		FreeTrial: freeTrialKey,
+		FreeTrial: "",
 	});
 	const [baseUrl, setBaseUrl] = useState("https://api.siliconflow.cn/v1");
 	const [firstName, setFirstName] = useState("");
@@ -70,7 +69,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 					OpenAI: initial.apiKey,
 					Moonshot: "",
 					Custom: "",
-					FreeTrial: freeTrialKey,
+					FreeTrial: "",
 				});
 			} else {
 				setApiKeys(
@@ -79,7 +78,6 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 						Anthropic: "",
 						OpenAI: "",
 						Custom: "",
-						FreeTrial: freeTrialKey,
 					}
 				);
 			}

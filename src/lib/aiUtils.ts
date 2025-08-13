@@ -60,12 +60,32 @@ export async function callAI(
 				return "";
 			}
 		case "Custom":
+			try {
+				const provider = createOpenAICompatible({
+					name: "Custom",
+					baseURL: providerConfig.baseUrl!,
+					apiKey: providerConfig.apiKey,
+				});
+				const model = provider(modelId);
+				const response = await generateText({
+					model: model,
+					prompt,
+				});
+				return response.text || "";
+			} catch (error) {
+				console.error("AI call error:", error);
+				console.error(
+					"Error message:",
+					`*${providerConfig.provider} is having trouble responding right now. Please try again later.*`
+				);
+				return "";
+			}
 		case "FreeTrial":
 			try {
 				const provider = createOpenAICompatible({
 					name: "AI",
 					baseURL: providerConfig.baseUrl!,
-					apiKey: providerConfig.apiKey,
+					apiKey: process.env.FREE_TRIAL_API_KEY!,
 				});
 				const model = provider(modelId);
 				const response = await generateText({

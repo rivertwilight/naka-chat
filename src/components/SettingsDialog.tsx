@@ -46,7 +46,7 @@ const MODEL_OPTIONS = {
 		{ value: "kimi-k2", label: "Kimi K2" },
 	],
 	Custom: [],
-	FreeTrial: [{ value: "Qwen/Qwen3-8B", label: "Qwen3" }],
+	NakaChat: [{ value: "Qwen/Qwen3-8B", label: "Qwen3" }],
 };
 
 const OPEN_SOURCE_PROJECTS = [
@@ -153,7 +153,7 @@ function ModelSection() {
 						<option value="Anthropic">Anthropic</option>
 						<option value="Moonshot">Moonshot</option>
 						<option value="Custom">Custom</option>
-						<option value="FreeTrial">Free Trial</option>
+						<option value="NakaChat">Naka Chat</option>
 					</select>
 					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center px-2 text-neutral-500">
 						<svg
@@ -177,14 +177,14 @@ function ModelSection() {
 					id="api"
 					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
 					placeholder={
-						provider === "FreeTrial"
-							? "No need to provide (Free Trial)"
+						provider === "NakaChat"
+							? "No need to provide (Naka Chat)"
 							: "Your API Key"
 					}
 					value={currentApiKey}
 					type="password"
 					onChange={(e) => setApiKey(provider, e.target.value)}
-					disabled={provider === "FreeTrial"}
+					disabled={provider === "NakaChat"}
 				/>
 			</div>
 			{provider === "Custom" && (

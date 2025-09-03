@@ -80,10 +80,10 @@ export async function callAI(
 				);
 				return "";
 			}
-		case "FreeTrial":
+		case "NakaChat":
 			try {
 				const provider = createOpenAICompatible({
-					name: "AI",
+					name: "NakaChat",
 					baseURL: providerConfig.baseUrl!,
 					apiKey: process.env.FREE_TRIAL_API_KEY!,
 				});

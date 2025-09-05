@@ -75,21 +75,27 @@ export default function Sidebar() {
 	const [creating, setCreating] = useState(false);
 
 	const showSettingsPanel = searchParams.get("view") === "settings";
+	const settingsTab = searchParams.get("tab") || undefined;
 	useEffect(() => {
 		if (showSettingsPanel) {
-			openSettingsPanel();
+			openSettingsPanel(settingsTab);
 		}
-	}, [showSettingsPanel, openSettingsPanel]);
+	}, [showSettingsPanel, openSettingsPanel, settingsTab]);
 
-	function handleSettingsPanel(action: "open" | "close") {
+	function handleSettingsPanel(action: "open" | "close", tab?: string) {
 		const currentParams = new URLSearchParams(searchParams);
 		if (action === "open") {
 			currentParams.set("view", "settings");
+			if (tab) {
+				currentParams.set("tab", tab);
+			} else {
+				currentParams.delete("tab");
+			}
 			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
 			router.push(newUrl);
-			openSettingsPanel();
 		} else {
 			currentParams.delete("view");
+			currentParams.delete("tab");
 			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
 			router.push(newUrl);
 			closeSettingsPanel();
@@ -203,7 +209,7 @@ export default function Sidebar() {
 					<div className="flex items-center gap-2">
 						<button
 							onClick={() => {
-								handleSettingsPanel("open");
+								handleSettingsPanel("open", "general");
 							}}
 							aria-label="Open settings"
 							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"

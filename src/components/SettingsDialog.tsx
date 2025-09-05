@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
 import { usePersistance } from "./PersistanceContext";
@@ -781,11 +782,21 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	initialTab = "general",
 }) => {
 	const [selectedTab, setSelectedTab] = React.useState(initialTab);
+	const searchParams = useSearchParams();
+	const router = useRouter();
 
 	// Update selected tab when initialTab prop changes
 	React.useEffect(() => {
 		setSelectedTab(initialTab);
 	}, [initialTab]);
+
+	React.useEffect(() => {
+		const currentParams = new URLSearchParams(searchParams);
+		currentParams.set("tab", selectedTab);
+		const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+		router.replace(newUrl);
+	}, [selectedTab]);
+
 	return (
 		<Dialog open={open} onClose={onClose} variant="modal">
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">

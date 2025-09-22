@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import Dialog from "./Dialog";
 import { usePersistance } from "./PersistanceContext";
@@ -10,6 +11,7 @@ import { useAgents } from "@/hooks/useDatabase";
 import { dbHelpers } from "@/lib/database";
 import { getRandomName, getRandomAvatar } from "@/utils/randomUtils";
 import Link from "next/link";
+import { ProviderConfig } from "@/lib/aiUtils";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -46,7 +48,7 @@ const MODEL_OPTIONS = {
 		{ value: "kimi-k2", label: "Kimi K2" },
 	],
 	Custom: [],
-	FreeTrial: [{ value: "Qwen/Qwen3-8B", label: "Qwen3" }],
+	NakaChat: [{ value: "Qwen/Qwen3-8B", label: "Qwen3" }],
 };
 
 const OPEN_SOURCE_PROJECTS = [
@@ -148,12 +150,11 @@ function ModelSection() {
 						onChange={(e) => setProvider(e.target.value as ProviderType)}
 						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
 					>
-						<option value="Google">Google</option>
-						<option value="OpenAI">OpenAI</option>
-						<option value="Anthropic">Anthropic</option>
-						<option value="Moonshot">Moonshot</option>
-						<option value="Custom">Custom</option>
-						<option value="FreeTrial">Free Trial</option>
+						{Object.keys(MODEL_OPTIONS).map((provider) => (
+							<option key={provider} value={provider}>
+								{provider}
+							</option>
+						))}
 					</select>
 					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center px-2 text-neutral-500">
 						<svg
@@ -166,27 +167,24 @@ function ModelSection() {
 					</div>
 				</div>
 			</div>
-			<div>
-				<label
-					htmlFor="api"
-					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-				>
-					API Key
-				</label>
-				<input
-					id="api"
-					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
-					placeholder={
-						provider === "FreeTrial"
-							? "No need to provide (Free Trial)"
-							: "Your API Key"
-					}
-					value={currentApiKey}
-					type="password"
-					onChange={(e) => setApiKey(provider, e.target.value)}
-					disabled={provider === "FreeTrial"}
-				/>
-			</div>
+			{provider !== "NakaChat" && (
+				<div>
+					<label
+						htmlFor="api"
+						className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+					>
+						API Key
+					</label>
+					<input
+						id="api"
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+						placeholder={"Your API Key"}
+						value={getApiKey(provider)}
+						type="password"
+						onChange={(e) => setApiKey(provider, e.target.value)}
+					/>
+				</div>
+			)}
 			{provider === "Custom" && (
 				<div className="mt-4">
 					<label
@@ -781,11 +779,23 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	initialTab = "general",
 }) => {
 	const [selectedTab, setSelectedTab] = React.useState(initialTab);
+	const searchParams = useSearchParams();
+	const router = useRouter();
 
 	// Update selected tab when initialTab prop changes
 	React.useEffect(() => {
 		setSelectedTab(initialTab);
 	}, [initialTab]);
+
+	React.useEffect(() => {
+		const currentParams = new URLSearchParams(searchParams);
+		if (currentParams.get("view") === "settings") {
+			currentParams.set("tab", selectedTab);
+			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+			router.replace(newUrl);
+		}
+	}, [selectedTab]);
+
 	return (
 		<Dialog open={open} onClose={onClose} variant="modal">
 			<div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">

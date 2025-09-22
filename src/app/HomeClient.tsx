@@ -36,7 +36,7 @@ export default function HomeClient() {
 	const [checked, setChecked] = useState<boolean[]>([]);
 	const router = useRouter();
 	const [errorMsg, setErrorMsg] = useState("");
-	const { apiKeys } = usePersistance();
+	const { apiKeys, provider } = usePersistance();
 	const { openSettingsPanel } = useUiContext();
 
 	// Sync checked state with agents length
@@ -52,9 +52,8 @@ export default function HomeClient() {
 	// Calculate selected agents count
 	const selectedAgents = checked.filter(Boolean).length;
 
-	const hasApiKeyConfigured = Object.values(apiKeys).some(
-		(key) => key.trim() !== ""
-	);
+	const hasApiKeyConfigured =
+		provider === "NakaChat" || apiKeys[provider].trim() !== "";
 
 	const handleStartGroupChat = async () => {
 		if (!user) {
@@ -253,7 +252,7 @@ export default function HomeClient() {
 								onClick={() => openSettingsPanel("model")}
 								className="text-orange-500 dark:text-orange-400 cursor-pointer underline"
 							>
-								Configure Your API key
+								Configure Your {provider} API key
 							</span>
 							<span>in Settings first</span>
 						</div>

@@ -23,11 +23,21 @@ const Dialog: React.FC<DialogProps> = ({
 }) => {
 	React.useEffect(() => {
 		if (!open) return;
+
+		// Disable background scroll when dialog is open
+		const originalStyle = window.getComputedStyle(document.body).overflow;
+		document.body.style.overflow = "hidden";
+
 		const onEsc = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
 		};
 		document.addEventListener("keydown", onEsc);
-		return () => document.removeEventListener("keydown", onEsc);
+
+		return () => {
+			document.removeEventListener("keydown", onEsc);
+			// Restore original scroll behavior when dialog closes
+			document.body.style.overflow = originalStyle;
+		};
 	}, [open, onClose]);
 
 	return (
@@ -59,7 +69,7 @@ const Dialog: React.FC<DialogProps> = ({
 					</motion.div>
 				) : (
 					<motion.div
-						className="fixed inset-0 z-50 flex items-center justify-center"
+						className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -67,7 +77,7 @@ const Dialog: React.FC<DialogProps> = ({
 					>
 						{/* Overlay */}
 						<div
-							className="absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm"
+							className="absolute inset-0 bg-black/20 dark:bg-black/40"
 							onClick={onClose}
 						/>
 						{/* Dialog content */}

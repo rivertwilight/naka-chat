@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sawarabi_Mincho } from "next/font/google";
 import { Moon, Sun, Plus, Settings, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
 	useUserGroups,
 	useLatestGroupMessages,
@@ -71,7 +71,36 @@ export default function Sidebar() {
 	const { groups, loading, error } = useUserGroups(groupsVersion);
 	const { user } = useCurrentUser();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [creating, setCreating] = useState(false);
+
+	const showSettingsPanel = searchParams.get("view") === "settings";
+	const settingsTab = searchParams.get("tab") || undefined;
+	useEffect(() => {
+		if (showSettingsPanel) {
+			openSettingsPanel(settingsTab);
+		}
+	}, [showSettingsPanel, openSettingsPanel, settingsTab]);
+
+	function handleSettingsPanel(action: "open" | "close", tab?: string) {
+		const currentParams = new URLSearchParams(searchParams);
+		if (action === "open") {
+			currentParams.set("view", "settings");
+			if (tab) {
+				currentParams.set("tab", tab);
+			} else {
+				currentParams.delete("tab");
+			}
+			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+			router.push(newUrl);
+		} else {
+			currentParams.delete("view");
+			currentParams.delete("tab");
+			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+			router.push(newUrl);
+			closeSettingsPanel();
+		}
+	}
 
 	// Close sidebar when clicking outside on mobile
 	useEffect(() => {
@@ -179,7 +208,9 @@ export default function Sidebar() {
 					</div>
 					<div className="flex items-center gap-2">
 						<button
-							onClick={() => openSettingsPanel()}
+							onClick={() => {
+								handleSettingsPanel("open", "general");
+							}}
 							aria-label="Open settings"
 							className="p-2 rounded-full text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
 							type="button"
@@ -246,7 +277,7 @@ export default function Sidebar() {
 			</aside>
 			<SettingsDialog
 				open={isSettingsPanelOpen}
-				onClose={closeSettingsPanel}
+				onClose={() => handleSettingsPanel("close")}
 				initialTab={settingsInitialTab}
 			/>
 		</>

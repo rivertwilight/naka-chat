@@ -789,9 +789,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
 	React.useEffect(() => {
 		const currentParams = new URLSearchParams(searchParams);
-		currentParams.set("tab", selectedTab);
-		const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
-		router.replace(newUrl);
+		if (currentParams.get("view") === "settings") {
+			currentParams.set("tab", selectedTab);
+			const newUrl = `${window.location.pathname}?${currentParams.toString()}`;
+			router.replace(newUrl);
+		}
 	}, [selectedTab]);
 
 	return (

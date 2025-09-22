@@ -11,6 +11,7 @@ import { useAgents } from "@/hooks/useDatabase";
 import { dbHelpers } from "@/lib/database";
 import { getRandomName, getRandomAvatar } from "@/utils/randomUtils";
 import Link from "next/link";
+import { ProviderConfig } from "@/lib/aiUtils";
 
 const sawarabi = Sawarabi_Mincho({
 	weight: "400",
@@ -149,12 +150,11 @@ function ModelSection() {
 						onChange={(e) => setProvider(e.target.value as ProviderType)}
 						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent appearance-none px-4 py-3 pr-10 text-neutral-900 dark:text-neutral-100 focus:outline-none select-none focus:ring-2 focus:ring-neutral-400 dark:focus:border-neutral-600 transition"
 					>
-						<option value="Google">Google</option>
-						<option value="OpenAI">OpenAI</option>
-						<option value="Anthropic">Anthropic</option>
-						<option value="Moonshot">Moonshot</option>
-						<option value="Custom">Custom</option>
-						<option value="NakaChat">Naka Chat</option>
+						{Object.keys(MODEL_OPTIONS).map((provider) => (
+							<option key={provider} value={provider}>
+								{provider}
+							</option>
+						))}
 					</select>
 					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center px-2 text-neutral-500">
 						<svg
@@ -167,27 +167,24 @@ function ModelSection() {
 					</div>
 				</div>
 			</div>
-			<div>
-				<label
-					htmlFor="api"
-					className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
-				>
-					API Key
-				</label>
-				<input
-					id="api"
-					className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
-					placeholder={
-						provider === "NakaChat"
-							? "No need to provide (Naka Chat)"
-							: "Your API Key"
-					}
-					value={currentApiKey}
-					type="password"
-					onChange={(e) => setApiKey(provider, e.target.value)}
-					disabled={provider === "NakaChat"}
-				/>
-			</div>
+			{provider !== "NakaChat" && (
+				<div>
+					<label
+						htmlFor="api"
+						className="block text-sm text-neutral-600 dark:text-neutral-300 mb-2"
+					>
+						API Key
+					</label>
+					<input
+						id="api"
+						className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-4 py-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition"
+						placeholder={"Your API Key"}
+						value={getApiKey(provider)}
+						type="password"
+						onChange={(e) => setApiKey(provider, e.target.value)}
+					/>
+				</div>
+			)}
 			{provider === "Custom" && (
 				<div className="mt-4">
 					<label

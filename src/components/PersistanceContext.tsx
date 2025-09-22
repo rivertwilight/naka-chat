@@ -81,7 +81,7 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 					}
 				);
 			}
-			setBaseUrl(initial.baseUrl || "");
+			setBaseUrl(initial.baseUrl || "https://api.siliconflow.cn/v1");
 			setFirstName(initial.firstName || "");
 			setLastName(initial.lastName || "");
 			setModelId(initial.modelId || "Qwen/Qwen3-8B");
@@ -103,15 +103,15 @@ export const PersistanceProvider: React.FC<{ children: React.ReactNode }> = ({
 		);
 	}, [provider, apiKeys, baseUrl, firstName, lastName, modelId]);
 
-	const setApiKey = (providerType: ProviderType, apiKey: string) => {
+	const setApiKey = (provider: ProviderType, apiKey: string) => {
 		setApiKeys((prev) => ({
 			...prev,
-			[providerType]: apiKey,
+			[provider]: apiKey,
 		}));
 	};
 
-	const getApiKey = (providerType: ProviderType) => {
-		return apiKeys[providerType] || "";
+	const getApiKey = (provider: ProviderType) => {
+		return apiKeys[provider] || "";
 	};
 
 	return (

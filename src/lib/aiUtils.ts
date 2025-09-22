@@ -84,7 +84,7 @@ export async function callAI(
 			try {
 				const provider = createOpenAICompatible({
 					name: "NakaChat",
-					baseURL: providerConfig.baseUrl!,
+					baseURL: "https://api.siliconflow.cn/v1",
 					apiKey: process.env.FREE_TRIAL_API_KEY!,
 				});
 				const model = provider(modelId);
